@@ -1,3 +1,5 @@
+package com.loverslab.apropos.edit;
+
 import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -475,16 +477,17 @@ public class Prototype {
 			Component sceneMarker = null, persMarker = null;
 			GridBagConstraints point = gbl.getConstraints( above );
 			for ( Component comp : panel.getComponents() ) {
-				comp.disable();
 				GridBagConstraints c = gbl.getConstraints( comp );
 				if ( c.gridy > point.gridy ) {
 					c.gridy++ ;
 					comp.invalidate();
 				}
 				else {
-					/*System.out.println(
-							"In: " + c.insets.left + ", Y: " + c.gridy + ", : " + ( ( comp instanceof EditableJLabel )
-									? ( (EditableJLabel) comp ).getText() : ( (JLabel) comp ).getText() ) );*/
+					/*
+					 * System.out.println(
+					 * "In: " + c.insets.left + ", Y: " + c.gridy + ", : " + ( ( comp instanceof EditableJLabel )
+					 * ? ( (EditableJLabel) comp ).getText() : ( (JLabel) comp ).getText() ) );
+					 */
 					if ( c.insets.left == 10 & c.gridy > sceneY ) {
 						sceneY = c.gridy;
 						sceneMarker = comp;
@@ -505,7 +508,7 @@ public class Prototype {
 			data.get( scene ).get( pers ).add( old );
 			
 			for ( JLabel k1 : data.keySet() ) {
-				System.out.println( k1.getText() + ": " + data.get( k1 ).size());
+				System.out.println( k1.getText() + ": " + data.get( k1 ).size() );
 				for ( JLabel k2 : data.get( k1 ).keySet() ) {
 					System.out.println( "\t" + k2.getText() + ": " + data.get( k1 ).get( k2 ).size() );
 					for ( EditableJLabel s : data.get( k1 ).get( k2 ) )
