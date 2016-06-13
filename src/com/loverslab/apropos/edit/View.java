@@ -3,6 +3,9 @@ package com.loverslab.apropos.edit;
 import java.awt.Dimension;
 import java.awt.DisplayMode;
 import java.awt.GraphicsEnvironment;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
@@ -12,8 +15,11 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.AbstractAction;
+import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
@@ -21,7 +27,10 @@ import javax.swing.SwingUtilities;
 public class View extends JFrame {
 	
 	private final String version = "0.1";
-	private Globals globals;
+	protected Globals globals;
+	private Banner banner;
+	private SidePanel side;
+	private DisplayPanel display;
 	
 	public static void main( String[] args ) {
 		// Create and initialise the UI on the EDT (Event Dispatch Thread)
@@ -45,8 +54,59 @@ public class View extends JFrame {
 	}
 	
 	public void initUI() {
-		setTitle( "Apropos Edit: " + version );
 		
+		setTitle( "Apropos Edit: " + version );
+		positionAndSize();
+		initExitActions();
+		initPanels();
+		
+		setVisible( true );
+	}
+	
+	/**
+	 * Initialise and Create main Panels
+	 */
+	private void initPanels() {
+		JPanel main = (JPanel) getContentPane();
+		GridBagLayout gbl = new GridBagLayout();
+		main.setLayout( gbl );
+		
+		GridBagConstraints c = new GridBagConstraints();
+		
+		banner = new Banner( this );
+		c.insets = new Insets( 0, 0, 0, 0 );
+		c.anchor = GridBagConstraints.PAGE_START;
+		c.gridheight = 1;
+		c.gridwidth = 2;
+		c.weightx = 1.0;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		add( banner, c );
+		
+		side = new SidePanel( this );
+		JScrollPane sideScroll = new JScrollPane( side, JScrollPane.VERTICAL_SCROLLBAR_NEVER,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED );
+		sideScroll.getVerticalScrollBar().setUnitIncrement( 16 );
+		sideScroll.setBorder( BorderFactory.createRaisedSoftBevelBorder() );
+		c.anchor = GridBagConstraints.FIRST_LINE_START;
+		c.gridwidth = 1;
+		c.gridy = 1;
+		c.weighty = 1;
+		c.weightx = 0;
+		c.fill = GridBagConstraints.VERTICAL;
+		add( side, c );
+		
+		display = new DisplayPanel( this );
+		JScrollPane displayScroll = new JScrollPane( display );
+		displayScroll.getVerticalScrollBar().setUnitIncrement( 16 );
+		c.weightx = 1;
+		c.fill = GridBagConstraints.BOTH;
+		add( displayScroll, c );
+	}
+	
+	/**
+	 * Get the values written to the Global Properties and adjust window dimensions and location accordingly
+	 */
+	private void positionAndSize() {
 		// Set Size
 		String size = globals.getProperty( "size" );
 		if ( size.equals( "auto" ) | size.equals( "max" ) ) {
@@ -58,7 +118,7 @@ public class View extends JFrame {
 			if ( size.equals( "max" ) ) maximize();
 		}
 		else {
-			String[] vals = size.split( "," );
+			String[] vals = size.split( globals.delimiter );
 			setSize( (int) Float.parseFloat( vals[0] ), (int) Float.parseFloat( vals[1] ) );
 		}
 		setMinimumSize( new Dimension( 500, 500 ) );
@@ -70,16 +130,22 @@ public class View extends JFrame {
 			if ( position.equals( "max" ) ) maximize();
 		}
 		else {
-			String[] vals = position.split( "," );
+			String[] vals = position.split( globals.delimiter );
 			setLocation( (int) Float.parseFloat( vals[0] ), (int) Float.parseFloat( vals[1] ) );
 		}
-		
+	}
+	
+	/**
+	 * Set up exit listener to write config file on close and bind CTRL + W to close
+	 */
+	private void initExitActions() {
 		// Add exit listener to update Config on Close
 		addWindowListener( new WindowAdapter() {
 			public void windowClosing( WindowEvent e ) {
-				globals.setProperty( "size", isMaximized() ? "max" : getSize().width + "," + getSize().height );
+				globals.setProperty( "size",
+						isMaximized() ? "max" : getSize().width + globals.delimiter + getSize().height );
 				globals.setProperty( "position",
-						isMaximized() ? "max" : getLocation().getX() + "," + getLocation().getY() );
+						isMaximized() ? "max" : getLocation().getX() + globals.delimiter + getLocation().getY() );
 				globals.write();
 				dispose();
 			}
@@ -94,11 +160,9 @@ public class View extends JFrame {
 				dispatchEvent( new WindowEvent( frame, WindowEvent.WINDOW_CLOSING ) );
 			}
 		} );
-		
-		setVisible( true );
 	}
 	
-	protected boolean isMaximized() {
+	private boolean isMaximized() {
 		return getExtendedState() == MAXIMIZED_BOTH;
 	}
 	
