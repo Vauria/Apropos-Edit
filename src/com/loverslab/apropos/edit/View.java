@@ -7,12 +7,15 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -24,20 +27,21 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
 @SuppressWarnings("serial")
-public class View extends JFrame {
+public class View extends JFrame implements ActionListener {
 	
 	private final String version = "0.1";
 	protected Globals globals;
-	private Banner banner;
-	private SidePanel side;
-	private DisplayPanel display;
+	protected Model model;
+	protected Banner banner;
+	protected SidePanel side;
+	protected DisplayPanel display;
 	
 	public static void main( String[] args ) {
 		// Create and initialise the UI on the EDT (Event Dispatch Thread)
+		final View view = new View();
 		try {
 			SwingUtilities.invokeAndWait( new Runnable() {
 				public void run() {
-					final View view = new View();
 					view.initUI();
 				}
 			} );
@@ -50,7 +54,8 @@ public class View extends JFrame {
 	
 	public View() {
 		globals = new Globals( new File( "apropos-edit.config" ) );
-		System.out.println( globals.read() );
+		globals.read();
+		model = new Model();
 	}
 	
 	public void initUI() {
@@ -59,6 +64,10 @@ public class View extends JFrame {
 		positionAndSize();
 		initExitActions();
 		initPanels();
+		
+		String defaultDB = globals.getProperty( "locations" ).split( globals.delimiter )[0];
+		if ( !defaultDB.equals( "" ) )
+			actionPerformed( new ActionEvent( this, ActionEvent.ACTION_PERFORMED, defaultDB ) );
 		
 		setVisible( true );
 	}
@@ -74,6 +83,7 @@ public class View extends JFrame {
 		GridBagConstraints c = new GridBagConstraints();
 		
 		banner = new Banner( this );
+		banner.addActionListener( this );
 		c.insets = new Insets( 0, 0, 0, 0 );
 		c.anchor = GridBagConstraints.PAGE_START;
 		c.gridheight = 1;
@@ -168,6 +178,35 @@ public class View extends JFrame {
 	
 	private void maximize() {
 		setExtendedState( MAXIMIZED_BOTH );
+	}
+	
+	public void actionPerformed( ActionEvent e ) {
+		model.setDataBase( e.getActionCommand() );
+		model.new AnimationFetcher() {
+			
+			protected void done() {
+				try {
+					get();
+				}
+				catch ( InterruptedException e ) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				catch ( ExecutionException e ) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				finally {
+					side.publishingComplete( true );
+				}
+				
+			}
+			
+			public void process( List<String> strings ) {
+				for ( String s : strings )
+					side.publishAnimation( s );
+			}
+		}.execute();
 	}
 	
 }

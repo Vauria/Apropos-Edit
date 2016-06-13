@@ -61,8 +61,8 @@ public class Prototype {
 	// Variables
 	String db = "C:\\Program Files (x86)\\Steam\\SteamApps\\common\\Skyrim\\Mod Organizer\\mods\\Apropos Beta 2015 04 24 01\\Apropos\\dbOfficial\\";
 	String outputDir = db + "Combined\\";
-	String folder = "FemaleActor_DDBeltedSolo";
-	String active = "Troll";
+	String folder = "FemaleActor_SexLabAggrMissionary";
+	String active = "Vilkas";
 	String primary = "Kaylee";
 	String path = db + folder + "\\";
 	String name;

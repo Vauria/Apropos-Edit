@@ -42,6 +42,14 @@ public class SidePanel extends JPanel {
 		
 	}
 	
+	public void publishAnimation( String str ) {
+		animations.addItem( str );
+	}
+	
+	public void publishingComplete( boolean b ) {
+		animations.setEnabled( b );
+	}
+	
 	private void addDBWide( GridBagConstraints c ) {
 		JLabel dbWide = new JLabel( "Database Wide" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
@@ -137,9 +145,9 @@ public class SidePanel extends JPanel {
 		Insets insButton = new Insets( 0, 5, 0, 0 );
 		Insets insHelp = new Insets( 0, 3, 0, 5 );
 		
-		animationsModel = new DefaultComboBoxModel<String>( new String[] { "FemaleActor", "FemaleActor_Male",
-				"FemaleActor_DarkInvestigationsDoggystyle", "FemaleActor_PlaceHolder" } );
+		animationsModel = new DefaultComboBoxModel<String>( new String[ 0 ] );
 		animations = new JComboBox<String>( animationsModel );
+		animations.setEnabled( false );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = new Insets( 0, 3, 0, 3 );
 		c.gridy++ ;

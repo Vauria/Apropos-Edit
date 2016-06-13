@@ -74,7 +74,7 @@ public class Banner extends JPanel implements ActionListener {
 		listenerList.remove( ActionListener.class, listener );
 	}
 	
-	protected void fireActionPerformed() {
+	protected void fireActionPerformed( String command ) {
 		// Guaranteed to return a non-null array
 		Object[] listeners = listenerList.getListenerList();
 		ActionEvent e = null;
@@ -84,7 +84,7 @@ public class Banner extends JPanel implements ActionListener {
 			if ( listeners[i] == ActionListener.class ) {
 				// Lazily create the event:
 				if ( e == null ) {
-					e = new ActionEvent( this, ActionEvent.ACTION_PERFORMED, "db:selected" );
+					e = new ActionEvent( this, ActionEvent.ACTION_PERFORMED, command );
 				}
 				( (ActionListener) listeners[i + 1] ).actionPerformed( e );
 			}
@@ -114,7 +114,7 @@ public class Banner extends JPanel implements ActionListener {
 		}
 		String newSelection = (String) model.getSelectedItem();
 		if ( !selected.equals( newSelection ) ) {
-			fireActionPerformed();
+			fireActionPerformed( newSelection );
 		}
 	}
 	
