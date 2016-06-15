@@ -248,21 +248,23 @@ public class View extends JFrame implements ActionListener {
 					e.printStackTrace();
 				}
 			}
-
+			
 			public void done() {
-				//JPanel main = (JPanel) getContentPane();
-				//GridBagConstraints c = ((GridBagLayout) main.getLayout()).getConstraints( displayScroll );
+				// JPanel main = (JPanel) getContentPane();
+				// GridBagConstraints c = ((GridBagLayout) main.getLayout()).getConstraints( displayScroll );
 				
-				//remove( displayScroll );
+				// remove( displayScroll );
 				//displayScroll.setViewportView( new Display() );
 				try {
+					//displayScroll.setViewportView( new DisplayPanel( View.this, displayScroll, get() ) );
+					//get();
 					display.load( get() );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
 					e.printStackTrace();
 				}
-				//main.add( displayScroll, c );
-				//displayScroll.revalidate();
+				// main.add( displayScroll, c );
+				// displayScroll.revalidate();
 			}
 		}.execute();
 	}

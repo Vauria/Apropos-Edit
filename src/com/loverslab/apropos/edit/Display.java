@@ -1,24 +1,16 @@
 package com.loverslab.apropos.edit;
 
-import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.TreeMap;
 
 import javax.swing.JComponent;
@@ -28,29 +20,40 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.loverslab.apropos.edit.Prototype.Stage;
 
 @SuppressWarnings("serial")
-class Display extends JPanel {
+class Display<T extends JPanel> extends JPanel {
 	
 	JPanel panel;
 	JMenuBar menu;
 	JMenu file;
 	GridBagLayout gbl;
-	TreeMap<JLabel, TreeMap<JLabel, ArrayList<EditableJLabel>>> data = new TreeMap<JLabel, TreeMap<JLabel, ArrayList<EditableJLabel>>>(
+	TreeMap<JLabel, TreeMap<JLabel, ArrayList<T>>> data = new TreeMap<JLabel, TreeMap<JLabel, ArrayList<T>>>(
 			new Prototype().new OrderL() );
 	
 	public static void main( String[] args ) {
-		JFrame frame = new JFrame( "I'M FUCKING DONE" );
-		frame.setSize( 1000, 1200 );
-		
-		frame.setContentPane( new JScrollPane( new Display() ) );
-		
-		frame.setVisible( true );
+		System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
+		try {
+			SwingUtilities.invokeAndWait( new Runnable() {
+				public void run() {
+					JFrame frame = new JFrame( "I'M FUCKING DONE" );
+					frame.setSize( 1000, 1200 );
+					
+					frame.setContentPane( new JScrollPane( new Display<AproposLabelSimple>() ) );
+					( (JScrollPane) frame.getContentPane() ).getVerticalScrollBar().setUnitIncrement( 16 );
+					
+					frame.setVisible( true );
+				}
+			} );
+		}
+		catch ( InvocationTargetException | InterruptedException e1 ) {
+			e1.printStackTrace();
+		}
 	}
 	
 	public Display() {
@@ -67,7 +70,7 @@ class Display extends JPanel {
 		c.weightx = 1.0d;
 		
 		JLabel jl = null;
-		EditableJLabel ejl = null;
+		T ejl = null;
 		
 		TreeMap<String, File> files = new TreeMap<String, File>();
 			files.put( "Intro", new File("C:\\Program Files (x86)\\Steam\\SteamApps\\common\\Skyrim\\Mod Organizer\\mods\\Apropos Beta 2015 04 24 01\\Apropos\\dbOfficial\\FemaleActor\\FemaleActor_Masturbation.txt") );
@@ -85,8 +88,7 @@ class Display extends JPanel {
 			c.gridheight = 1;
 			jl = new JLabel( key );
 			add( jl, c );
-			TreeMap<JLabel, ArrayList<EditableJLabel>> scene = new TreeMap<JLabel, ArrayList<EditableJLabel>>(
-					new Prototype().new OrderL() );
+			TreeMap<JLabel, ArrayList<T>> scene = new TreeMap<JLabel, ArrayList<T>>( new Prototype().new OrderL() );
 			data.put( jl, scene );
 			System.out.println( key );
 			try ( Reader reader = new InputStreamReader( new FileInputStream( files.get( key ) ) ) ) {
@@ -99,17 +101,17 @@ class Display extends JPanel {
 					jl = new JLabel( per );
 					add( jl, c );
 					c.insets = new Insets( 0, 70, 0, 5 );
-					ArrayList<EditableJLabel> perspec = new ArrayList<EditableJLabel>();
+					ArrayList<T> perspec = new ArrayList<T>();
 					scene.put( jl, perspec );
 					for ( String str : strings ) {
 						c.gridy++ ;
-						ejl = new EditableJLabel( str );
+						ejl = (T) new AproposLabelSimple( str );
 						add( ejl, c );
 						perspec.add( ejl );
 					}
 					if ( strings.length > 1 | !strings[0].equals( "" ) ) {
 						c.gridy++ ;
-						add( new EditableJLabel( "" ), c );
+						add( (T) new AproposLabelSimple( "" ), c );
 					}
 				}
 			}
@@ -123,7 +125,7 @@ class Display extends JPanel {
 			}
 		}
 		
-		revalidate();
+		//revalidate();
 		
 	}
 	
@@ -140,8 +142,8 @@ class Display extends JPanel {
 			else {
 				/*
 				 * System.out.println(
-				 * "In: " + c.insets.left + ", Y: " + c.gridy + ", : " + ( ( comp instanceof EditableJLabel )
-				 * ? ( (EditableJLabel) comp ).getText() : ( (JLabel) comp ).getText() ) );
+				 * "In: " + c.insets.left + ", Y: " + c.gridy + ", : " + ( ( comp instanceof T )
+				 * ? ( (T) comp ).getText() : ( (JLabel) comp ).getText() ) );
 				 */
 				if ( c.insets.left == 10 & c.gridy > sceneY ) {
 					sceneY = c.gridy;
@@ -158,154 +160,18 @@ class Display extends JPanel {
 		add( add, a );
 		JLabel scene = ( (JLabel) sceneMarker );
 		JLabel pers = ( (JLabel) persMarker );
-		EditableJLabel old = (EditableJLabel) above;
-		System.out.println( "Adding \"" + old.getText() + "\" to " + scene.getText() + ": " + pers.getText() );
+		T old = (T) above;
+		System.out.println( "Adding \"" + old.toString() + "\" to " + scene.getText() + ": " + pers.getText() );
 		data.get( scene ).get( pers ).add( old );
 		
 		for ( JLabel k1 : data.keySet() ) {
 			System.out.println( k1.getText() + ": " + data.get( k1 ).size() );
 			for ( JLabel k2 : data.get( k1 ).keySet() ) {
 				System.out.println( "\t" + k2.getText() + ": " + data.get( k1 ).get( k2 ).size() );
-				for ( EditableJLabel s : data.get( k1 ).get( k2 ) )
-					System.out.println( "\t\t" + s.getText() );
+				for ( T s : data.get( k1 ).get( k2 ) )
+					System.out.println( "\t\t" + s.toString() );
 			}
 		}
-	}
-	
-	class EditableJLabel extends JPanel {
-		
-		private JLabel label;
-		private JTextField textField;
-		private LinkedList<ValueChangedListener> listeners = new LinkedList<ValueChangedListener>();
-		
-		public EditableJLabel( String startText ) {
-			super();
-			
-			// Create the listener and the layout
-			CardLayout layout = new CardLayout( 0, 0 );
-			this.setLayout( layout );
-			EditableListener hl = new EditableListener();
-			
-			// Create the JPanel for the "normal" state
-			JPanel labelPanel = new JPanel( new GridLayout( 1, 1 ) );
-			label = new JLabel( startText.equals( "" ) ? "<add new>" : startText );
-			labelPanel.add( label );
-			
-			// Create the JPanel for the "hover state"
-			JPanel inputPanel = new JPanel( new GridLayout( 1, 1 ) );
-			textField = new JTextField( startText );
-			textField.addMouseListener( hl );
-			textField.addKeyListener( hl );
-			textField.addFocusListener( hl );
-			inputPanel.add( textField );
-			
-			this.addMouseListener( hl );
-			
-			// Set the states
-			this.add( labelPanel, "NORMAL" );
-			this.add( inputPanel, "HOVER" );
-			
-			// Show the correct panel to begin with
-			layout.show( this, "NORMAL" );
-		}
-		
-		public void setText( String text ) {
-			System.out.println( text );
-			if ( getText().equals( "" ) ) {
-				if ( !text.equals( "" ) ) {
-					this.label.setText( text );
-					EditableJLabel add = new EditableJLabel( "" );
-					add.setHoverState( true );
-					insert( add, this );
-					add.textField.grabFocus();
-				}
-			}
-			else if ( text.equals( "" ) )
-				this.label.setText( "<add new>" );
-			else
-				this.label.setText( text );
-			this.textField.setText( text );
-		}
-		
-		public String getText() {
-			String text = this.label.getText();
-			return text.equals( "<add new>" ) ? "" : text;
-		}
-		
-		public JTextField getTextField() {
-			return textField;
-		}
-		
-		public JLabel getLabel() {
-			return label;
-		}
-		
-		public void setHoverState( boolean hover ) {
-			CardLayout cl = (CardLayout) ( this.getLayout() );
-			
-			if ( hover )
-				cl.show( this, "HOVER" );
-			else
-				cl.show( this, "NORMAL" );
-		}
-		
-		public void addValueChangedListener( ValueChangedListener l ) {
-			this.listeners.add( l );
-		}
-		
-		public int positionFromPoint( int x, String s ) {
-			int w = label.getGraphics().getFontMetrics().stringWidth( s );
-			float pos = ( (float) x / (float) w ) * (float) s.length();
-			return Math.min( (int) pos, s.length() );
-		}
-		
-		public class EditableListener implements MouseListener, KeyListener, FocusListener {
-			boolean locked = false;
-			String oldValue;
-			
-			public void focusGained( FocusEvent arg0 ) {
-				oldValue = textField.getText();
-			}
-			public void mouseClicked( MouseEvent e ) {
-				if ( e.getClickCount() == 2 ) {
-					setHoverState( true );
-					textField.grabFocus();
-					textField.setCaretPosition( positionFromPoint( e.getX(), textField.getText() ) );
-				}
-			}
-			public void release() {
-				this.locked = false;
-			}
-			public void focusLost( FocusEvent e ) {
-				if ( !locked ) setText( oldValue );
-				setHoverState( false );
-				release();
-				mouseExited( null );
-			}
-			public void keyTyped( KeyEvent e ) {
-				if ( e.getKeyChar() == KeyEvent.VK_ENTER ) {
-					setText( textField.getText() );
-					for ( ValueChangedListener v : listeners ) {
-						v.valueChanged( textField.getText(), EditableJLabel.this );
-					}
-					setHoverState( false );
-					locked = true;
-					mouseExited( null );
-				}
-				else if ( e.getKeyChar() == KeyEvent.VK_ESCAPE ) {
-					setHoverState( false );
-					release();
-					setText( oldValue );
-				}
-			}
-			public void mousePressed( MouseEvent e ) {}
-			public void mouseReleased( MouseEvent e ) {}
-			public void keyPressed( KeyEvent e ) {}
-			public void keyReleased( KeyEvent e ) {}
-			public void mouseEntered( MouseEvent e ) {}
-			public void mouseExited( MouseEvent e ) {}
-		}
-		
 	}
 	
 }

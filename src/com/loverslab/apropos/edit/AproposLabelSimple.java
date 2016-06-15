@@ -23,7 +23,7 @@ import javax.swing.JTextField;
 public class AproposLabelSimple extends JPanel {
 	
 	private String string;
-	private AproposLabel parent;
+	private AproposLabel parentLabel;
 	private GridBagConstraints cons;
 	private JLabel label;
 	private JTextField textField;
@@ -35,7 +35,7 @@ public class AproposLabelSimple extends JPanel {
 	public AproposLabelSimple( String source ) {
 		super();
 		string = source;
-		this.parent = new AproposLabel( string, null );
+		this.parentLabel = new AproposLabel( string, null );
 		
 		// Create the listener and the layout
 		CardLayout layout = new CardLayout( 0, 0 );
@@ -92,8 +92,8 @@ public class AproposLabelSimple extends JPanel {
 		return string;
 	}
 	
-	public AproposLabel getParent() {
-		return parent;
+	public AproposLabel getParentLabel() {
+		return parentLabel;
 	}
 	
 	public GridBagConstraints getGridBagCons() {
