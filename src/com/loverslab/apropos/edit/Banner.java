@@ -17,6 +17,7 @@ import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.LookAndFeel;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -42,9 +43,13 @@ public class Banner extends JPanel implements ActionListener {
 		GridBagConstraints c = new GridBagConstraints();
 		
 		label = new JLabel( "Apropos \\db\\ Location" );
-		c.anchor = GridBagConstraints.FIRST_LINE_START;
+		c.anchor = GridBagConstraints.LINE_START;
 		c.insets = new Insets( 5, 10, 5, 5 );
+		c.gridx = 0;
 		add( label, c );
+		
+		// c.gridx++ ;
+		// add( new AproposLabel( "New Label!", null ).display( c, null ), c );
 		
 		String locConfig = parent.globals.getProperty( "locations" );
 		String[] locArr;
@@ -62,6 +67,7 @@ public class Banner extends JPanel implements ActionListener {
 		locations.addActionListener( this );
 		c.insets = new Insets( 5, 5, 5, 5 );
 		c.weightx = 1.0;
+		c.gridx++ ;
 		c.fill = GridBagConstraints.HORIZONTAL;
 		add( locations, c );
 	}

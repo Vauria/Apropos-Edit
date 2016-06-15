@@ -3,6 +3,8 @@ package com.loverslab.apropos.edit;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
@@ -21,6 +23,8 @@ public class SidePanel extends JPanel {
 	private ComboBoxModel<String> animationsModel;
 	private JComboBox<Position> positions;
 	private ComboBoxModel<Position> positionsModel;
+	private JCheckBox rapeCheck;
+	private ActionListener listenLoad, listenSimulate;
 	
 	public SidePanel( View parent ) {
 		super( true );
@@ -29,6 +33,7 @@ public class SidePanel extends JPanel {
 		setLayout( new GridBagLayout() );
 		GridBagConstraints c = new GridBagConstraints();
 		
+		initListeners();
 		addDBWide( c );
 		addAnimLocal( c );
 		
@@ -48,6 +53,26 @@ public class SidePanel extends JPanel {
 	
 	public void publishingComplete( boolean b ) {
 		animations.setEnabled( b );
+		animations.setSelectedIndex( 2 );
+		positions.setSelectedIndex( 7 );
+	}
+	
+	private void initListeners() {
+		
+		listenLoad = new ActionListener() {
+			public void actionPerformed( ActionEvent e ) {
+				String folder = (String) animations.getSelectedItem();
+				String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(),
+						rapeCheck.isSelected() );
+				parent.displayPosition( folder, animString );
+			}
+		};
+		
+		listenSimulate = new ActionListener() {
+			public void actionPerformed( ActionEvent e ) {
+				System.out.println( "Yeah, I'll get right on it" );
+			}
+		};
 	}
 	
 	private void addDBWide( GridBagConstraints c ) {
@@ -155,7 +180,7 @@ public class SidePanel extends JPanel {
 		
 		positionsModel = new DefaultComboBoxModel<Position>( Position.values() );
 		positions = new JComboBox<Position>( positionsModel );
-		JCheckBox rapeCheck = new JCheckBox( "Rape", false );
+		rapeCheck = new JCheckBox( "Rape", false );
 		c.insets = new Insets( 0, 3, 0, 0 );
 		c.gridwidth = 1;
 		c.gridy++ ;
@@ -169,6 +194,7 @@ public class SidePanel extends JPanel {
 		c.gridwidth = 1;
 		
 		JButton loadButton = new JButton( "Load" );
+		loadButton.addActionListener( listenLoad );
 		JLabel loadInfo = new JLabel( "(?)" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
@@ -183,6 +209,7 @@ public class SidePanel extends JPanel {
 		add( loadInfo, c );
 		
 		JButton simulateButton = new JButton( "Simulate" );
+		simulateButton.addActionListener( listenSimulate );
 		JLabel simulateInfo = new JLabel( "(?)" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
@@ -195,10 +222,6 @@ public class SidePanel extends JPanel {
 		c.weightx = 0;
 		c.gridx++ ;
 		add( simulateInfo, c );
-	}
-	
-	public enum Position {
-		Anal, BoobJob, Fisting, FootJob, GangBang, HandJob, MMF, Oral, Vaginal, Unique
 	}
 	
 }
