@@ -9,13 +9,10 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
 import java.util.LinkedList;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
 /**
@@ -30,7 +27,6 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	private GridBagConstraints cons;
 	private JLabel label;
 	private JTextField textField;
-	private MouseWheelTransferListener mwtl;
 	private LinkedList<ValueChangedListener> listeners = new LinkedList<ValueChangedListener>();
 	
 	public AproposLabel( String startText, AproposLabel parent ) {
@@ -41,14 +37,13 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		this.addMouseListener( hl );
 	}
 	
-	public AproposLabel display( GridBagConstraints c, JScrollPane scroll ) {
+	public AproposLabel display( GridBagConstraints c ) {
 		cons = (GridBagConstraints) c.clone();
 		
 		// Create the listener and the layout
 		CardLayout layout = new CardLayout( 0, 0 );
 		this.setLayout( layout );
 		EditingListener hl = new EditingListener();
-		mwtl = new MouseWheelTransferListener( scroll );
 		
 		// Create the JPanel for the "normal" state
 		JPanel labelPanel = new JPanel( new GridLayout( 1, 1 ) );
@@ -73,8 +68,8 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		this.addMouseListener( hl );
 		
 		// Set the states
-		this.add( label, "NORMAL" );
-		this.add( textField, "HOVER" );
+		this.add( labelPanel, "NORMAL" );
+		this.add( inputPanel, "HOVER" );
 		
 		// Show the correct panel to begin with
 		layout.show( this, "NORMAL" );
@@ -105,7 +100,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		return string;
 	}
 	
-	public AproposLabel getParent() {
+	public AproposLabel getParentLabel() {
 		return parent;
 	}
 	
@@ -145,11 +140,9 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		String oldValue;
 		
 		public void focusGained( FocusEvent arg0 ) {
-			System.out.println( arg0.getSource() + ": Focus Gained" );
 			oldValue = textField.getText();
 		}
 		public void mouseClicked( MouseEvent e ) {
-			System.out.println( e.getSource() + ": Clicked" );
 			if ( e.getClickCount() == 2 ) {
 				setHoverState( true );
 				textField.grabFocus();
@@ -185,39 +178,8 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		public void mouseReleased( MouseEvent e ) {}
 		public void keyPressed( KeyEvent e ) {}
 		public void keyReleased( KeyEvent e ) {}
-		public void mouseEntered( MouseEvent e ) {
-			System.out.println( e );
-		}
-		public void mouseExited( MouseEvent e ) {
-			System.out.println( e );
-		}
-	}
-	
-	// http://stackoverflow.com/a/11403697
-	public class MouseWheelTransferListener implements MouseWheelListener {
-		
-		private JScrollPane parentScrollPane;
-		
-		public MouseWheelTransferListener( JScrollPane parentScrollPane ) {
-			this.parentScrollPane = parentScrollPane;
-		}
-		
-		/** {@inheritDoc} */
-		@Override
-		public void mouseWheelMoved( MouseWheelEvent event ) {
-			System.out.println( "Caught Event" );
-			parentScrollPane.dispatchEvent( cloneEvent( event ) );
-		}
-		
-		/**
-		 * Copies the given MouseWheelEvent.
-		 */
-		private MouseWheelEvent cloneEvent( MouseWheelEvent event ) {
-			return new MouseWheelEvent( parentScrollPane, event.getID(), event.getWhen(), event.getModifiers(), 1, 1,
-					event.getClickCount(), false, event.getScrollType(), event.getScrollAmount(),
-					event.getWheelRotation() );
-		}
-		
+		public void mouseEntered( MouseEvent e ) {}
+		public void mouseExited( MouseEvent e ) {}
 	}
 	
 	/**

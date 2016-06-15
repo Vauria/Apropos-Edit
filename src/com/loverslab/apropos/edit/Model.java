@@ -32,7 +32,7 @@ public class Model {
 	
 	public StageMap getStages( AproposLabel parent ) {
 		StageMap data = new StageMap();
-		String path = db + parent.getParent().toString() + "\\" + parent.toString();
+		String path = db + parent.getParentLabel().toString() + "\\" + parent.toString();
 		System.out.println( path );
 		File file = new File( path + ".txt" );
 		if ( file.exists() ) {

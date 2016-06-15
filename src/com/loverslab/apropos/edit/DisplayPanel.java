@@ -4,7 +4,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 
-import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -58,23 +57,23 @@ public class DisplayPanel extends JPanel {
 			c.gridx = 0;
 			c.gridwidth = 1;
 			c.gridheight = 1;
-			// add( stage.display( c, scroll ), c );
-			JButton b = new JButton( stage.toString() );
+			add( stage.display( c ), c );
+			// JButton b = new JButton( stage.toString() );
 			// b.addMouseListener( stage.new EditingListener() );
-			add( b, c );
+			// add( b, c );
 			PerspectiveMap persMap = stageMap.get( stage );
 			for ( AproposLabel perspec : persMap.keySet() ) {
 				c.insets = new Insets( 0, 40, 0, 5 );
 				c.gridy++ ;
-				// add( perspec.display( c, scroll ), c );
-				EditableJLabel als = new EditableJLabel( perspec.getText() );
-				System.out.println( als );
-				add( als, c );
+				add( perspec.display( c ), c );
+				//EditableJLabel als = new EditableJLabel( perspec.getText() );
+				//System.out.println( als );
+				//add( als, c );
 				LabelList list = persMap.get( perspec );
 				c.insets = new Insets( 0, 70, 0, 5 );
 				for ( AproposLabel label : list ) {
 					c.gridy++ ;
-					add( new AproposLabelSimple( label ), c );
+					add( label.display( c ), c );
 				}
 			}
 		}

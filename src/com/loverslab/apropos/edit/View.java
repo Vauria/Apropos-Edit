@@ -226,45 +226,13 @@ public class View extends JFrame implements ActionListener {
 	
 	public void displayPosition( String folder, String animString ) {
 		model.new PositionFetcher( folder, animString ) {
-			public void doNE() {
-				try {
-					JFrame frame = new JFrame( animString );
-					
-					frame.setSize( 1000, 1200 );
-					frame.setLocationRelativeTo( View.this );
-					
-					JScrollPane displayScroll = new JScrollPane( display );
-					DisplayPanel display = new DisplayPanel( View.this, displayScroll );
-					displayScroll.setViewportView( display );
-					displayScroll.getVerticalScrollBar().setUnitIncrement( 16 );
-					
-					frame.add( displayScroll );
-					
-					display.load( get() );
-					
-					frame.setVisible( true );
-				}
-				catch ( InterruptedException | ExecutionException e ) {
-					e.printStackTrace();
-				}
-			}
-			
 			public void done() {
-				// JPanel main = (JPanel) getContentPane();
-				// GridBagConstraints c = ((GridBagLayout) main.getLayout()).getConstraints( displayScroll );
-				
-				// remove( displayScroll );
-				//displayScroll.setViewportView( new Display() );
 				try {
-					//displayScroll.setViewportView( new DisplayPanel( View.this, displayScroll, get() ) );
-					//get();
 					display.load( get() );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
 					e.printStackTrace();
 				}
-				// main.add( displayScroll, c );
-				// displayScroll.revalidate();
 			}
 		}.execute();
 	}
