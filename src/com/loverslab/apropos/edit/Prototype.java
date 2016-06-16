@@ -664,6 +664,6 @@ public class Prototype {
  * @author James McMinn
  * 
  */
-interface ValueChangedListener {
+/*interface ValueChangedListener {
 	public void valueChanged( String value, JComponent source );
-}
+}*/

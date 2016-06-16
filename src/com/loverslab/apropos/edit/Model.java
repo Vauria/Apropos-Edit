@@ -65,6 +65,9 @@ public class Model {
 				while ( reader.hasNext() )
 					list.add( new AproposLabel( reader.nextString(), parent ) );
 				reader.endArray();
+				if ( ! ( list.size() == 1 & list.get( 0 ).toString().equals( "" ) ) ) {
+					list.add( new AproposLabel( "", parent ) );
+				}
 				data.put( key, list );
 			}
 		}
@@ -105,7 +108,6 @@ public class Model {
 		}
 		
 		public StageMap doInBackground() {
-			System.out.println( "Position Fetcher Running" );
 			return getStages( parent );
 		}
 		
@@ -139,7 +141,7 @@ public class Model {
 			AproposLabel[] keys = keySet.toArray( new AproposLabel[ keySet.size() ] );
 			for ( int i = 0; i < size(); i++ ) {
 				if ( i > 0 ) builder.append( "\n\t\t\t" );
-				builder.append( keys[i].toString()+ "\n\t\t\t\t" + get( keys[i] ) );
+				builder.append( keys[i].toString() + "\n\t\t\t\t" + get( keys[i] ) );
 			}
 			return builder.toString();
 		}
@@ -169,7 +171,7 @@ public class Model {
 			AproposLabel[] keys = keySet.toArray( new AproposLabel[ keySet.size() ] );
 			for ( int i = 0; i < size(); i++ ) {
 				if ( i > 0 ) builder.append( "\n\t" );
-				builder.append( keys[i].toString() + "\n\t\t"  + get( keys[i] ) );
+				builder.append( keys[i].toString() + "\n\t\t" + get( keys[i] ) );
 			}
 			return builder.toString();
 		}
@@ -184,7 +186,7 @@ public class Model {
 			AproposLabel[] keys = keySet.toArray( new AproposLabel[ keySet.size() ] );
 			for ( int i = 0; i < size(); i++ ) {
 				if ( i > 0 ) builder.append( "\n" );
-				builder.append( keys[i].toString() + "\n\t"  + get( keys[i] ) );
+				builder.append( keys[i].toString() + "\n\t" + get( keys[i] ) );
 			}
 			return builder.toString();
 		}

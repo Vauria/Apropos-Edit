@@ -24,7 +24,7 @@ public class SidePanel extends JPanel {
 	private JComboBox<Position> positions;
 	private ComboBoxModel<Position> positionsModel;
 	private JCheckBox rapeCheck;
-	private ActionListener listenLoad, listenSimulate;
+	private ActionListener listenLoad, listenSimulate, listenWrite;
 	
 	public SidePanel( View parent ) {
 		super( true );
@@ -58,7 +58,6 @@ public class SidePanel extends JPanel {
 	}
 	
 	private void initListeners() {
-		
 		listenLoad = new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
 				String folder = (String) animations.getSelectedItem();
@@ -71,6 +70,12 @@ public class SidePanel extends JPanel {
 		listenSimulate = new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
 				System.out.println( "Yeah, I'll get right on it" );
+			}
+		};
+		
+		listenWrite = new ActionListener() {
+			public void actionPerformed( ActionEvent e ) {
+				parent.writeDisplay();
 			}
 		};
 	}
@@ -222,6 +227,21 @@ public class SidePanel extends JPanel {
 		c.weightx = 0;
 		c.gridx++ ;
 		add( simulateInfo, c );
+		
+		JButton writeButton = new JButton( "Write" );
+		writeButton.addActionListener( listenWrite );
+		JLabel writeInfo = new JLabel( "(?)" );
+		c.anchor = GridBagConstraints.FIRST_LINE_START;
+		c.insets = insButton;
+		c.weightx = 1;
+		c.gridy++ ;
+		c.gridx = 0;
+		add( writeButton, c );
+		c.anchor = GridBagConstraints.LINE_START;
+		c.insets = insHelp;
+		c.weightx = 0;
+		c.gridx++ ;
+		add( writeInfo, c );
 	}
 	
 }

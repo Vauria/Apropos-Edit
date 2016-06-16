@@ -1,5 +1,6 @@
 package com.loverslab.apropos.edit;
 
+import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -14,20 +15,25 @@ import com.loverslab.apropos.edit.Model.PerspectiveMap;
 import com.loverslab.apropos.edit.Model.StageMap;
 
 @SuppressWarnings("serial")
-public class DisplayPanel extends JPanel {
+public class DisplayPanel extends JPanel implements LineInsertedListener {
+	@SuppressWarnings("unused")
 	private View parent;
 	private JScrollPane scroll;
+	protected StageMap stageMap;
+	private GridBagLayout layout;
+	private JSeparator sep;
 	
 	public DisplayPanel( View parent, JScrollPane scroll ) {
 		super( true );
 		this.parent = parent;
 		this.scroll = scroll;
 		
-		setLayout( new GridBagLayout() );
-		
-		// addMouseListener( new AproposLabel("",null).new EditingListener() );
-		
-		System.out.println( this );
+		layout = new GridBagLayout() {
+			public GridBagConstraints getConstraints( Component comp ) {
+				return lookupConstraints( comp );
+			}
+		};
+		setLayout( layout );
 	}
 	
 	public DisplayPanel( View parent, JScrollPane scroll, StageMap stageMap ) {
@@ -41,6 +47,8 @@ public class DisplayPanel extends JPanel {
 	}
 	
 	public void load( StageMap stageMap ) {
+		this.stageMap = stageMap;
+		
 		removeAll();
 		scroll.getVerticalScrollBar().setValue( 0 );
 		GridBagConstraints c = new GridBagConstraints();
@@ -57,81 +65,73 @@ public class DisplayPanel extends JPanel {
 			c.gridx = 0;
 			c.gridwidth = 1;
 			c.gridheight = 1;
-			add( stage.display( c ), c );
-			// JButton b = new JButton( stage.toString() );
-			// b.addMouseListener( stage.new EditingListener() );
-			// add( b, c );
+			add( stage.display( layout ), c );
+			stage.addLineInsertedListener( this );
 			PerspectiveMap persMap = stageMap.get( stage );
 			for ( AproposLabel perspec : persMap.keySet() ) {
 				c.insets = new Insets( 0, 40, 0, 5 );
 				c.gridy++ ;
-				add( perspec.display( c ), c );
-				//EditableJLabel als = new EditableJLabel( perspec.getText() );
-				//System.out.println( als );
-				//add( als, c );
+				add( perspec.display( layout ), c );
+				perspec.addLineInsertedListener( this );
 				LabelList list = persMap.get( perspec );
 				c.insets = new Insets( 0, 70, 0, 5 );
 				for ( AproposLabel label : list ) {
 					c.gridy++ ;
-					add( label.display( c ), c );
+					add( label.display( layout ), c );
+					label.addLineInsertedListener( this );
 				}
 			}
 		}
 		
-		// for ( String key : files.keySet() ) {
-		// c.insets = new Insets( 25, 10, 5, 10 );
-		// c.gridy++ ;
-		// c.gridx = 0;
-		// c.gridwidth = 1;
-		// c.gridheight = 1;
-		// jl = new JLabel( key );
-		// add( jl, c );
-		// TreeMap<JLabel, ArrayList<EditableJLabel>> scene = new TreeMap<JLabel, ArrayList<EditableJLabel>>(
-		// new OrderL() );
-		// put( jl, scene );
-		// System.out.println( key );
-		// try ( Reader reader = new InputStreamReader( new FileInputStream( files.get( key ) ) ) ) {
-		// Stage s = g.fromJson( reader, Stage.class ).build();
-		// if ( s != null ) for ( String per : s.strings.keySet() ) {
-		// String[] strings = s.strings.get( per );
-		// c.insets = new Insets( 0, 40, 0, 5 );
-		// c.gridy++ ;
-		// jl = new JLabel( per );
-		// add( jl, c );
-		// c.insets = new Insets( 0, 70, 0, 5 );
-		// ArrayList<EditableJLabel> perspec = new ArrayList<EditableJLabel>();
-		// scene.put( jl, perspec );
-		// for ( String str : strings ) {
-		// c.gridy++ ;
-		// ejl = new EditableJLabel( str );
-		// add( ejl, c );
-		// perspec.add( ejl );
-		// }
-		// if ( strings.length > 1 | !strings[0].equals( "" ) ) {
-		// c.gridy++ ;
-		// add( new EditableJLabel( "" ), c );
-		// }
-		// }
-		// }
-		// catch ( JsonSyntaxException e ) {
-		// System.err.println( "Error parsing " + files.get( key ).getAbsolutePath().replace( db, "\\db\\" ) );
-		// System.err.println( e.getMessage() );
-		// }
-		// catch ( IOException e ) {
-		// // TODO Auto-generated catch block
-		// e.printStackTrace();
-		// }
-		// }
-		
+		sep = new JSeparator();
 		c.insets = new Insets( 0, 3, 0, 3 );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.gridwidth = 2;
 		c.weighty = 1;
 		c.gridy++ ;
 		c.gridx = 0;
-		add( new JSeparator(), c );
+		// add( sep, c );
 		
 		revalidate();
+	}
+	
+	public void lineInserted( AproposLabel above ) {
+		if ( stageMap != null ) {
+			GridBagConstraints cAbove = above.getGridBagCons();
+			GridBagConstraints c;
+			boolean found = false;
+			LabelList insertList = null;
+			for ( AproposLabel stage : stageMap.keySet() ) {
+				PerspectiveMap persMap = stageMap.get( stage );
+				if ( found ) stage.bump();
+				for ( AproposLabel perspec : persMap.keySet() ) {
+					LabelList list = persMap.get( perspec );
+					if ( found ) perspec.bump();
+					for ( AproposLabel label : list ) {
+						c = label.getGridBagCons();
+						if ( found ) label.bump();
+						if ( !found & c.gridy >= cAbove.gridy ) {
+							found = true;
+							insertList = list;
+						}
+					}
+				}
+			}
+			
+			c = (GridBagConstraints) cAbove.clone();
+			c.gridy++ ;
+			AproposLabel toAdd = new AproposLabel( "", above.getParentLabel() ).display( layout );
+			insertList.add( toAdd );
+			add( toAdd, c );
+			toAdd.setHoverState( true );
+			toAdd.getTextField().grabFocus();
+			toAdd.addLineInsertedListener( this );
+			
+			layout.getConstraints( sep ).gridy++ ;
+			// System.out.println( stageMap );
+			
+			revalidate();
+		}
 	}
 	
 }

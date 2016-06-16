@@ -40,7 +40,7 @@ import javax.swing.event.MouseInputAdapter;
 @SuppressWarnings("serial")
 public class View extends JFrame implements ActionListener {
 	
-	private final String version = "0.6a";
+	private final String version = "0.7a";
 	protected Globals globals;
 	protected Model model;
 	protected Banner banner;
@@ -124,8 +124,6 @@ public class View extends JFrame implements ActionListener {
 		c.weightx = 1;
 		c.fill = GridBagConstraints.BOTH;
 		main.add( displayScroll, c );
-		
-		// setGlassPane( new MyGlassPane( null, null, main ));
 	}
 	
 	/**
@@ -236,109 +234,9 @@ public class View extends JFrame implements ActionListener {
 			}
 		}.execute();
 	}
-	
-}
 
-class MyGlassPane extends JComponent implements ItemListener {
-	private static final long serialVersionUID = -1200592169643692879L;
-	Point point;
-	
-	// React to change button clicks.
-	public void itemStateChanged( ItemEvent e ) {
-		setVisible( e.getStateChange() == ItemEvent.SELECTED );
-	}
-	
-	protected void paintComponent( Graphics g ) {
-		if ( point != null ) {
-			g.setColor( Color.red );
-			g.fillOval( point.x - 10, point.y - 10, 20, 20 );
-		}
-	}
-	
-	public void setPoint( Point p ) {
-		point = p;
-	}
-	
-	public MyGlassPane( AbstractButton aButton, JMenuBar menuBar, Container contentPane ) {
-		CBListener listener = new CBListener( aButton, menuBar, this, contentPane );
-		addMouseListener( listener );
-		addMouseMotionListener( listener );
-		setVisible( true );
-	}
-}
-
-/**
- * Listen for all events that our check box is likely to be
- * interested in. Redispatch them to the check box.
- */
-class CBListener extends MouseInputAdapter {
-	Component liveButton;
-	JMenuBar menuBar;
-	MyGlassPane glassPane;
-	Container contentPane;
-	
-	public CBListener( Component liveButton, JMenuBar menuBar, MyGlassPane glassPane, Container contentPane ) {
-		this.liveButton = liveButton;
-		this.menuBar = menuBar;
-		this.glassPane = glassPane;
-		this.contentPane = contentPane;
-	}
-	
-	public void mouseMoved( MouseEvent e ) {
-		redispatchMouseEvent( e, false );
-	}
-	
-	public void mouseDragged( MouseEvent e ) {
-		redispatchMouseEvent( e, false );
-	}
-	
-	public void mouseClicked( MouseEvent e ) {
-		redispatchMouseEvent( e, false );
-	}
-	
-	public void mouseEntered( MouseEvent e ) {
-		redispatchMouseEvent( e, false );
-	}
-	
-	public void mouseExited( MouseEvent e ) {
-		redispatchMouseEvent( e, false );
-	}
-	
-	public void mousePressed( MouseEvent e ) {
-		redispatchMouseEvent( e, false );
-	}
-	
-	public void mouseReleased( MouseEvent e ) {
-		redispatchMouseEvent( e, true );
-	}
-	
-	// A more finished version of this method would
-	// handle mouse-dragged events specially.
-	private void redispatchMouseEvent( MouseEvent e, boolean repaint ) {
-		System.out.println( e );
-		Point glassPanePoint = e.getPoint();
-		Container container = contentPane;
-		Point containerPoint = SwingUtilities.convertPoint( glassPane, glassPanePoint, contentPane );
-		if ( containerPoint.y < 0 ) { // we're not in the content pane
-		}
-		else {
-			// The mouse event is probably over the content pane.
-			// Find out exactly which component it's over.
-			Component component = SwingUtilities.getDeepestComponentAt( container, containerPoint.x, containerPoint.y );
-			
-			System.out.println( component );
-			if ( ( component != null ) && ( component.equals( liveButton ) ) ) {
-				// Forward events over the check box.
-				Point componentPoint = SwingUtilities.convertPoint( glassPane, glassPanePoint, component );
-				component.dispatchEvent( new MouseEvent( component, e.getID(), e.getWhen(), e.getModifiers(),
-						componentPoint.x, componentPoint.y, e.getClickCount(), e.isPopupTrigger() ) );
-			}
-		}
+	public void writeDisplay() {
 		
-		// Update the glass pane if requested.
-		if ( repaint ) {
-			glassPane.setPoint( glassPanePoint );
-			glassPane.repaint();
-		}
 	}
+	
 }
