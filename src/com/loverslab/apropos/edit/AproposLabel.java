@@ -35,8 +35,6 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		super();
 		string = startText;
 		this.parent = parent;
-		EditingListener hl = new EditingListener();
-		this.addMouseListener( hl );
 	}
 	
 	public AproposLabel display( GridBagLayout gbl ) {
@@ -80,6 +78,22 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		return this;
 	}
 	
+	public AproposLabel display( GridBagLayout gbl, boolean b ) {
+		layout = gbl;
+		
+		setLayout( new GridLayout( 1, 1 ) );
+		AproposListener al = new AproposListener();
+		
+		label = new JLabel( string.equals( "" ) ? "<add new>" : string );
+		add( label );
+		
+		this.addMouseListener( al );
+		
+		revalidate();
+		
+		return this;
+	}
+	
 	public void setText( String text ) {
 		if ( getText().equals( "" ) ) {
 			if ( !text.equals( "" ) ) {
@@ -109,7 +123,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	public GridBagConstraints getGridBagCons() {
-		if(cons == null) {
+		if ( cons == null ) {
 			cons = layout.getConstraints( this );
 		}
 		return cons;
@@ -124,13 +138,15 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	public void bump() {
-		//if(getDepth() == 4)
-			//System.out.println( this.toString() );
 		getGridBagCons().gridy++ ;
 		invalidate();
-		//setEnabled( false );
 	}
-
+	
+	public void boop() {
+		getGridBagCons().gridy-- ;
+		invalidate();
+	}
+	
 	public void setHoverState( boolean hover ) {
 		CardLayout cl = (CardLayout) ( this.getLayout() );
 		
@@ -140,7 +156,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 			cl.show( this, "NORMAL" );
 	}
 	
-	public void setEnabled(boolean enabled) {
+	public void setEnabled( boolean enabled ) {
 		super.setEnabled( enabled );
 		textField.setEnabled( enabled );
 		label.setEnabled( enabled );
@@ -166,12 +182,12 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		}
 	}
 	
-	public void addLineInsertedListener( LineInsertedListener listener ) {
-		listenerList.add( LineInsertedListener.class, listener );
+	public void addLineChangedListener( LineChangedListener listener ) {
+		listenerList.add( LineChangedListener.class, listener );
 	}
 	
-	public void removeLineInsertedListener( LineInsertedListener listener ) {
-		listenerList.remove( LineInsertedListener.class, listener );
+	public void removeLineChangedListener( LineChangedListener listener ) {
+		listenerList.remove( LineChangedListener.class, listener );
 	}
 	
 	protected void fireLineInserted( AproposLabel above ) {
@@ -180,8 +196,41 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		// Process the listeners last to first, notifying
 		// those that are interested in this event
 		for ( int i = listeners.length - 2; i >= 0; i -= 2 ) {
-			if ( listeners[i] == LineInsertedListener.class ) {
-				( (LineInsertedListener) listeners[i + 1] ).lineInserted( above );
+			if ( listeners[i] == LineChangedListener.class ) {
+				( (LineChangedListener) listeners[i + 1] ).lineInserted( above );
+			}
+		}
+	}
+	
+	protected void fireLineRemoved( AproposLabel removed ) {
+		// Guaranteed to return a non-null array
+		Object[] listeners = listenerList.getListenerList();
+		// Process the listeners last to first, notifying
+		// those that are interested in this event
+		for ( int i = listeners.length - 2; i >= 0; i -= 2 ) {
+			if ( listeners[i] == LineChangedListener.class ) {
+				( (LineChangedListener) listeners[i + 1] ).lineRemoved( removed );
+			}
+		}
+	}
+	
+	public void addPopupMenuListener( PopupMenuListener listener ) {
+		listenerList.add( PopupMenuListener.class, listener );
+	}
+	
+	public void removePopupMenuListener( PopupMenuListener listener ) {
+		listenerList.remove( PopupMenuListener.class, listener );
+	}
+	
+	protected void firepopupMenuTriggered( AproposLabel label, MouseEvent e ) {
+		if ( label.getText().equals( "" ) ) return;
+		// Guaranteed to return a non-null array
+		Object[] listeners = listenerList.getListenerList();
+		// Process the listeners last to first, notifying
+		// those that are interested in this event
+		for ( int i = listeners.length - 2; i >= 0; i -= 2 ) {
+			if ( listeners[i] == PopupMenuListener.class ) {
+				( (PopupMenuListener) listeners[i + 1] ).popupMenuTriggered( label, e );
 			}
 		}
 	}
@@ -192,7 +241,25 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		return Math.min( (int) pos, s.length() );
 	}
 	
-	public class EditingListener implements MouseListener, KeyListener, FocusListener {
+	public class AproposListener implements MouseListener {
+		
+		public void mousePressed( MouseEvent e ) {
+			if ( e.isPopupTrigger() ) {
+				firepopupMenuTriggered( AproposLabel.this, e );
+			}
+		}
+		public void mouseReleased( MouseEvent e ) {
+			if ( e.isPopupTrigger() ) {
+				firepopupMenuTriggered( AproposLabel.this, e );
+			}
+		}
+		
+		public void mouseEntered( MouseEvent e ) {}
+		public void mouseExited( MouseEvent e ) {}
+		public void mouseClicked( MouseEvent e ) {}
+	}
+	
+	public class EditingListener extends AproposListener implements KeyListener, FocusListener {
 		boolean locked = false;
 		String oldValue;
 		
@@ -200,7 +267,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 			oldValue = textField.getText();
 		}
 		public void mouseClicked( MouseEvent e ) {
-			if ( e.getClickCount() == 2 ) {
+			if ( e.getClickCount() == 2 & !e.isPopupTrigger() ) {
 				setHoverState( true );
 				textField.grabFocus();
 				textField.setCaretPosition( positionFromPoint( e.getX(), textField.getText() ) );
@@ -229,12 +296,9 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 				setText( oldValue );
 			}
 		}
-		public void mousePressed( MouseEvent e ) {}
-		public void mouseReleased( MouseEvent e ) {}
+		
 		public void keyPressed( KeyEvent e ) {}
 		public void keyReleased( KeyEvent e ) {}
-		public void mouseEntered( MouseEvent e ) {}
-		public void mouseExited( MouseEvent e ) {}
 	}
 	
 	/**
@@ -278,6 +342,11 @@ interface ValueChangedListener extends EventListener {
 	public void valueChanged( String value, JComponent source );
 }
 
-interface LineInsertedListener extends EventListener {
+interface LineChangedListener extends EventListener {
 	public void lineInserted( AproposLabel above );
+	public void lineRemoved( AproposLabel removed );
+}
+
+interface PopupMenuListener extends EventListener {
+	public void popupMenuTriggered( AproposLabel label, MouseEvent e );
 }

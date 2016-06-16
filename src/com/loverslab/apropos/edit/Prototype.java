@@ -232,7 +232,7 @@ public class Prototype {
 		File output = new File( outputDir + name + "_All.txt" );
 		new File( outputDir ).mkdirs();
 		try ( JsonWriter writer = new JsonWriter( new FileWriter( output ) ) ) {
-			writer.setIndent( "\t" );
+			writer.setIndent( "    " );
 			writer.beginObject();
 			for ( String key : files.keySet() ) {
 				writer.name( key );

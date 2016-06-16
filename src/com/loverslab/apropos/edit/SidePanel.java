@@ -24,7 +24,7 @@ public class SidePanel extends JPanel {
 	private JComboBox<Position> positions;
 	private ComboBoxModel<Position> positionsModel;
 	private JCheckBox rapeCheck;
-	private ActionListener listenLoad, listenSimulate, listenWrite;
+	private ActionListener listenVerify, listenLoad, listenSimulate, listenWrite;
 	
 	public SidePanel( View parent ) {
 		super( true );
@@ -58,6 +58,12 @@ public class SidePanel extends JPanel {
 	}
 	
 	private void initListeners() {
+		listenVerify = new ActionListener() {
+			public void actionPerformed( ActionEvent e ) {
+				parent.verifyDatabase();
+			}
+		};
+		
 		listenLoad = new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
 				String folder = (String) animations.getSelectedItem();
@@ -100,6 +106,7 @@ public class SidePanel extends JPanel {
 		Insets insHelp = new Insets( 0, 3, 0, 5 );
 		
 		JButton verifyButton = new JButton( "Verify Database" );
+		verifyButton.addActionListener( listenVerify );
 		JLabel verifyInfo = new JLabel( "(?)" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
