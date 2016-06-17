@@ -48,7 +48,12 @@ public class Model {
 			AproposLabel stage = new AproposLabel( "Intro", parent );
 			data.put( stage, getPerspectives( stage, file ) );
 		}
-		int i = 1;
+		file = new File( path + "_Stage1.txt" );
+		if(file.exists() ) {
+			AproposLabel stage = new AproposLabel( "Stage 1", parent );
+			data.put( stage, getPerspectives( stage, file ) );
+		}
+		int i = 2;
 		while ( ( file = new File( path + "_Stage" + i + ".txt" ) ).exists() ) {
 			AproposLabel stage = new AproposLabel( "Stage " + i, parent );
 			data.put( stage, getPerspectives( stage, file ) );

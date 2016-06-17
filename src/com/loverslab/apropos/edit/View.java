@@ -1,11 +1,12 @@
 package com.loverslab.apropos.edit;
 
-import java.awt.Dimension;
+import java.awt.BorderLayout;
 import java.awt.DisplayMode;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
@@ -54,6 +55,7 @@ public class View extends JFrame implements ActionListener {
 	}
 	
 	public View() {
+		super();
 		globals = new Globals( new File( "apropos-edit.config" ) );
 		globals.read();
 		model = new Model();
@@ -64,7 +66,7 @@ public class View extends JFrame implements ActionListener {
 		setTitle( "Apropos Edit: " + version );
 		positionAndSize();
 		initExitActions();
-		initPanels();
+		initPanelsBorderLayout();
 		
 		String defaultDB = globals.getProperty( "locations" ).split( globals.delimiter )[0];
 		if ( !defaultDB.equals( "" ) )
@@ -75,7 +77,10 @@ public class View extends JFrame implements ActionListener {
 	
 	/**
 	 * Initialise and Create main Panels
+	 * 
+	 * @deprecated
 	 */
+	@SuppressWarnings("unused")
 	private void initPanels() {
 		JPanel main = (JPanel) getContentPane();
 		GridBagLayout gbl = new GridBagLayout();
@@ -94,8 +99,8 @@ public class View extends JFrame implements ActionListener {
 		main.add( banner, c );
 		
 		side = new SidePanel( this );
-		JScrollPane sideScroll = new JScrollPane( side, JScrollPane.VERTICAL_SCROLLBAR_NEVER,
-				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED );
+		JScrollPane sideScroll = new JScrollPane( side, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
 		sideScroll.getVerticalScrollBar().setUnitIncrement( 16 );
 		sideScroll.setBorder( BorderFactory.createRaisedSoftBevelBorder() );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
@@ -106,13 +111,41 @@ public class View extends JFrame implements ActionListener {
 		c.fill = GridBagConstraints.VERTICAL;
 		main.add( sideScroll, c );
 		
-		displayScroll = new JScrollPane( display );
+		displayScroll = new JScrollPane( display, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+				JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS );
 		display = new DisplayPanel( this, displayScroll );
 		displayScroll.setViewportView( display );
 		displayScroll.getVerticalScrollBar().setUnitIncrement( 16 );
 		c.weightx = 1;
 		c.fill = GridBagConstraints.BOTH;
 		main.add( displayScroll, c );
+	}
+	
+	/**
+	 * Initialise and Create main Panels
+	 */
+	private void initPanelsBorderLayout() {
+		JPanel main = (JPanel) getContentPane();
+		BorderLayout border = new BorderLayout();
+		main.setLayout( border );
+		
+		banner = new Banner( this );
+		banner.addActionListener( this );
+		main.add( banner, BorderLayout.PAGE_START );
+		
+		side = new SidePanel( this );
+		JScrollPane sideScroll = new JScrollPane( side, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
+		sideScroll.getVerticalScrollBar().setUnitIncrement( 16 );
+		sideScroll.setBorder( BorderFactory.createRaisedSoftBevelBorder() );
+		main.add( sideScroll, BorderLayout.LINE_START );
+		
+		displayScroll = new JScrollPane( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED );
+		display = new DisplayPanel( this, displayScroll );
+		displayScroll.setViewportView( display );
+		displayScroll.getVerticalScrollBar().setUnitIncrement( 16 );
+		main.add( displayScroll, BorderLayout.CENTER );
 	}
 	
 	/**
@@ -133,7 +166,7 @@ public class View extends JFrame implements ActionListener {
 			String[] vals = size.split( globals.delimiter );
 			setSize( (int) Float.parseFloat( vals[0] ), (int) Float.parseFloat( vals[1] ) );
 		}
-		setMinimumSize( new Dimension( 500, 500 ) );
+		// setMinimumSize( new Dimension( 500, 500 ) );
 		
 		// Set Position
 		String position = globals.getProperty( "position" );
@@ -184,18 +217,14 @@ public class View extends JFrame implements ActionListener {
 	
 	public void actionPerformed( ActionEvent e ) {
 		model.setDataBase( e.getActionCommand() );
+		side.publishingComplete( false );
 		model.new FolderListFetcher() {
 			
 			protected void done() {
 				try {
 					get();
 				}
-				catch ( InterruptedException e ) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				catch ( ExecutionException e ) {
-					// TODO Auto-generated catch block
+				catch ( InterruptedException | ExecutionException e ) {
 					e.printStackTrace();
 				}
 				finally {
@@ -225,11 +254,30 @@ public class View extends JFrame implements ActionListener {
 		}.execute();
 	}
 	
-	public void displayPosition( String folder, String animString ) {
+	public void displayPosition( String folder, String animString, boolean newWindow ) {
 		model.new PositionFetcher( folder, animString ) {
 			public void done() {
 				try {
-					display.load( get() );
+					if ( newWindow ) {
+						JFrame displayFrame = new JFrame( animString );
+						displayFrame.setSize( 800, getHeight() );
+						displayFrame.setLocation( new Point( getLocation().x + getWidth(), getLocation().y ) );
+						displayFrame.setDefaultCloseOperation( DISPOSE_ON_CLOSE );
+						
+						JPanel displayPanel = new JPanel( new BorderLayout() );
+						JScrollPane displayNWScroll = new JScrollPane( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+								JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED );
+						DisplayPanel displayNW = new DisplayPanel( null, displayNWScroll );
+						displayNW.load( get() );
+						displayNWScroll.setViewportView( displayNW );
+						displayNWScroll.getVerticalScrollBar().setUnitIncrement( 16 );
+						displayPanel.add( displayNWScroll, BorderLayout.CENTER );
+						
+						displayFrame.setContentPane( displayPanel );
+						displayFrame.setVisible( true );
+					}
+					else
+						display.load( get() );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
 					e.printStackTrace();

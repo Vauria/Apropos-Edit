@@ -228,6 +228,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 					removeItem.addActionListener( new RemoveListener( label ) );
 					add( removeItem );
 					JMenuItem duplicateItem = new JMenuItem( "Duplicate" );
+					duplicateItem.addActionListener( new DuplicateListener( label ) );
 					add( duplicateItem );
 					JMenu copyTo = new JMenu( "Copy To" );
 					add( copyTo );
@@ -261,6 +262,18 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		}
 		public void actionPerformed( ActionEvent e ) {
 			label.fireLineRemoved( label );
+		}
+		
+	}
+	
+	public class DuplicateListener implements ActionListener {
+		AproposLabel label;
+		
+		public DuplicateListener( AproposLabel label ) {
+			this.label = label;
+		}
+		public void actionPerformed( ActionEvent e ) {
+			label.fireLineInserted( label, label.clone() );
 		}
 		
 	}

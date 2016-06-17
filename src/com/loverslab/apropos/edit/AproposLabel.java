@@ -30,6 +30,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	private GridBagConstraints cons;
 	private JLabel label;
 	private JTextField textField;
+	private boolean hoverState;
 	
 	public AproposLabel( String startText, AproposLabel parent ) {
 		super();
@@ -78,7 +79,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		return this;
 	}
 	
-	public AproposLabel display( GridBagLayout gbl, boolean b ) {
+	public AproposLabel display( GridBagLayout gbl, boolean editable ) {
 		layout = gbl;
 		
 		setLayout( new GridLayout( 1, 1 ) );
@@ -118,6 +119,10 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		return string;
 	}
 	
+	public AproposLabel clone() {
+		return new AproposLabel(getText(),getParentLabel());
+	}
+	
 	public AproposLabel getParentLabel() {
 		return parent;
 	}
@@ -150,10 +155,15 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	public void setHoverState( boolean hover ) {
 		CardLayout cl = (CardLayout) ( this.getLayout() );
 		
+		hoverState = hover;
 		if ( hover )
 			cl.show( this, "HOVER" );
 		else
 			cl.show( this, "NORMAL" );
+	}
+	
+	public boolean getHoverState() {
+		return hoverState;
 	}
 	
 	public void setEnabled( boolean enabled ) {
@@ -191,13 +201,16 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	protected void fireLineInserted( AproposLabel above ) {
+		fireLineInserted(above, new AproposLabel( "", above.getParentLabel() ) );
+	}
+	protected void fireLineInserted( AproposLabel above, AproposLabel toAdd ) {
 		// Guaranteed to return a non-null array
 		Object[] listeners = listenerList.getListenerList();
 		// Process the listeners last to first, notifying
 		// those that are interested in this event
 		for ( int i = listeners.length - 2; i >= 0; i -= 2 ) {
 			if ( listeners[i] == LineChangedListener.class ) {
-				( (LineChangedListener) listeners[i + 1] ).lineInserted( above );
+				( (LineChangedListener) listeners[i + 1] ).lineInserted( above, toAdd );
 			}
 		}
 	}
@@ -267,7 +280,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 			oldValue = textField.getText();
 		}
 		public void mouseClicked( MouseEvent e ) {
-			if ( e.getClickCount() == 2 & !e.isPopupTrigger() ) {
+			if ( e.getClickCount() == 2 & !e.isPopupTrigger() & !getHoverState()) {
 				setHoverState( true );
 				textField.grabFocus();
 				textField.setCaretPosition( positionFromPoint( e.getX(), textField.getText() ) );
@@ -343,7 +356,7 @@ interface ValueChangedListener extends EventListener {
 }
 
 interface LineChangedListener extends EventListener {
-	public void lineInserted( AproposLabel above );
+	public void lineInserted( AproposLabel above, AproposLabel toAdd );
 	public void lineRemoved( AproposLabel removed );
 }
 

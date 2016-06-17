@@ -8,6 +8,8 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.io.File;
 
 import javax.swing.BorderFactory;
@@ -25,7 +27,7 @@ import javax.swing.event.EventListenerList;
 import sun.swing.FilePane;
 
 @SuppressWarnings("serial")
-public class Banner extends JPanel implements ActionListener {
+public class Banner extends JPanel implements ItemListener {
 	
 	private View parent;
 	JLabel label;
@@ -63,7 +65,7 @@ public class Banner extends JPanel implements ActionListener {
 		}
 		model = new DefaultComboBoxModel<String>( locArr );
 		locations = new JComboBox<String>( model );
-		locations.addActionListener( this );
+		locations.addItemListener( this );
 		c.insets = new Insets( 5, 5, 5, 5 );
 		c.weightx = 1.0;
 		c.gridx++ ;
@@ -96,31 +98,37 @@ public class Banner extends JPanel implements ActionListener {
 		}
 	}
 	
-	public void actionPerformed( ActionEvent e ) {
-		String selected = (String) model.getSelectedItem();
-		if ( selected.equals( "<other>" ) ) {
-			JSystemFileChooser fileChooser = new JSystemFileChooser();
-			fileChooser.setAcceptAllFileFilterUsed( false );
-			fileChooser.setFileSelectionMode( JFileChooser.DIRECTORIES_ONLY );
-			fileChooser.setCurrentDirectory( new File( "" ) );
-			int result = fileChooser.showOpenDialog( this );
-			
-			if ( result == JFileChooser.APPROVE_OPTION ) {
-				File chosenFile = fileChooser.getSelectedFile();
-				// Update locations in config file
-				String oldLoc = parent.globals.getProperty( "locations" );
-				parent.globals.setProperty( "locations",
-						( ( oldLoc.split( parent.globals.delimiter ).length > 0 & !oldLoc.equals( "" ) )
-								? parent.globals.delimiter : "" ) + chosenFile.getAbsolutePath() );
-				locations.insertItemAt( chosenFile.getAbsolutePath(), locations.getItemCount() - 1 );
-				locations.setSelectedIndex( locations.getItemCount() - 2 );
+	public void itemStateChanged( ItemEvent e ) {
+		if ( e.getStateChange() == ItemEvent.SELECTED ) {
+			String selected = (String) model.getSelectedItem();
+			if ( selected.equals( "<other>" ) ) {
+				JSystemFileChooser fileChooser = new JSystemFileChooser();
+				fileChooser.setAcceptAllFileFilterUsed( false );
+				fileChooser.setFileSelectionMode( JFileChooser.DIRECTORIES_ONLY );
+				fileChooser.setCurrentDirectory( new File( "" ) );
+				int result = fileChooser.showOpenDialog( this );
+				
+				if ( result == JFileChooser.APPROVE_OPTION ) {
+					File chosenFile = fileChooser.getSelectedFile();
+					// Update locations in config file
+					String oldLoc = parent.globals.getProperty( "locations" );
+					parent.globals
+							.setProperty( "locations",
+									oldLoc + ( ( oldLoc.split( parent.globals.delimiter ).length > 0
+											& !oldLoc.equals( "" ) ) ? parent.globals.delimiter : "" )
+											+ chosenFile.getAbsolutePath() );
+					locations.insertItemAt( chosenFile.getAbsolutePath(), locations.getItemCount() - 1 );
+					locations.setSelectedIndex( locations.getItemCount() - 2 );
+				}
+				
 			}
-			
-		}
-		String newSelection = (String) model.getSelectedItem();
-		if ( !selected.equals( newSelection ) ) {
+			String newSelection = (String) model.getSelectedItem();
 			fireActionPerformed( newSelection );
 		}
+	}
+	
+	public void actionPerformed( ActionEvent e ) {
+		
 	}
 	
 	public class JSystemFileChooser extends JFileChooser {

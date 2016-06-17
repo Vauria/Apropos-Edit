@@ -24,7 +24,7 @@ public class SidePanel extends JPanel {
 	private JComboBox<Position> positions;
 	private ComboBoxModel<Position> positionsModel;
 	private JCheckBox rapeCheck;
-	private ActionListener listenVerify, listenLoad, listenSimulate, listenWrite;
+	private ActionListener listenVerify, listenLoad, listenNWLoad, listenSimulate, listenWrite;
 	
 	public SidePanel( View parent ) {
 		super( true );
@@ -45,6 +45,8 @@ public class SidePanel extends JPanel {
 		c.gridx = 0;
 		add( new JSeparator(), c );
 		
+		//setMinimumSize( new Dimension( animations.getMaximumSize().width, 300 ) );
+		//setPreferredSize( new Dimension( animations.getMaximumSize().width, 300 ) );
 	}
 	
 	public void publishAnimation( String str ) {
@@ -52,9 +54,8 @@ public class SidePanel extends JPanel {
 	}
 	
 	public void publishingComplete( boolean b ) {
+		if(!b) animations.removeAllItems();
 		animations.setEnabled( b );
-		animations.setSelectedIndex( 2 );
-		positions.setSelectedIndex( 7 );
 	}
 	
 	private void initListeners() {
@@ -69,7 +70,16 @@ public class SidePanel extends JPanel {
 				String folder = (String) animations.getSelectedItem();
 				String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(),
 						rapeCheck.isSelected() );
-				parent.displayPosition( folder, animString );
+				parent.displayPosition( folder, animString, false );
+			}
+		};
+		
+		listenNWLoad = new ActionListener() {
+			public void actionPerformed( ActionEvent e ) {
+				String folder = (String) animations.getSelectedItem();
+				String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(),
+						rapeCheck.isSelected() );
+				parent.displayPosition( folder, animString, true );
 			}
 		};
 		
@@ -105,7 +115,7 @@ public class SidePanel extends JPanel {
 		Insets insButton = new Insets( 0, 5, 0, 0 );
 		Insets insHelp = new Insets( 0, 3, 0, 5 );
 		
-		JButton verifyButton = new JButton( "Verify Database" );
+		JButton verifyButton = new JButton( "Unify Formating" );
 		verifyButton.addActionListener( listenVerify );
 		JLabel verifyInfo = new JLabel( "(?)" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
@@ -203,8 +213,6 @@ public class SidePanel extends JPanel {
 		c.gridx++ ;
 		add( rapeCheck, c );
 		
-		c.gridwidth = 1;
-		
 		JButton loadButton = new JButton( "Load" );
 		loadButton.addActionListener( listenLoad );
 		JLabel loadInfo = new JLabel( "(?)" );
@@ -219,6 +227,21 @@ public class SidePanel extends JPanel {
 		c.weightx = 0;
 		c.gridx++ ;
 		add( loadInfo, c );
+		
+		JButton loadNWButton = new JButton( "Load in New Window" );
+		loadNWButton.addActionListener( listenNWLoad );
+		JLabel loadNWInfo = new JLabel( "(?)" );
+		c.anchor = GridBagConstraints.FIRST_LINE_START;
+		c.insets = insButton;
+		c.weightx = 1;
+		c.gridy++ ;
+		c.gridx = 0;
+		add( loadNWButton, c );
+		c.anchor = GridBagConstraints.LINE_START;
+		c.insets = insHelp;
+		c.weightx = 0;
+		c.gridx++ ;
+		add( loadNWInfo, c );
 		
 		JButton simulateButton = new JButton( "Simulate" );
 		simulateButton.addActionListener( listenSimulate );
