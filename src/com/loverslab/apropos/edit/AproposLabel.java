@@ -120,7 +120,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	public AproposLabel clone() {
-		return new AproposLabel(getText(),getParentLabel());
+		return new AproposLabel( getText(), getParentLabel() );
 	}
 	
 	public AproposLabel getParentLabel() {
@@ -142,14 +142,17 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		return label;
 	}
 	
-	public void bump() {
-		getGridBagCons().gridy++ ;
+	public void poke( int amount ) {
+		getGridBagCons().gridy += amount;
 		invalidate();
+	}
+
+	public void bump() {
+		poke( 1 );
 	}
 	
 	public void boop() {
-		getGridBagCons().gridy-- ;
-		invalidate();
+		poke( -1 );
 	}
 	
 	public void setHoverState( boolean hover ) {
@@ -201,7 +204,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	protected void fireLineInserted( AproposLabel above ) {
-		fireLineInserted(above, new AproposLabel( "", above.getParentLabel() ) );
+		fireLineInserted( above, new AproposLabel( "", above.getParentLabel() ) );
 	}
 	protected void fireLineInserted( AproposLabel above, AproposLabel toAdd ) {
 		// Guaranteed to return a non-null array
@@ -257,12 +260,12 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	public class AproposListener implements MouseListener {
 		
 		public void mousePressed( MouseEvent e ) {
-			if ( e.isPopupTrigger() ) {
+			if ( e.isPopupTrigger() & !getHoverState() ) {
 				firepopupMenuTriggered( AproposLabel.this, e );
 			}
 		}
 		public void mouseReleased( MouseEvent e ) {
-			if ( e.isPopupTrigger() ) {
+			if ( e.isPopupTrigger() & !getHoverState() ) {
 				firepopupMenuTriggered( AproposLabel.this, e );
 			}
 		}
@@ -280,7 +283,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 			oldValue = textField.getText();
 		}
 		public void mouseClicked( MouseEvent e ) {
-			if ( e.getClickCount() == 2 & !e.isPopupTrigger() & !getHoverState()) {
+			if ( e.getClickCount() == 2 & !e.isPopupTrigger() & !getHoverState() ) {
 				setHoverState( true );
 				textField.grabFocus();
 				textField.setCaretPosition( positionFromPoint( e.getX(), textField.getText() ) );

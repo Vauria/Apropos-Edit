@@ -5,6 +5,8 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
@@ -25,6 +27,7 @@ public class SidePanel extends JPanel {
 	private ComboBoxModel<Position> positionsModel;
 	private JCheckBox rapeCheck;
 	private ActionListener listenVerify, listenLoad, listenNWLoad, listenSimulate, listenWrite;
+	private ItemListener listenFolder;
 	
 	public SidePanel( View parent ) {
 		super( true );
@@ -45,8 +48,8 @@ public class SidePanel extends JPanel {
 		c.gridx = 0;
 		add( new JSeparator(), c );
 		
-		//setMinimumSize( new Dimension( animations.getMaximumSize().width, 300 ) );
-		//setPreferredSize( new Dimension( animations.getMaximumSize().width, 300 ) );
+		// setMinimumSize( new Dimension( animations.getMaximumSize().width, 300 ) );
+		// setPreferredSize( new Dimension( animations.getMaximumSize().width, 300 ) );
 	}
 	
 	public void publishAnimation( String str ) {
@@ -54,7 +57,7 @@ public class SidePanel extends JPanel {
 	}
 	
 	public void publishingComplete( boolean b ) {
-		if(!b) animations.removeAllItems();
+		if ( !b ) animations.removeAllItems();
 		animations.setEnabled( b );
 	}
 	
@@ -64,7 +67,6 @@ public class SidePanel extends JPanel {
 				parent.verifyDatabase();
 			}
 		};
-		
 		listenLoad = new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
 				String folder = (String) animations.getSelectedItem();
@@ -73,7 +75,6 @@ public class SidePanel extends JPanel {
 				parent.displayPosition( folder, animString, false );
 			}
 		};
-		
 		listenNWLoad = new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
 				String folder = (String) animations.getSelectedItem();
@@ -82,16 +83,22 @@ public class SidePanel extends JPanel {
 				parent.displayPosition( folder, animString, true );
 			}
 		};
-		
 		listenSimulate = new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
 				System.out.println( "Yeah, I'll get right on it" );
 			}
 		};
-		
 		listenWrite = new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
 				parent.writeDisplay();
+			}
+		};
+		listenFolder = new ItemListener() {
+			public void itemStateChanged( ItemEvent e ) {
+				if ( e.getStateChange() == ItemEvent.SELECTED ) {
+					if ( parent.model.isUnique( (String) animations.getSelectedItem() ) ) 
+						positions.setSelectedItem( Position.Unique );
+				}
 			}
 		};
 	}
@@ -194,6 +201,7 @@ public class SidePanel extends JPanel {
 		
 		animationsModel = new DefaultComboBoxModel<String>( new String[ 0 ] );
 		animations = new JComboBox<String>( animationsModel );
+		animations.addItemListener( listenFolder );
 		animations.setEnabled( false );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = new Insets( 0, 3, 0, 3 );

@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.SwingWorker;
 
@@ -26,13 +27,12 @@ public class Model {
 	
 	String db;
 	AproposLabel root = new AproposLabel( db, null );
-	
-	public Model() {
-		
-	}
+	TreeMap<String, Boolean> uniques = null;
 	
 	public void setDataBase( String actionCommand ) {
 		db = actionCommand + "\\";
+		uniques = null;
+		new UniquesFetcher().execute();
 	}
 	
 	public static String getAnimString( String folder, Position pos, boolean rape ) {
@@ -49,7 +49,7 @@ public class Model {
 			data.put( stage, getPerspectives( stage, file ) );
 		}
 		file = new File( path + "_Stage1.txt" );
-		if(file.exists() ) {
+		if ( file.exists() ) {
 			AproposLabel stage = new AproposLabel( "Stage 1", parent );
 			data.put( stage, getPerspectives( stage, file ) );
 		}
@@ -148,6 +148,14 @@ public class Model {
 		}
 	}
 	
+	public boolean isUnique( String string ) {
+		if ( uniques == null | !string.contains( "_" ) ) return false;
+		string = string.substring( string.lastIndexOf( '_' ) + 1 );
+		Boolean b = uniques.get( string );
+		System.out.println( string + ": " + b );
+		return b == null ? false : b;
+	}
+	
 	public abstract class FolderListFetcher extends SwingWorker<List<String>, String> {
 		
 		public List<String> doInBackground() {
@@ -162,6 +170,42 @@ public class Model {
 		protected abstract void done();
 		
 		public abstract void process( List<String> strings );
+		
+	}
+	
+	public class UniquesFetcher extends SwingWorker<Object, Object> {
+		
+		public Object doInBackground() {
+			uniques = new TreeMap<String, Boolean>();
+			File file = new File( db + "UniqueAnimations.txt" );
+			try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
+				reader.beginObject();
+				while ( reader.hasNext() ) {
+					while ( reader.hasNext() )
+						uniques.put( reader.nextName(), reader.nextBoolean() );
+				}
+			}
+			catch ( IllegalStateException | MalformedJsonException e ) {
+				System.err.println( "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) );
+				System.err.println( e.getMessage() );
+			}
+			catch ( IOException e ) {
+				e.printStackTrace();
+			}
+			return null;
+		}
+		
+		public void done() {
+			try {
+				get();
+			}
+			catch ( InterruptedException | ExecutionException e ) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		};
+		
+		public void process( Object o ) {};
 		
 	}
 	
@@ -222,10 +266,6 @@ public class Model {
 	
 	public abstract class DatabaseRebuilder extends SwingWorker<Object, Object> {
 		
-		public DatabaseRebuilder() {
-			super();
-		}
-		
 		public Object doInBackground() {
 			JSonRebuilder rebuilder = new JSonRebuilder();
 			try {
@@ -243,110 +283,111 @@ public class Model {
 		
 	}
 	
-	// This is the alternative to parameterising everything with
-	// TreeMap<AproposLabel,TreeMap<AproposLabel,TreeMap<AproposLabel,TreeMap<AproposLabel,ArrayList<AproposLabel>>>>>
-	public class LabelList extends ArrayList<AproposLabel> {
-		private static final long serialVersionUID = -3091716550688577792L;
-		
-		public int totalSize() {
-			return size();
-		}
-		public String toString() {
-			StringBuilder builder = new StringBuilder();
-			for ( int i = 0; i < size(); i++ ) {
-				if ( i > 0 ) builder.append( "\n\t\t\t\t" );
-				builder.append( get( i ) );
-			}
-			return builder.toString();
-		}
-	}
+}
+
+// This is the alternative to parameterising everything with
+// TreeMap<AproposLabel,TreeMap<AproposLabel,TreeMap<AproposLabel,TreeMap<AproposLabel,ArrayList<AproposLabel>>>>>
+
+class LabelList extends ArrayList<AproposLabel> {
+	private static final long serialVersionUID = -3091716550688577792L;
 	
-	public class PerspectiveMap extends TreeMap<AproposLabel, LabelList> {
-		private static final long serialVersionUID = 1659741172660975737L;
-		
-		public int totalSize() {
-			int i = 0;
-			for ( AproposLabel label : keySet() ) {
-				i += get( label ).totalSize();
-			}
-			return i;
-		}
-		public String toString() {
-			StringBuilder builder = new StringBuilder();
-			Set<AproposLabel> keySet = keySet();
-			AproposLabel[] keys = keySet.toArray( new AproposLabel[ keySet.size() ] );
-			for ( int i = 0; i < size(); i++ ) {
-				if ( i > 0 ) builder.append( "\n\t\t\t" );
-				builder.append( keys[i].toString() + "\n\t\t\t\t" + get( keys[i] ) );
-			}
-			return builder.toString();
-		}
+	public int totalSize() {
+		return size();
 	}
-	
-	public class StageMap extends TreeMap<AproposLabel, PerspectiveMap> {
-		private static final long serialVersionUID = -4569924813567288184L;
-		
-		public int totalSize() {
-			int i = 0;
-			for ( AproposLabel label : keySet() ) {
-				i += get( label ).totalSize();
-			}
-			return i;
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		for ( int i = 0; i < size(); i++ ) {
+			if ( i > 0 ) builder.append( "\n\t\t\t\t" );
+			builder.append( get( i ) );
 		}
-		public String toString() {
-			StringBuilder builder = new StringBuilder();
-			Set<AproposLabel> keySet = keySet();
-			AproposLabel[] keys = keySet.toArray( new AproposLabel[ keySet.size() ] );
-			for ( int i = 0; i < size(); i++ ) {
-				if ( i > 0 ) builder.append( "\n\t\t" );
-				builder.append( keys[i].toString() + "\n\t\t\t" + get( keys[i] ) );
-			}
-			return builder.toString();
-		}
+		return builder.toString();
 	}
+}
+
+class PerspectiveMap extends TreeMap<AproposLabel, LabelList> {
+	private static final long serialVersionUID = 1659741172660975737L;
 	
-	public class PositionMap extends TreeMap<AproposLabel, StageMap> {
-		private static final long serialVersionUID = 8253283878828610516L;
-		
-		public int totalSize() {
-			int i = 0;
-			for ( AproposLabel label : keySet() ) {
-				i += get( label ).totalSize();
-			}
-			return i;
+	public int totalSize() {
+		int i = 0;
+		for ( AproposLabel label : keySet() ) {
+			i += get( label ).totalSize();
 		}
-		public String toString() {
-			StringBuilder builder = new StringBuilder();
-			Set<AproposLabel> keySet = keySet();
-			AproposLabel[] keys = keySet.toArray( new AproposLabel[ keySet.size() ] );
-			for ( int i = 0; i < size(); i++ ) {
-				if ( i > 0 ) builder.append( "\n\t" );
-				builder.append( keys[i].toString() + "\n\t\t" + get( keys[i] ) );
-			}
-			return builder.toString();
-		}
+		return i;
 	}
-	
-	public class FolderMap extends TreeMap<AproposLabel, PositionMap> {
-		private static final long serialVersionUID = 3997804667766094854L;
-		
-		public int totalSize() {
-			int i = 0;
-			for ( AproposLabel label : keySet() ) {
-				i += get( label ).totalSize();
-			}
-			return i;
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		Set<AproposLabel> keySet = keySet();
+		AproposLabel[] keys = keySet.toArray( new AproposLabel[ keySet.size() ] );
+		for ( int i = 0; i < size(); i++ ) {
+			if ( i > 0 ) builder.append( "\n\t\t\t" );
+			builder.append( keys[i].toString() + "\n\t\t\t\t" + get( keys[i] ) );
 		}
-		public String toString() {
-			StringBuilder builder = new StringBuilder();
-			Set<AproposLabel> keySet = keySet();
-			AproposLabel[] keys = keySet.toArray( new AproposLabel[ keySet.size() ] );
-			for ( int i = 0; i < size(); i++ ) {
-				if ( i > 0 ) builder.append( "\n" );
-				builder.append( keys[i].toString() + "\n\t" + get( keys[i] ) );
-			}
-			return builder.toString();
-		}
+		return builder.toString();
 	}
+}
+
+class StageMap extends TreeMap<AproposLabel, PerspectiveMap> {
+	private static final long serialVersionUID = -4569924813567288184L;
 	
+	public int totalSize() {
+		int i = 0;
+		for ( AproposLabel label : keySet() ) {
+			i += get( label ).totalSize();
+		}
+		return i;
+	}
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		Set<AproposLabel> keySet = keySet();
+		AproposLabel[] keys = keySet.toArray( new AproposLabel[ keySet.size() ] );
+		for ( int i = 0; i < size(); i++ ) {
+			if ( i > 0 ) builder.append( "\n\t\t" );
+			builder.append( keys[i].toString() + "\n\t\t\t" + get( keys[i] ) );
+		}
+		return builder.toString();
+	}
+}
+
+class PositionMap extends TreeMap<AproposLabel, StageMap> {
+	private static final long serialVersionUID = 8253283878828610516L;
+	
+	public int totalSize() {
+		int i = 0;
+		for ( AproposLabel label : keySet() ) {
+			i += get( label ).totalSize();
+		}
+		return i;
+	}
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		Set<AproposLabel> keySet = keySet();
+		AproposLabel[] keys = keySet.toArray( new AproposLabel[ keySet.size() ] );
+		for ( int i = 0; i < size(); i++ ) {
+			if ( i > 0 ) builder.append( "\n\t" );
+			builder.append( keys[i].toString() + "\n\t\t" + get( keys[i] ) );
+		}
+		return builder.toString();
+	}
+}
+
+class FolderMap extends TreeMap<AproposLabel, PositionMap> {
+	private static final long serialVersionUID = 3997804667766094854L;
+	
+	public int totalSize() {
+		int i = 0;
+		for ( AproposLabel label : keySet() ) {
+			i += get( label ).totalSize();
+		}
+		return i;
+	}
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		Set<AproposLabel> keySet = keySet();
+		AproposLabel[] keys = keySet.toArray( new AproposLabel[ keySet.size() ] );
+		for ( int i = 0; i < size(); i++ ) {
+			if ( i > 0 ) builder.append( "\n" );
+			builder.append( keys[i].toString() + "\n\t" + get( keys[i] ) );
+		}
+		return builder.toString();
+	}
 }

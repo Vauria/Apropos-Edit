@@ -15,11 +15,13 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -30,13 +32,14 @@ import javax.swing.SwingUtilities;
 @SuppressWarnings("serial")
 public class View extends JFrame implements ActionListener {
 	
-	private final String version = "0.9a";
+	private final String version = "0.9b";
 	protected Globals globals;
 	protected Model model;
 	protected Banner banner;
 	protected SidePanel side;
 	protected DisplayPanel display;
-	JScrollPane displayScroll;
+	protected JScrollPane displayScroll;
+	protected ArrayList<JFrame> displayFrames = new ArrayList<JFrame>();
 	
 	public static void main( String[] args ) {
 		// Create and initialise the UI on the EDT (Event Dispatch Thread)
@@ -194,6 +197,14 @@ public class View extends JFrame implements ActionListener {
 				globals.write();
 				dispose();
 			}
+			public void windowIconified( WindowEvent e ) {
+				for ( JFrame frame : displayFrames )
+					frame.setState( ICONIFIED );
+			}
+			public void windowDeiconified( WindowEvent e ) {
+				for ( JFrame frame : displayFrames )
+					frame.setState( NORMAL );
+			}
 		} );
 		
 		// Add key listener to allow closing the application with CTRL + W;
@@ -273,6 +284,17 @@ public class View extends JFrame implements ActionListener {
 						displayNWScroll.getVerticalScrollBar().setUnitIncrement( 16 );
 						displayPanel.add( displayNWScroll, BorderLayout.CENTER );
 						
+						JPanel writePanel = new JPanel();
+						JButton writeButton = new JButton( "Write" );
+						writeButton.addActionListener( new ActionListener() {
+							public void actionPerformed( ActionEvent e ) {
+								writeNWDisplay( displayNW );
+							}
+						} );
+						writePanel.add( writeButton );
+						displayPanel.add( writePanel, BorderLayout.PAGE_END );
+						
+						displayFrames.add( displayFrame );
 						displayFrame.setContentPane( displayPanel );
 						displayFrame.setVisible( true );
 					}
@@ -287,6 +309,20 @@ public class View extends JFrame implements ActionListener {
 	}
 	
 	public void writeDisplay() {
+		model.new PositionWriter( display.stageMap ) {
+			public void done() {
+				try {
+					get();
+					System.out.println( "Written!" );
+				}
+				catch ( InterruptedException | ExecutionException e ) {
+					e.printStackTrace();
+				}
+			}
+		}.execute();
+	}
+	
+	public void writeNWDisplay( DisplayPanel display ) {
 		model.new PositionWriter( display.stageMap ) {
 			public void done() {
 				try {

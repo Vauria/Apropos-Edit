@@ -16,10 +16,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
-import com.loverslab.apropos.edit.Model.LabelList;
-import com.loverslab.apropos.edit.Model.PerspectiveMap;
-import com.loverslab.apropos.edit.Model.StageMap;
-
 @SuppressWarnings("serial")
 public class DisplayPanel extends JPanel implements LineChangedListener, PopupMenuListener {
 	@SuppressWarnings("unused")
@@ -182,6 +178,66 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		}
 	}
 	
+	public void sectionRemoved( AproposLabel section ) {
+		int distance = 0;
+		boolean found = false;
+		switch ( section.getDepth() ) {
+			case 3:
+				for ( AproposLabel pers : stageMap.get( section ).keySet() ) {
+					LabelList labelList = stageMap.get( section ).get( pers );
+					for ( int i = 0; i < labelList.size() - 1; i++ )
+						remove( labelList.get( i ) );
+					LabelList replaceList = new LabelList();
+					replaceList.add( labelList.get( labelList.size() - 1 ) );
+					distance += ( labelList.size() - 1 );
+					stageMap.get( section ).put( pers, replaceList );
+					for ( AproposLabel stage : stageMap.keySet() ) {
+						PerspectiveMap persMap = stageMap.get( stage );
+						if ( found ) stage.poke( distance );
+						for ( AproposLabel perspec : persMap.keySet() ) {
+							LabelList list = persMap.get( perspec );
+							if ( found ) {
+								perspec.poke( distance );
+								for ( AproposLabel label : list ) {
+									label.poke( distance );
+								}
+							}
+						}
+						if ( !found & stage == section ) found = true;
+					}
+				}
+				break;
+			case 4:
+				LabelList labelList = stageMap.get( section.getParentLabel() ).get( section );
+				for ( int i = 0; i < labelList.size() - 1; i++ )
+					remove( labelList.get( i ) );
+				LabelList replaceList = new LabelList();
+				replaceList.add( labelList.get( labelList.size() - 1 ) );
+				distance += ( labelList.size() - 1 );
+				stageMap.get( section.getParentLabel() ).put( section, replaceList );
+				for ( AproposLabel stage : stageMap.keySet() ) {
+					PerspectiveMap persMap = stageMap.get( stage );
+					if ( found ) stage.poke( distance );
+					for ( AproposLabel perspec : persMap.keySet() ) {
+						LabelList list = persMap.get( perspec );
+						if ( found ) {
+							perspec.poke( distance );
+							for ( AproposLabel label : list ) {
+								label.poke( distance );
+							}
+						}
+						if ( !found & perspec == section ) found = true;
+					}
+				}
+				break;
+			default:
+				System.err.println( "Clear was called on a label that shouldn't have clear available" );
+				break;
+		}
+		
+		revalidate();
+	}
+	
 	public void popupMenuTriggered( AproposLabel label, MouseEvent e ) {
 		new RightClickMenu( label ).show( e.getComponent(), e.getX(), e.getY() );
 	}
@@ -197,9 +253,10 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 					break;
 				case 2:
 					break;
-				case 3:
+				case 3: //Fall Through
 				case 4:
 					JMenuItem clearItem = new JMenuItem( "Clear" );
+					clearItem.addActionListener( new ClearListener( label ) );
 					add( clearItem );
 					JMenu copyReplace = new JMenu( "Copy & Replace" );
 					JMenu copyAppend = new JMenu( "Copy & Append" );
@@ -262,6 +319,18 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		}
 		public void actionPerformed( ActionEvent e ) {
 			label.fireLineRemoved( label );
+		}
+		
+	}
+	
+	public class ClearListener implements ActionListener {
+		AproposLabel label;
+		
+		public ClearListener( AproposLabel label ) {
+			this.label = label;
+		}
+		public void actionPerformed( ActionEvent e ) {
+			sectionRemoved( label );
 		}
 		
 	}
