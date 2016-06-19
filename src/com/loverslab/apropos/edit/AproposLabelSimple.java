@@ -2,6 +2,7 @@ package com.loverslab.apropos.edit;
 
 import java.awt.CardLayout;
 import java.awt.GridBagConstraints;
+import java.awt.GridLayout;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
@@ -13,7 +14,6 @@ import java.util.LinkedList;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.event.MouseInputAdapter;
 
 /**
  * Original Author James McMinn
@@ -22,70 +22,78 @@ import javax.swing.event.MouseInputAdapter;
 @SuppressWarnings("serial")
 public class AproposLabelSimple extends JPanel {
 	
-	private String stringstring;
-	private AproposLabel parentLabel;
+	private String string;
+	private AproposLabel parent;
 	private GridBagConstraints cons;
-	private JLabel labellabel;
-	private JTextField textFieldFIELD;
+	private JLabel label;
+	private JTextField textField;
 	private LinkedList<ValueChangedListener> listeners = new LinkedList<ValueChangedListener>();
 	
 	public AproposLabelSimple( AproposLabel source ) {
+		this( source.getText() );
+	}
+	public AproposLabelSimple( String source ) {
 		super();
-		stringstring = source.getText();
-		this.parentLabel = source;
+		string = source;
+		this.parent = new AproposLabel( string, null );
 		
 		// Create the listener and the layout
-		EditingListener hl = new EditingListener();
+		CardLayout layout = new CardLayout( 0, 0 );
+		this.setLayout( layout );
+		EditableListener hl = new EditableListener();
 		
 		// Create the JPanel for the "normal" state
-		labellabel = new JLabel( stringstring.equals( "" ) ? "<add new>" : stringstring );
-		// label.addMouseListener( hl );
+		JPanel labelPanel = new JPanel( new GridLayout( 1, 1 ) );
+		label = new JLabel( string.equals( "" ) ? "<add new>" : string );
+		labelPanel.add( label );
 		
 		// Create the JPanel for the "hover state"
-		textFieldFIELD = new JTextField( stringstring );
+		JPanel inputPanel = new JPanel( new GridLayout( 1, 1 ) );
+		textField = new JTextField( string );
+		textField.addMouseListener( hl );
+		textField.addKeyListener( hl );
+		textField.addFocusListener( hl );
+		inputPanel.add( textField );
 		
 		// label.addMouseWheelListener( mwtl );
 		// labelPanel.addMouseWheelListener( mwtl );
 		// textField.addMouseWheelListener( mwtl );
 		// inputPanel.addMouseWheelListener( mwtl );
 		
-		this.add( labellabel );
-		
-		this.addMouseListener( new MouseInputAdapter(){
-			public void mouseEntered( MouseEvent e ) {
-				System.out.println( e );
-			}
-		});
+		this.addMouseListener( hl );
 		
 		// Set the states
+		this.add( labelPanel, "NORMAL" );
+		this.add( inputPanel, "HOVER" );
 		
 		// Show the correct panel to begin with
+		layout.show( this, "NORMAL" );
 	}
 	
 	public void setText( String text ) {
 		if ( getText().equals( "" ) ) {
 			if ( !text.equals( "" ) ) {
-				this.labellabel.setText( text );
+				this.label.setText( text );
 			}
 		}
 		else if ( text.equals( "" ) )
-			this.labellabel.setText( "<add new>" );
+			this.label.setText( "<add new>" );
 		else
-			this.labellabel.setText( text );
-		this.textFieldFIELD.setText( text );
-		this.stringstring = text;
+			this.label.setText( text );
+		this.textField.setText( text );
+		this.string = text;
 	}
 	
 	public String getText() {
-		return stringstring;
+		return string;
 	}
 	
 	public String toString() {
-		return stringstring;
+		return string;
 	}
 	
 	public AproposLabel getParent() {
-		return parentLabel;
+		return parent;
 	}
 	
 	public GridBagConstraints getGridBagCons() {
@@ -93,11 +101,11 @@ public class AproposLabelSimple extends JPanel {
 	}
 	
 	public JTextField getTextField() {
-		return textFieldFIELD;
+		return textField;
 	}
 	
 	public JLabel getLabel() {
-		return labellabel;
+		return label;
 	}
 	
 	public void setHoverState( boolean hover ) {
@@ -114,25 +122,23 @@ public class AproposLabelSimple extends JPanel {
 	}
 	
 	public int positionFromPoint( int x, String s ) {
-		int w = labellabel.getGraphics().getFontMetrics().stringWidth( s );
+		int w = label.getGraphics().getFontMetrics().stringWidth( s );
 		float pos = ( (float) x / (float) w ) * (float) s.length();
 		return Math.min( (int) pos, s.length() );
 	}
 	
-	public class EditingListener implements MouseListener, KeyListener, FocusListener {
+	public class EditableListener implements MouseListener, KeyListener, FocusListener {
 		boolean locked = false;
 		String oldValue;
 		
 		public void focusGained( FocusEvent arg0 ) {
-			System.out.println( arg0.getSource() + ": Focus Gained" );
-			oldValue = textFieldFIELD.getText();
+			oldValue = textField.getText();
 		}
 		public void mouseClicked( MouseEvent e ) {
-			System.out.println( e.getSource() + ": Clicked" );
 			if ( e.getClickCount() == 2 ) {
 				setHoverState( true );
-				textFieldFIELD.grabFocus();
-				textFieldFIELD.setCaretPosition( positionFromPoint( e.getX(), textFieldFIELD.getText() ) );
+				textField.grabFocus();
+				textField.setCaretPosition( positionFromPoint( e.getX(), textField.getText() ) );
 			}
 		}
 		public void release() {
@@ -146,9 +152,9 @@ public class AproposLabelSimple extends JPanel {
 		}
 		public void keyTyped( KeyEvent e ) {
 			if ( e.getKeyChar() == KeyEvent.VK_ENTER ) {
-				setText( textFieldFIELD.getText() );
+				setText( textField.getText() );
 				for ( ValueChangedListener v : listeners ) {
-					v.valueChanged( textFieldFIELD.getText(), AproposLabelSimple.this );
+					v.valueChanged( textField.getText(), AproposLabelSimple.this );
 				}
 				setHoverState( false );
 				locked = true;
@@ -164,12 +170,8 @@ public class AproposLabelSimple extends JPanel {
 		public void mouseReleased( MouseEvent e ) {}
 		public void keyPressed( KeyEvent e ) {}
 		public void keyReleased( KeyEvent e ) {}
-		public void mouseEntered( MouseEvent e ) {
-			System.out.println( e );
-		}
-		public void mouseExited( MouseEvent e ) {
-			System.out.println( e );
-		}
+		public void mouseEntered( MouseEvent e ) {}
+		public void mouseExited( MouseEvent e ) {}
 	}
 	
 }

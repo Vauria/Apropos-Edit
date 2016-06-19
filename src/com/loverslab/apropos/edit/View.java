@@ -254,9 +254,15 @@ public class View extends JFrame implements ActionListener {
 				//GridBagConstraints c = ((GridBagLayout) main.getLayout()).getConstraints( displayScroll );
 				
 				//remove( displayScroll );
-				displayScroll.setViewportView( new Display() );
+				//displayScroll.setViewportView( new Display() );
+				try {
+					display.load( get() );
+				}
+				catch ( InterruptedException | ExecutionException e ) {
+					e.printStackTrace();
+				}
 				//main.add( displayScroll, c );
-				displayScroll.revalidate();
+				//displayScroll.revalidate();
 			}
 		}.execute();
 	}
