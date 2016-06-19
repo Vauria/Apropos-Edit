@@ -71,22 +71,7 @@ public class Model {
 	public PerspectiveMap getPerspectives( AproposLabel parent, File file ) {
 		PerspectiveMap data = new PerspectiveMap();
 		try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
-			reader.beginObject();
-			while ( reader.hasNext() ) {
-				AproposLabel key = new AproposLabel( reader.nextName(), parent );
-				LabelList list = new LabelList();
-				reader.beginArray();
-				while ( reader.hasNext() )
-					list.add( new AproposLabel( reader.nextString(), key ) );
-				reader.endArray();
-				if ( list.size() == 0 ) {
-					list.add( new AproposLabel( "", key ) );
-				}
-				else if ( ! ( list.size() == 1 & list.get( 0 ).toString().equals( "" ) ) ) {
-					list.add( new AproposLabel( "", key ) );
-				}
-				data.put( key, list );
-			}
+			data = getPerspectives(parent, reader);
 		}
 		catch ( IllegalStateException | MalformedJsonException e ) {
 			System.err.println( "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) );
@@ -98,11 +83,32 @@ public class Model {
 		return data;
 	}
 	
+	public PerspectiveMap getPerspectives( AproposLabel parent, JsonReader reader ) throws IllegalStateException, IOException {
+		PerspectiveMap data = new PerspectiveMap();
+		reader.beginObject();
+		while ( reader.hasNext() ) {
+			AproposLabel key = new AproposLabel( reader.nextName(), parent );
+			LabelList list = new LabelList();
+			reader.beginArray();
+			while ( reader.hasNext() )
+				list.add( new AproposLabel( reader.nextString(), key ) );
+			reader.endArray();
+			if ( list.size() == 0 ) {
+				list.add( new AproposLabel( "", key ) );
+			}
+			else if ( ! ( list.size() == 1 & list.get( 0 ).toString().equals( "" ) ) ) {
+				list.add( new AproposLabel( "", key ) );
+			}
+			data.put( key, list );
+		}
+		return data;
+	}
+	
 	public void writeStages( StageMap stageMap ) {
 		File file;
 		AproposLabel first = stageMap.keySet().iterator().next();
 		String folder = db + first.getParentLabel().getParentLabel().getText();
-		new File(folder).mkdirs();
+		new File( folder ).mkdirs();
 		String path = folder + "\\" + first.getParentLabel().getText();
 		for ( AproposLabel stage : stageMap.keySet() ) {
 			PerspectiveMap persMap = stageMap.get( stage );
@@ -295,7 +301,16 @@ public class Model {
 			if ( file.getName().endsWith( ".txt" ) ) {
 				for ( String str : skip )
 					if ( str.equals( file.getName() ) ) return FileVisitResult.CONTINUE;
-				writePerspectives( getPerspectives( null, file ), file );
+				try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
+					writePerspectives( getPerspectives( null, reader ), file );
+				}
+				catch ( IllegalStateException | MalformedJsonException e ) {
+					System.err.println( "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) );
+					System.err.println( e.getMessage() );
+				}
+				catch ( IOException e ) {
+					e.printStackTrace();
+				}
 			}
 			return FileVisitResult.CONTINUE;
 		}
