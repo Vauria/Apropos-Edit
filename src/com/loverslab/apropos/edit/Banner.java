@@ -112,11 +112,9 @@ public class Banner extends JPanel implements ItemListener {
 					File chosenFile = fileChooser.getSelectedFile();
 					// Update locations in config file
 					String oldLoc = parent.globals.getProperty( "locations" );
-					parent.globals
-							.setProperty( "locations",
-									oldLoc + ( ( oldLoc.split( parent.globals.delimiter ).length > 0
-											& !oldLoc.equals( "" ) ) ? parent.globals.delimiter : "" )
-											+ chosenFile.getAbsolutePath() );
+					parent.globals.setProperty( "locations",
+							oldLoc + ( ( oldLoc.split( parent.globals.delimiter ).length > 0 & !oldLoc.equals( "" ) )
+									? parent.globals.delimiter : "" ) + chosenFile.getAbsolutePath() );
 					locations.insertItemAt( chosenFile.getAbsolutePath(), locations.getItemCount() - 1 );
 					locations.setSelectedIndex( locations.getItemCount() - 2 );
 				}

@@ -302,8 +302,7 @@ public class Prototype {
 				try ( Reader reader = new InputStreamReader( new FileInputStream( file.toFile() ) ) ) {
 					Stage s = g.fromJson( reader, Stage.class );
 					if ( s == null ) {
-						System.err
-								.println( "File is empty: " + file.toFile().getAbsolutePath().replace( db, "\\db\\" ) );
+						System.err.println( "File is empty: " + file.toFile().getAbsolutePath().replace( db, "\\db\\" ) );
 						return FileVisitResult.CONTINUE;
 					}
 					checked++ ;
@@ -331,8 +330,8 @@ public class Prototype {
 			while ( m.find() ) {
 				String match = m.group();
 				if ( !synonyms.containsKey( match ) ) {
-					System.out.println( "Unused Tag " + match + " in "
-							+ file.toFile().getAbsolutePath().replace( db, "\\db\\" ) + ", \"" + str + "\"" );
+					System.out.println( "Unused Tag " + match + " in " + file.toFile().getAbsolutePath().replace( db, "\\db\\" ) + ", \""
+							+ str + "\"" );
 					missing.add( match );
 					errors++ ;
 				}
@@ -388,8 +387,7 @@ public class Prototype {
 		public Display() {
 			setTitle( name );
 			
-			DisplayMode dm = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
-					.getDisplayMode();
+			DisplayMode dm = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode();
 			int w = (int) ( dm.getWidth() * 0.8f );
 			int h = (int) ( dm.getHeight() * 0.8f );
 			setSize( w, h );
@@ -432,8 +430,7 @@ public class Prototype {
 				c.gridheight = 1;
 				jl = new JLabel( key );
 				panel.add( jl, c );
-				TreeMap<JLabel, ArrayList<EditableJLabel>> scene = new TreeMap<JLabel, ArrayList<EditableJLabel>>(
-						new OrderL() );
+				TreeMap<JLabel, ArrayList<EditableJLabel>> scene = new TreeMap<JLabel, ArrayList<EditableJLabel>>( new OrderL() );
 				data.put( jl, scene );
 				System.out.println( key );
 				try ( Reader reader = new InputStreamReader( new FileInputStream( files.get( key ) ) ) ) {
@@ -664,6 +661,8 @@ public class Prototype {
  * @author James McMinn
  * 
  */
-/*interface ValueChangedListener {
-	public void valueChanged( String value, JComponent source );
-}*/
+/*
+ * interface ValueChangedListener {
+ * public void valueChanged( String value, JComponent source );
+ * }
+ */

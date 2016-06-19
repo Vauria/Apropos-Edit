@@ -96,6 +96,10 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	public void setText( String text ) {
+		if ( this.label == null & this.textField == null ) {
+			this.string = text;
+			return;
+		}
 		if ( getText().equals( "" ) ) {
 			if ( !text.equals( "" ) ) {
 				this.label.setText( text );
@@ -146,7 +150,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		getGridBagCons().gridy += amount;
 		invalidate();
 	}
-
+	
 	public void bump() {
 		poke( 1 );
 	}

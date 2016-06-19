@@ -13,7 +13,9 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
@@ -26,7 +28,7 @@ public class SidePanel extends JPanel {
 	private JComboBox<Position> positions;
 	private ComboBoxModel<Position> positionsModel;
 	private JCheckBox rapeCheck;
-	private ActionListener listenVerify, listenLoad, listenNWLoad, listenSimulate, listenWrite;
+	private ActionListener listenVerify, listenLoad, listenNWLoad, listenSimulate, listenWrite, listenCopyNew, listenCopyAppend;
 	private ItemListener listenFolder;
 	
 	public SidePanel( View parent ) {
@@ -70,16 +72,14 @@ public class SidePanel extends JPanel {
 		listenLoad = new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
 				String folder = (String) animations.getSelectedItem();
-				String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(),
-						rapeCheck.isSelected() );
+				String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), rapeCheck.isSelected() );
 				parent.displayPosition( folder, animString, false );
 			}
 		};
 		listenNWLoad = new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
 				String folder = (String) animations.getSelectedItem();
-				String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(),
-						rapeCheck.isSelected() );
+				String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), rapeCheck.isSelected() );
 				parent.displayPosition( folder, animString, true );
 			}
 		};
@@ -93,11 +93,44 @@ public class SidePanel extends JPanel {
 				parent.writeDisplay();
 			}
 		};
+		listenCopyNew = new ActionListener() {
+			public void actionPerformed( ActionEvent e ) {
+				String newAnim = JOptionPane.showInputDialog( parent,
+						new String[] { "Enter the filename for the new position, excluding Stages",
+								"E.g. 'FemaleActor_Wolf_Oral', 'FemaleActor_AnubsWolfTest', or 'FemaleActor_NecroDoggy_Rape'" },
+						"Copy to New Folder", JOptionPane.QUESTION_MESSAGE );
+				if ( newAnim != null && !newAnim.equals( "" ) ) {
+					String folder = (String) animations.getSelectedItem();
+					String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), rapeCheck.isSelected() );
+					parent.copyToNew( folder, animString, newAnim );
+				}
+			}
+		};
+		listenCopyAppend = new ActionListener() {
+			public void actionPerformed( ActionEvent e ) {
+				ComboBoxModel<String> animationsModel = new DefaultComboBoxModel<String>( new String[ 0 ] );
+				JComboBox<String> animations = new JComboBox<String>( animationsModel );
+				for ( int i = 0; i < SidePanel.this.animationsModel.getSize(); i++ )
+					animations.addItem( SidePanel.this.animations.getItemAt( i ) );
+				ComboBoxModel<Position> positionsModel = new DefaultComboBoxModel<Position>( Position.values() );
+				JComboBox<Position> positions = new JComboBox<Position>( positionsModel );
+				JCheckBox rapeCheck = new JCheckBox( "Rape", false );
+				JComponent[] components = new JComponent[] { animations, positions, rapeCheck };
+				if ( JOptionPane.showConfirmDialog( parent, components, "Select an Existing Position", JOptionPane.OK_CANCEL_OPTION,
+						JOptionPane.QUESTION_MESSAGE ) == JOptionPane.OK_OPTION ) {
+					String newFolder = (String) animations.getSelectedItem();
+					String newAnim = Model.getAnimString( newFolder, (Position) positions.getSelectedItem(), rapeCheck.isSelected() );
+					String folder = (String) SidePanel.this.animations.getSelectedItem();
+					String animString = Model.getAnimString( folder, (Position) SidePanel.this.positions.getSelectedItem(),
+							SidePanel.this.rapeCheck.isSelected() );
+					parent.copyAppend( folder, animString, newFolder, newAnim );
+				}
+			}
+		};
 		listenFolder = new ItemListener() {
 			public void itemStateChanged( ItemEvent e ) {
 				if ( e.getStateChange() == ItemEvent.SELECTED ) {
-					if ( parent.model.isUnique( (String) animations.getSelectedItem() ) ) 
-						positions.setSelectedItem( Position.Unique );
+					if ( parent.model.isUnique( (String) animations.getSelectedItem() ) ) positions.setSelectedItem( Position.Unique );
 				}
 			}
 		};
@@ -125,6 +158,9 @@ public class SidePanel extends JPanel {
 		JButton verifyButton = new JButton( "Unify Formating" );
 		verifyButton.addActionListener( listenVerify );
 		JLabel verifyInfo = new JLabel( "(?)" );
+		verifyInfo.setToolTipText( "<html>Reads and then rewrites every JSON file in the selected database<br>"
+				+ "so as to ensure uniform formatting across the database in terms of tabs<br>"
+				+ "vs spaces, line endings, brackets style and ordering.</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.gridwidth = 1;
@@ -138,7 +174,11 @@ public class SidePanel extends JPanel {
 		add( verifyInfo, c );
 		
 		JButton fixButton = new JButton( "Fix Comma Errors" );
+		fixButton.setEnabled( false );
 		JLabel fixInfo = new JLabel( "(?)" );
+		fixInfo.setToolTipText( "<html>Reads the entire database and attempts to fix simple missing or extra<br>"
+				+ "comma errors. Will report any files that could not be automatically fixed, which<br>"
+				+ "will need to be repaired manually outside the Apropos Editor</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.weightx = 1.0;
@@ -152,7 +192,10 @@ public class SidePanel extends JPanel {
 		add( fixInfo, c );
 		
 		JButton brokenSynsButton = new JButton( "List Broken Synonyms" );
+		brokenSynsButton.setEnabled( false );
 		JLabel brokenSynsInfo = new JLabel( "(?)" );
+		brokenSynsInfo.setToolTipText( "<html>Displays a list of lines which contain a synonym tag (denoted by <br>"
+				+ "a word in all-caps between { and }) that do not have an entry in the <br>" + "synonyms.txt file.</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.weightx = 1.0;
@@ -166,7 +209,13 @@ public class SidePanel extends JPanel {
 		add( brokenSynsInfo, c );
 		
 		JButton suggestSynsButton = new JButton( "Suggest Synonyms" );
+		suggestSynsButton.setEnabled( false );
 		JLabel suggestSynsInfo = new JLabel( "(?)" );
+		suggestSynsInfo.setToolTipText( "<html>Reads the entire database and displays every line that contains a word<br>"
+				+ "which could be inserted by a synonym tag. Especially useful if you intend<br>"
+				+ "to add new tags to an existing database's synonyms file and want existing<br>"
+				+ "animation files to take advantage of the new tags. Will take a long time to<br>"
+				+ "search the entire database, but will return editable lines as they are found.</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.weightx = 1.0;
@@ -224,6 +273,7 @@ public class SidePanel extends JPanel {
 		JButton loadButton = new JButton( "Load" );
 		loadButton.addActionListener( listenLoad );
 		JLabel loadInfo = new JLabel( "(?)" );
+		loadInfo.setToolTipText( "<html>Loads every stage to be found under the paramaters given by the <br>" + "above options.</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.weightx = 1;
@@ -239,6 +289,9 @@ public class SidePanel extends JPanel {
 		JButton loadNWButton = new JButton( "Load in New Window" );
 		loadNWButton.addActionListener( listenNWLoad );
 		JLabel loadNWInfo = new JLabel( "(?)" );
+		loadNWInfo.setToolTipText( "<html>Loads every stage to be found under the parameters given by the <br>"
+				+ "above options in an external window that opens to the right of the main<br>"
+				+ "window, so you can draw inspiration from exisiting files easier</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.weightx = 1;
@@ -251,9 +304,47 @@ public class SidePanel extends JPanel {
 		c.gridx++ ;
 		add( loadNWInfo, c );
 		
+		JButton loadCopyToNew = new JButton( "Copy to New Position" );
+		loadCopyToNew.addActionListener( listenCopyNew );
+		JLabel loadCopyToNewInfo = new JLabel( "(?)" );
+		loadCopyToNewInfo.setToolTipText( "<html>Fetches the files for the animation selected above, and writes<br>"
+				+ "to a new folder under the new name given in the dialog window.<br>"
+				+ "Will then load the newly writen files immediately ready for editing</html>" );
+		c.anchor = GridBagConstraints.FIRST_LINE_START;
+		c.insets = insButton;
+		c.weightx = 1;
+		c.gridy++ ;
+		c.gridx = 0;
+		add( loadCopyToNew, c );
+		c.anchor = GridBagConstraints.LINE_START;
+		c.insets = insHelp;
+		c.weightx = 0;
+		c.gridx++ ;
+		add( loadCopyToNewInfo, c );
+		
+		JButton loadCopyToExist = new JButton( "Copy to Existing Position" );
+		loadCopyToExist.addActionListener( listenCopyAppend );
+		loadCopyToExist.setEnabled( false );
+		JLabel loadCopyToExistInfo = new JLabel( "(?)" );
+		loadCopyToExistInfo.setToolTipText( "<html>Fetches the files for the animation selected above, and adds<br>"
+				+ "every line on top of the existing lines for the second animation<br>"
+				+ "found by the dialog window. Will then load the newly extended files.</html>" );
+		c.anchor = GridBagConstraints.FIRST_LINE_START;
+		c.insets = insButton;
+		c.weightx = 1;
+		c.gridy++ ;
+		c.gridx = 0;
+		add( loadCopyToExist, c );
+		c.anchor = GridBagConstraints.LINE_START;
+		c.insets = insHelp;
+		c.weightx = 0;
+		c.gridx++ ;
+		add( loadCopyToExistInfo, c );
+		
 		JButton simulateButton = new JButton( "Simulate" );
 		simulateButton.addActionListener( listenSimulate );
 		JLabel simulateInfo = new JLabel( "(?)" );
+		simulateInfo.setToolTipText( "<html>I 'unno. Something.</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.weightx = 1;
@@ -269,6 +360,8 @@ public class SidePanel extends JPanel {
 		JButton writeButton = new JButton( "Write" );
 		writeButton.addActionListener( listenWrite );
 		JLabel writeInfo = new JLabel( "(?)" );
+		writeInfo.setToolTipText(
+				"<html>Writes the file loaded in the right display area to the database,<br>" + "overwriting the existing files.</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.weightx = 1;

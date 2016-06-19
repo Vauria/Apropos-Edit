@@ -72,8 +72,7 @@ public class View extends JFrame implements ActionListener {
 		initPanelsBorderLayout();
 		
 		String defaultDB = globals.getProperty( "locations" ).split( globals.delimiter )[0];
-		if ( !defaultDB.equals( "" ) )
-			actionPerformed( new ActionEvent( this, ActionEvent.ACTION_PERFORMED, defaultDB ) );
+		if ( !defaultDB.equals( "" ) ) actionPerformed( new ActionEvent( this, ActionEvent.ACTION_PERFORMED, defaultDB ) );
 		
 		setVisible( true );
 	}
@@ -81,7 +80,7 @@ public class View extends JFrame implements ActionListener {
 	/**
 	 * Initialise and Create main Panels
 	 * 
-	 * @deprecated
+	 * @deprecated GridBagLayout likes to collapse panels with ScrollPanes
 	 */
 	@SuppressWarnings("unused")
 	private void initPanels() {
@@ -102,8 +101,7 @@ public class View extends JFrame implements ActionListener {
 		main.add( banner, c );
 		
 		side = new SidePanel( this );
-		JScrollPane sideScroll = new JScrollPane( side, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-				JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
+		JScrollPane sideScroll = new JScrollPane( side, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
 		sideScroll.getVerticalScrollBar().setUnitIncrement( 16 );
 		sideScroll.setBorder( BorderFactory.createRaisedSoftBevelBorder() );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
@@ -114,8 +112,7 @@ public class View extends JFrame implements ActionListener {
 		c.fill = GridBagConstraints.VERTICAL;
 		main.add( sideScroll, c );
 		
-		displayScroll = new JScrollPane( display, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-				JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS );
+		displayScroll = new JScrollPane( display, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS );
 		display = new DisplayPanel( this, displayScroll );
 		displayScroll.setViewportView( display );
 		displayScroll.getVerticalScrollBar().setUnitIncrement( 16 );
@@ -137,14 +134,12 @@ public class View extends JFrame implements ActionListener {
 		main.add( banner, BorderLayout.PAGE_START );
 		
 		side = new SidePanel( this );
-		JScrollPane sideScroll = new JScrollPane( side, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-				JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
+		JScrollPane sideScroll = new JScrollPane( side, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
 		sideScroll.getVerticalScrollBar().setUnitIncrement( 16 );
 		sideScroll.setBorder( BorderFactory.createRaisedSoftBevelBorder() );
 		main.add( sideScroll, BorderLayout.LINE_START );
 		
-		displayScroll = new JScrollPane( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED );
+		displayScroll = new JScrollPane( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED );
 		display = new DisplayPanel( this, displayScroll );
 		displayScroll.setViewportView( display );
 		displayScroll.getVerticalScrollBar().setUnitIncrement( 16 );
@@ -158,8 +153,7 @@ public class View extends JFrame implements ActionListener {
 		// Set Size
 		String size = globals.getProperty( "size" );
 		if ( size.equals( "auto" ) | size.equals( "max" ) ) {
-			DisplayMode dm = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
-					.getDisplayMode();
+			DisplayMode dm = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode();
 			int w = (int) ( dm.getWidth() * 0.8f );
 			int h = (int) ( dm.getHeight() * 0.8f );
 			setSize( w, h );
@@ -190,10 +184,8 @@ public class View extends JFrame implements ActionListener {
 		// Add exit listener to update Config on Close
 		addWindowListener( new WindowAdapter() {
 			public void windowClosing( WindowEvent e ) {
-				globals.setProperty( "size",
-						isMaximized() ? "max" : getSize().width + globals.delimiter + getSize().height );
-				globals.setProperty( "position",
-						isMaximized() ? "max" : getLocation().getX() + globals.delimiter + getLocation().getY() );
+				globals.setProperty( "size", isMaximized() ? "max" : getSize().width + globals.delimiter + getSize().height );
+				globals.setProperty( "position", isMaximized() ? "max" : getLocation().getX() + globals.delimiter + getLocation().getY() );
 				globals.write();
 				dispose();
 			}
@@ -228,7 +220,7 @@ public class View extends JFrame implements ActionListener {
 	
 	public void actionPerformed( ActionEvent e ) {
 		model.setDataBase( e.getActionCommand() );
-		side.publishingComplete( false );
+		side.publishingComplete( false ); 
 		model.new FolderListFetcher() {
 			
 			protected void done() {
@@ -334,6 +326,23 @@ public class View extends JFrame implements ActionListener {
 				}
 			}
 		}.execute();
+	}
+	
+	public void copyToNew( String folder, String animString, String newAnim ) {
+		model.new PositionCopier( folder, animString, newAnim ) {
+			public void done() {
+				try {
+					display.load( get() );
+				}
+				catch ( InterruptedException | ExecutionException e ) {
+					e.printStackTrace();
+				}
+			}
+		}.execute();
+	}
+	
+	public void copyAppend( String folder, String animString, String newFolder, String newAnim ) {
+		System.out.println( "Unimplemented" );
 	}
 	
 }

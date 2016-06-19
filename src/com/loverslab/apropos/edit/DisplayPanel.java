@@ -253,7 +253,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 					break;
 				case 2:
 					break;
-				case 3: //Fall Through
+				case 3: // Fall Through
 				case 4:
 					JMenuItem clearItem = new JMenuItem( "Clear" );
 					clearItem.addActionListener( new ClearListener( label ) );

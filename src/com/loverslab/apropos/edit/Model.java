@@ -101,7 +101,9 @@ public class Model {
 	public void writeStages( StageMap stageMap ) {
 		File file;
 		AproposLabel first = stageMap.keySet().iterator().next();
-		String path = db + first.getParentLabel().getParentLabel().getText() + "\\" + first.getParentLabel().getText();
+		String folder = db + first.getParentLabel().getParentLabel().getText();
+		new File(folder).mkdirs();
+		String path = folder + "\\" + first.getParentLabel().getText();
 		for ( AproposLabel stage : stageMap.keySet() ) {
 			PerspectiveMap persMap = stageMap.get( stage );
 			String[] split = stage.getText().split( " " );
@@ -154,6 +156,13 @@ public class Model {
 		Boolean b = uniques.get( string );
 		System.out.println( string + ": " + b );
 		return b == null ? false : b;
+	}
+	
+	public String extractFolder( String animString ) {
+		animString = animString.replace( ".txt", "" ).replace( "_Rape", "" );
+		for ( Position p : Position.values() )
+			animString = animString.replace( "_" + p.name(), "" );
+		return animString;
 	}
 	
 	public abstract class FolderListFetcher extends SwingWorker<List<String>, String> {
@@ -248,10 +257,38 @@ public class Model {
 		
 	}
 	
+	public abstract class PositionCopier extends SwingWorker<StageMap, Object> {
+		String folder, animString, newAnim;
+		
+		public PositionCopier( String folder, String animString, String newAnim ) {
+			super();
+			this.folder = folder;
+			this.animString = animString;
+			this.newAnim = newAnim;
+		}
+		
+		public StageMap doInBackground() {
+			AproposLabel parent = new AproposLabel( animString, new AproposLabel( folder, root ) );
+			StageMap toCopy = getStages( parent );
+			AproposLabel first = toCopy.keySet().iterator().next();
+			AproposLabel position = first.getParentLabel();
+			AproposLabel folder = position.getParentLabel();
+			
+			position.setText( newAnim );
+			folder.setText( extractFolder( newAnim ) );
+			writeStages( toCopy );
+			return toCopy;
+		}
+		
+		public abstract void done();
+		
+		public void process( Object o ) {};
+		
+	}
+	
 	public class JSonRebuilder extends SimpleFileVisitor<Path> {
-		private String[] skip = new String[] { "AnimationPatchups.txt", "Arousal_Descriptors.txt", "Themes.txt",
-				"UniqueAnimations.txt", "WearAndTear_Damage.txt", "WearAndTear_Descriptors.txt",
-				"WearAndTear_Effects.txt" };
+		private String[] skip = new String[] { "AnimationPatchups.txt", "Arousal_Descriptors.txt", "Themes.txt", "UniqueAnimations.txt",
+				"WearAndTear_Damage.txt", "WearAndTear_Descriptors.txt", "WearAndTear_Effects.txt" };
 		
 		public FileVisitResult visitFile( Path path, BasicFileAttributes attr ) {
 			File file = path.toFile();
