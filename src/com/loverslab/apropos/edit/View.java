@@ -3,9 +3,6 @@ package com.loverslab.apropos.edit;
 import java.awt.BorderLayout;
 import java.awt.DisplayMode;
 import java.awt.GraphicsEnvironment;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -29,7 +26,11 @@ import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
-@SuppressWarnings("serial")
+/**
+ * Main class for the application. Handles most of the communication between user and model.
+ * 
+ */
+@SuppressWarnings("serial") // No one Serialises Swing anymore
 public class View extends JFrame implements ActionListener {
 	
 	private final String version = "0.9b";
@@ -75,50 +76,6 @@ public class View extends JFrame implements ActionListener {
 		if ( !defaultDB.equals( "" ) ) actionPerformed( new ActionEvent( this, ActionEvent.ACTION_PERFORMED, defaultDB ) );
 		
 		setVisible( true );
-	}
-	
-	/**
-	 * Initialise and Create main Panels
-	 * 
-	 * @deprecated GridBagLayout likes to collapse panels with ScrollPanes
-	 */
-	@SuppressWarnings("unused")
-	private void initPanels() {
-		JPanel main = (JPanel) getContentPane();
-		GridBagLayout gbl = new GridBagLayout();
-		main.setLayout( gbl );
-		
-		GridBagConstraints c = new GridBagConstraints();
-		
-		banner = new Banner( this );
-		banner.addActionListener( this );
-		c.insets = new Insets( 0, 0, 0, 0 );
-		c.anchor = GridBagConstraints.PAGE_START;
-		c.gridheight = 1;
-		c.gridwidth = 2;
-		c.weightx = 1.0;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		main.add( banner, c );
-		
-		side = new SidePanel( this );
-		JScrollPane sideScroll = new JScrollPane( side, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
-		sideScroll.getVerticalScrollBar().setUnitIncrement( 16 );
-		sideScroll.setBorder( BorderFactory.createRaisedSoftBevelBorder() );
-		c.anchor = GridBagConstraints.FIRST_LINE_START;
-		c.gridwidth = 1;
-		c.gridy = 1;
-		c.weighty = 1;
-		c.weightx = 0;
-		c.fill = GridBagConstraints.VERTICAL;
-		main.add( sideScroll, c );
-		
-		displayScroll = new JScrollPane( display, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS );
-		display = new DisplayPanel( this, displayScroll );
-		displayScroll.setViewportView( display );
-		displayScroll.getVerticalScrollBar().setUnitIncrement( 16 );
-		c.weightx = 1;
-		c.fill = GridBagConstraints.BOTH;
-		main.add( displayScroll, c );
 	}
 	
 	/**
@@ -220,7 +177,7 @@ public class View extends JFrame implements ActionListener {
 	
 	public void actionPerformed( ActionEvent e ) {
 		model.setDataBase( e.getActionCommand() );
-		side.publishingComplete( false ); 
+		side.publishingComplete( false );
 		model.new FolderListFetcher() {
 			
 			protected void done() {

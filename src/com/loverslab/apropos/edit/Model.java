@@ -23,22 +23,44 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import com.google.gson.stream.MalformedJsonException;
 
+/**
+ * Model class to handle all database interaction
+ *
+ */
 public class Model {
 	
 	String db;
 	AproposLabel root = new AproposLabel( db, null );
 	TreeMap<String, Boolean> uniques = null;
 	
-	public void setDataBase( String actionCommand ) {
-		db = actionCommand + "\\";
+	/**
+	 * Sets the Filepath of the chosen database's root folder.
+	 * 
+	 * @param path Filepath. Should not end in \
+	 */
+	public void setDataBase( String path ) {
+		db = path + "\\";
 		uniques = null;
 		new UniquesFetcher().execute();
 	}
 	
+	/**
+	 * Composes the three variables to match the filename structure of the database
+	 * 
+	 * @param folder The folder the file would be stored in, like FemaleActor_Male or FemaleActor_DarkInvestigationsBlowjob
+	 * @param pos The position within this folder
+	 * @param rape If the context is non-consensual
+	 * @return Composed String
+	 */
 	public static String getAnimString( String folder, Position pos, boolean rape ) {
 		return folder + ( pos != Position.Unique ? "_" + pos.name() : "" ) + ( rape ? "_Rape" : "" );
 	}
 	
+	/**
+	 * Provided the files for the animation denoted by the parent label exist, parses them and adds them to the returned StageMap
+	 * 
+	 * @param parent Text for this label should be an animation, Text for it's parent should be a folder
+	 */
 	public StageMap getStages( AproposLabel parent ) {
 		StageMap data = new StageMap();
 		String path = db + parent.getParentLabel().toString() + "\\" + parent.toString();
@@ -48,7 +70,8 @@ public class Model {
 			AproposLabel stage = new AproposLabel( "Intro", parent );
 			data.put( stage, getPerspectives( stage, file ) );
 		}
-		file = new File( path + "_Stage1.txt" );
+		file = new File( path + "_Stage1.txt" ); // Official database skips stage 1 to use the Intro file instead, so a missing stage one
+												 // does not imply a missing stage 2+
 		if ( file.exists() ) {
 			AproposLabel stage = new AproposLabel( "Stage 1", parent );
 			data.put( stage, getPerspectives( stage, file ) );
@@ -68,10 +91,18 @@ public class Model {
 		return data;
 	}
 	
+	/**
+	 * Returns all the perspectives (and in turn their lines) accessible from the given <code>File</code>. Uses lazy exception handling
+	 * (prints to sys.err)
+	 * 
+	 * @param parent Label that will be the parent of every perspective label
+	 * @param file object representation of the desired animation file
+	 * @return
+	 */
 	public PerspectiveMap getPerspectives( AproposLabel parent, File file ) {
 		PerspectiveMap data = new PerspectiveMap();
 		try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
-			data = getPerspectives(parent, reader);
+			data = getPerspectives( parent, reader );
 		}
 		catch ( IllegalStateException | MalformedJsonException e ) {
 			System.err.println( "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) );
@@ -83,6 +114,14 @@ public class Model {
 		return data;
 	}
 	
+	/**
+	 * Returns all the perspectives (and in turn their lines) accessible from the given <code>JsonReader</code>
+	 * 
+	 * @param parent Label that will be the parent of every perspective label
+	 * @param reader Reader for the json file. Caller is responsible for closing
+	 * @throws IllegalStateException If JSON errors occur
+	 * @throws IOException If file errors occur
+	 */
 	public PerspectiveMap getPerspectives( AproposLabel parent, JsonReader reader ) throws IllegalStateException, IOException {
 		PerspectiveMap data = new PerspectiveMap();
 		reader.beginObject();
@@ -104,6 +143,12 @@ public class Model {
 		return data;
 	}
 	
+	/**
+	 * Writes the lines, perspectives and stages contained within the given StageMap. Write location is determined by the parents of the
+	 * contained labels, and any missing directories denoted by these labels will be created before writing
+	 * 
+	 * @param stageMap
+	 */
 	public void writeStages( StageMap stageMap ) {
 		File file;
 		AproposLabel first = stageMap.keySet().iterator().next();
@@ -133,6 +178,13 @@ public class Model {
 		}
 	}
 	
+	/**
+	 * Writes the given PerspectiveMap to the given file, writing a JSON array for each perspective. Caller must ensure the folder the file
+	 * is to be written to exists
+	 * 
+	 * @param persMap
+	 * @param file
+	 */
 	public void writePerspectives( PerspectiveMap persMap, File file ) {
 		try ( JsonWriter writer = new JsonWriter( new FileWriter( file ) ) ) {
 			writer.setIndent( "    " );
@@ -156,6 +208,12 @@ public class Model {
 		}
 	}
 	
+	/**
+	 * Checks a string against UniqueAnimations.txt
+	 * 
+	 * @param string
+	 * @return True if the given Animation name appears on the UniqueAnimations list.
+	 */
 	public boolean isUnique( String string ) {
 		if ( uniques == null | !string.contains( "_" ) ) return false;
 		string = string.substring( string.lastIndexOf( '_' ) + 1 );
@@ -164,13 +222,24 @@ public class Model {
 		return b == null ? false : b;
 	}
 	
+	/**
+	 * Extracts the folder part of an animation file name
+	 * 
+	 * @param animString
+	 * @return
+	 */
 	public String extractFolder( String animString ) {
-		animString = animString.replace( ".txt", "" ).replace( "_Rape", "" );
+		animString = animString.replace( ".txt", "" ).replace( "_Rape", "" ).replace( "_Orgasm", "" ).replaceAll( "_Stage[1-9]", "" );
 		for ( Position p : Position.values() )
 			animString = animString.replace( "_" + p.name(), "" );
 		return animString;
 	}
 	
+	/**
+	 * SwingWorker that fetches the name of every folder in the model db's directory, and publishes them as they are found.
+	 * <br>
+	 * <code>public void process( List&lt;String&gt; strings )</code> must be implemented
+	 */
 	public abstract class FolderListFetcher extends SwingWorker<List<String>, String> {
 		
 		public List<String> doInBackground() {
@@ -182,12 +251,18 @@ public class Model {
 			return null;
 		}
 		
-		protected abstract void done();
+		protected void done() {};
 		
 		public abstract void process( List<String> strings );
 		
 	}
 	
+	/**
+	 * SwingWorker that loads the database's UniqueAnimations.txt file into the member TreeMap, for future writing or querying with
+	 * <code>isUnique(String string)</code>
+	 *
+	 * Does not Publish.
+	 */
 	public class UniquesFetcher extends SwingWorker<Object, Object> {
 		
 		public Object doInBackground() {
@@ -224,6 +299,11 @@ public class Model {
 		
 	}
 	
+	/**
+	 * SwingWorker that fetches a <code>StageMap</code> to be processed by done() for displaying
+	 *
+	 * Does not Publish.
+	 */
 	public abstract class PositionFetcher extends SwingWorker<StageMap, Object> {
 		
 		private AproposLabel parent;
@@ -243,6 +323,11 @@ public class Model {
 		
 	}
 	
+	/**
+	 * SwingWorker that writes a given <code>StageMap</code> to disk
+	 * 
+	 * Does not Publish.
+	 */
 	public abstract class PositionWriter extends SwingWorker<Object, Object> {
 		
 		private StageMap stageMap;
@@ -263,7 +348,13 @@ public class Model {
 		
 	}
 	
-	public abstract class PositionCopier extends SwingWorker<StageMap, Object> {
+	/**
+	 * SwingWorker that loads the <code>StageMap</code> denoted by the <code>folder</code> and <code>animString</code> constructor
+	 * parameters, changes the parent's text to assign a new write location, then completes the write.
+	 *
+	 * Does not Publish.
+	 */
+	public class PositionCopier extends SwingWorker<StageMap, Object> {
 		String folder, animString, newAnim;
 		
 		public PositionCopier( String folder, String animString, String newAnim ) {
@@ -286,13 +377,17 @@ public class Model {
 			return toCopy;
 		}
 		
-		public abstract void done();
+		public void done() {};
 		
 		public void process( Object o ) {};
 		
 	}
 	
-	public class JSonRebuilder extends SimpleFileVisitor<Path> {
+	/**
+	 * <code>FileVisitor</code> that simply loads and rewrites every .txt file it visits.
+	 *
+	 */
+	protected class JSonRebuilder extends SimpleFileVisitor<Path> {
 		private String[] skip = new String[] { "AnimationPatchups.txt", "Arousal_Descriptors.txt", "Themes.txt", "UniqueAnimations.txt",
 				"WearAndTear_Damage.txt", "WearAndTear_Descriptors.txt", "WearAndTear_Effects.txt" };
 		
@@ -316,6 +411,9 @@ public class Model {
 		}
 	}
 	
+	/**
+	 * @see Model.JSonRebuilder
+	 */
 	public abstract class DatabaseRebuilder extends SwingWorker<Object, Object> {
 		
 		public Object doInBackground() {

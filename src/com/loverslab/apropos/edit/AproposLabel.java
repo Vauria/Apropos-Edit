@@ -18,6 +18,8 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 /**
+ * A JLabel disguised as JPanel designed to be initialised without fully creating all the sup-components and then allow editing.
+ * 
  * Original Author James McMinn
  * github.com/JamesMcMinn/EditableJLabel
  */
@@ -32,12 +34,24 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	private JTextField textField;
 	private boolean hoverState;
 	
+	/**
+	 * Creates a non-displayable AproposLabel with the given parent and given text
+	 * 
+	 * @param startText
+	 * @param parent
+	 */
 	public AproposLabel( String startText, AproposLabel parent ) {
 		super();
 		string = startText;
 		this.parent = parent;
 	}
 	
+	/**
+	 * Creates and arranged the components required for this Label to function.
+	 * 
+	 * @param gbl The GridBagLayout used in the container this Label is initialised in.
+	 * @return This AproposLabel
+	 */
 	public AproposLabel display( GridBagLayout gbl ) {
 		layout = gbl;
 		
@@ -79,6 +93,13 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		return this;
 	}
 	
+	/**
+	 * Creates a more lightweight AproposLabel that is not editable
+	 * 
+	 * @param gbl
+	 * @param editable Ignored
+	 * @return This AproposLabel
+	 */
 	public AproposLabel display( GridBagLayout gbl, boolean editable ) {
 		layout = gbl;
 		
@@ -95,6 +116,11 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		return this;
 	}
 	
+	/**
+	 * Sets the String this label holds and displays.
+	 * 
+	 * @param text
+	 */
 	public void setText( String text ) {
 		if ( this.label == null & this.textField == null ) {
 			this.string = text;
@@ -123,6 +149,9 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		return string;
 	}
 	
+	/**
+	 * Returns a new label with equal reference to this label's parent and copied text
+	 */
 	public AproposLabel clone() {
 		return new AproposLabel( getText(), getParentLabel() );
 	}
@@ -131,6 +160,9 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		return parent;
 	}
 	
+	/**
+	 * @return the GridBagConstraints that directly represent how this object is positioned.
+	 */
 	public GridBagConstraints getGridBagCons() {
 		if ( cons == null ) {
 			cons = layout.getConstraints( this );
@@ -146,19 +178,33 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		return label;
 	}
 	
+	/**
+	 * Nudge this label up or down based on this passed value. Negative is Up, Positive is Down.
+	 * 
+	 * @param amount
+	 */
 	public void poke( int amount ) {
 		getGridBagCons().gridy += amount;
 		invalidate();
 	}
 	
+	/**
+	 * Nudge label down one grid spot in it's container
+	 */
 	public void bump() {
 		poke( 1 );
 	}
 	
+	/**
+	 * Nudge label up one grid spot in it's container
+	 */
 	public void boop() {
 		poke( -1 );
 	}
 	
+	/**
+	 * @param hover Shows textField on true, JLabel on false
+	 */
 	public void setHoverState( boolean hover ) {
 		CardLayout cl = (CardLayout) ( this.getLayout() );
 		
@@ -173,12 +219,18 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		return hoverState;
 	}
 	
+	/**
+	 * Allows enabling and disabling this panel, the textfield and the label.
+	 */
 	public void setEnabled( boolean enabled ) {
 		super.setEnabled( enabled );
 		textField.setEnabled( enabled );
 		label.setEnabled( enabled );
 	}
 	
+	/**
+	 * Register a listener to be notified whenever the text value of this Label changes
+	 */
 	public void addValueChangedListener( ValueChangedListener listener ) {
 		listenerList.add( ValueChangedListener.class, listener );
 	}
@@ -187,6 +239,9 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		listenerList.remove( ValueChangedListener.class, listener );
 	}
 	
+	/**
+	 * Notifies all listeners of the text this label holds being changed, passing the new text.
+	 */
 	protected void fireValueChanged( String value ) {
 		// Guaranteed to return a non-null array
 		Object[] listeners = listenerList.getListenerList();
@@ -199,6 +254,9 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		}
 	}
 	
+	/**
+	 * Register a listener to be notified whenever this label spawns a new line or needs to be removed.
+	 */
 	public void addLineChangedListener( LineChangedListener listener ) {
 		listenerList.add( LineChangedListener.class, listener );
 	}
@@ -207,9 +265,15 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		listenerList.remove( LineChangedListener.class, listener );
 	}
 	
+	/**
+	 * Notifies all listeners that a new, blank label is to be displayed below this one
+	 */
 	protected void fireLineInserted( AproposLabel above ) {
 		fireLineInserted( above, new AproposLabel( "", above.getParentLabel() ) );
 	}
+	/**
+	 * Notifies all listeners that a new label is to be displayed below this one
+	 */
 	protected void fireLineInserted( AproposLabel above, AproposLabel toAdd ) {
 		// Guaranteed to return a non-null array
 		Object[] listeners = listenerList.getListenerList();
@@ -222,6 +286,9 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		}
 	}
 	
+	/**
+	 * Notifies all listeners that this Label is to be removed.
+	 */
 	protected void fireLineRemoved( AproposLabel removed ) {
 		// Guaranteed to return a non-null array
 		Object[] listeners = listenerList.getListenerList();
@@ -234,6 +301,9 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		}
 	}
 	
+	/**
+	 * Register a listener to be notified whenever this label needs to display a PopupMenu
+	 */
 	public void addPopupMenuListener( PopupMenuListener listener ) {
 		listenerList.add( PopupMenuListener.class, listener );
 	}
@@ -242,6 +312,9 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		listenerList.remove( PopupMenuListener.class, listener );
 	}
 	
+	/**
+	 * Notifies all listeners that this Label needs to display a PopupMenu
+	 */
 	protected void firepopupMenuTriggered( AproposLabel label, MouseEvent e ) {
 		if ( label.getText().equals( "" ) ) return;
 		// Guaranteed to return a non-null array
@@ -255,12 +328,18 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		}
 	}
 	
+	/**
+	 * Gets the number of characters into the given string is based on a relative point co-ordinate
+	 */
 	public int positionFromPoint( int x, String s ) {
 		int w = label.getGraphics().getFontMetrics().stringWidth( s );
 		float pos = ( (float) x / (float) w ) * (float) s.length();
 		return Math.min( (int) pos, s.length() );
 	}
 	
+	/**
+	 * A listener for non-editable AproposLabels, only provides PopupMenu actions
+	 */
 	public class AproposListener implements MouseListener {
 		
 		public void mousePressed( MouseEvent e ) {
@@ -279,6 +358,9 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		public void mouseClicked( MouseEvent e ) {}
 	}
 	
+	/**
+	 * Listener for full editing support
+	 */
 	public class EditingListener extends AproposListener implements KeyListener, FocusListener {
 		boolean locked = false;
 		String oldValue;
@@ -358,15 +440,24 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	
 }
 
+/**
+ * A listener that will be notified whenever the text of an attached JLabel is modified
+ */
 interface ValueChangedListener extends EventListener {
 	public void valueChanged( String value, JComponent source );
 }
 
+/**
+ * A listener that will be notified whenever the attached JLabel needs to display a new Label below it or be removed
+ */
 interface LineChangedListener extends EventListener {
 	public void lineInserted( AproposLabel above, AproposLabel toAdd );
 	public void lineRemoved( AproposLabel removed );
 }
 
+/**
+ * A listener that will be notified whenever the attached JLabel needs to display a PopupMenu
+ */
 interface PopupMenuListener extends EventListener {
 	public void popupMenuTriggered( AproposLabel label, MouseEvent e );
 }

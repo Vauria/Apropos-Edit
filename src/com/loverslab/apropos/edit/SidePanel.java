@@ -19,6 +19,9 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
+/**
+ * Left Side Panel to hold all buttons and options for interacting with the database or an animation.
+ */
 @SuppressWarnings("serial")
 public class SidePanel extends JPanel {
 	
@@ -54,15 +57,25 @@ public class SidePanel extends JPanel {
 		// setPreferredSize( new Dimension( animations.getMaximumSize().width, 300 ) );
 	}
 	
+	/**
+	 * Adds an Animation to the animations <code>ComboBox</code>.
+	 * @param str <code>animString</code> to denote the Animation
+	 */
 	public void publishAnimation( String str ) {
 		animations.addItem( str );
 	}
 	
+	/**
+	 * @param b Enable the animations box or disable and empty it
+	 */
 	public void publishingComplete( boolean b ) {
 		if ( !b ) animations.removeAllItems();
 		animations.setEnabled( b );
 	}
 	
+	/**
+	 * Create all the listeners for this panel
+	 */
 	private void initListeners() {
 		listenVerify = new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
@@ -136,6 +149,9 @@ public class SidePanel extends JPanel {
 		};
 	}
 	
+	/**
+	 * Add interactive options for all the options that affect the entire database
+	 */
 	private void addDBWide( GridBagConstraints c ) {
 		JLabel dbWide = new JLabel( "Database Wide" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
@@ -229,6 +245,9 @@ public class SidePanel extends JPanel {
 		add( suggestSynsInfo, c );
 	}
 	
+	/**
+	 * Add interactive options for all the options that only affect one animation
+	 */
 	private void addAnimLocal( GridBagConstraints c ) {
 		JLabel animLocal = new JLabel( "Animation Options" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
