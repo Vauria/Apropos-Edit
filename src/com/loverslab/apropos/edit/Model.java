@@ -30,8 +30,14 @@ import com.google.gson.stream.MalformedJsonException;
 public class Model {
 	
 	String db;
+	View view;
 	AproposLabel root = new AproposLabel( db, null );
 	TreeMap<String, Boolean> uniques = null;
+	
+	public Model( View view ) {
+		super();
+		this.view = view;
+	}
 	
 	/**
 	 * Sets the Filepath of the chosen database's root folder.
@@ -87,7 +93,7 @@ public class Model {
 			AproposLabel stage = new AproposLabel( "Orgasm", parent );
 			data.put( stage, getPerspectives( stage, file ) );
 		}
-		System.out.println( data.size() + " stages found" );
+		if ( data.size() == 0 ) view.handleException( new Exception("No files found") );
 		return data;
 	}
 	

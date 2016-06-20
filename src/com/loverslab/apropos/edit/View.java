@@ -13,14 +13,19 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
@@ -41,6 +46,7 @@ public class View extends JFrame implements ActionListener {
 	protected DisplayPanel display;
 	protected JScrollPane displayScroll;
 	protected ArrayList<JFrame> displayFrames = new ArrayList<JFrame>();
+	protected LinkedList<Exception> exceptionQueue = new LinkedList<Exception>();
 	
 	public static void main( String[] args ) {
 		// Create and initialise the UI on the EDT (Event Dispatch Thread)
@@ -62,7 +68,7 @@ public class View extends JFrame implements ActionListener {
 		super();
 		globals = new Globals( new File( "apropos-edit.config" ) );
 		globals.read();
-		model = new Model();
+		model = new Model( this );
 	}
 	
 	public void initUI() {
@@ -300,6 +306,29 @@ public class View extends JFrame implements ActionListener {
 	
 	public void copyAppend( String folder, String animString, String newFolder, String newAnim ) {
 		System.out.println( "Unimplemented" );
+	}
+	
+	public void handleException( Exception e ) {
+		exceptionQueue.add( e );
+		SwingUtilities.invokeLater( new ExceptionDisplayer() );
+	}
+	
+	private class ExceptionDisplayer implements Runnable {
+		public void run() {
+			Exception e = exceptionQueue.pop();
+			JPanel messagePanel = new JPanel();
+			messagePanel.setLayout(new BoxLayout(messagePanel, BoxLayout.PAGE_AXIS));
+			messagePanel.add( new JLabel(e.getMessage()), BorderLayout.LINE_START );
+			messagePanel.add( new JLabel("A thing went wrong somewhere"), BorderLayout.LINE_START );
+			JOptionPane optionPane = new JOptionPane( messagePanel, JOptionPane.WARNING_MESSAGE, JOptionPane.OK_OPTION );
+			JDialog dialog = optionPane.createDialog( View.this, e.getClass().getSimpleName() );
+			dialog.setLocationRelativeTo( View.this );
+			messagePanel.add( new JLabel("OH SHIT EVERYTHING IS ON FIRREEEEEE"), BorderLayout.LINE_START );
+			dialog.pack(); //Needs to be called after new lines are added in case one of the new lines is longer than an existing one
+			dialog.setVisible( true );
+			
+			System.out.println( ( (Integer) optionPane.getValue() ).intValue() == JOptionPane.OK_OPTION );
+		}
 	}
 	
 }
