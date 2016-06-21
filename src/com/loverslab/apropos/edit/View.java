@@ -45,8 +45,11 @@ public class View extends JFrame implements ActionListener {
 	protected SidePanel side;
 	protected DisplayPanel display;
 	protected JScrollPane displayScroll;
+	protected JDialog dialog;
+	protected JPanel messagePanel;
 	protected ArrayList<JFrame> displayFrames = new ArrayList<JFrame>();
-	protected LinkedList<Exception> exceptionQueue = new LinkedList<Exception>();
+	protected volatile LinkedList<Exception> exceptionQueue = new LinkedList<Exception>();
+	protected volatile LinkedList<Exception> displayedExceptions = new LinkedList<Exception>();
 	
 	public static void main( String[] args ) {
 		// Create and initialise the UI on the EDT (Event Dispatch Thread)
@@ -315,19 +318,47 @@ public class View extends JFrame implements ActionListener {
 	
 	private class ExceptionDisplayer implements Runnable {
 		public void run() {
-			Exception e = exceptionQueue.pop();
-			JPanel messagePanel = new JPanel();
-			messagePanel.setLayout(new BoxLayout(messagePanel, BoxLayout.PAGE_AXIS));
-			messagePanel.add( new JLabel(e.getMessage()), BorderLayout.LINE_START );
-			messagePanel.add( new JLabel("A thing went wrong somewhere"), BorderLayout.LINE_START );
-			JOptionPane optionPane = new JOptionPane( messagePanel, JOptionPane.WARNING_MESSAGE, JOptionPane.OK_OPTION );
-			JDialog dialog = optionPane.createDialog( View.this, e.getClass().getSimpleName() );
-			dialog.setLocationRelativeTo( View.this );
-			messagePanel.add( new JLabel("OH SHIT EVERYTHING IS ON FIRREEEEEE"), BorderLayout.LINE_START );
-			dialog.pack(); //Needs to be called after new lines are added in case one of the new lines is longer than an existing one
-			dialog.setVisible( true );
-			
-			System.out.println( ( (Integer) optionPane.getValue() ).intValue() == JOptionPane.OK_OPTION );
+			if ( dialog == null ) {
+				// Create the messagePanel
+				messagePanel = new JPanel();
+				messagePanel.setLayout( new BoxLayout( messagePanel, BoxLayout.PAGE_AXIS ) );
+				while ( !exceptionQueue.isEmpty() ) {
+					Exception e = exceptionQueue.pop();// Should be thread safe.
+					displayedExceptions.add( e );
+					JLabel label = new JLabel( e.getClass().getSimpleName() + ": " + e.getMessage() );
+					messagePanel.add( label, BorderLayout.LINE_START );
+				}
+				// Create the optionPane with this messagePanel
+				JOptionPane optionPane = new JOptionPane( messagePanel, JOptionPane.WARNING_MESSAGE, JOptionPane.OK_OPTION );
+				dialog = optionPane.createDialog( View.this, "Errors Occured" );
+				dialog.setLocationRelativeTo( View.this );
+				dialog.pack();
+				dialog.setVisible( true ); // Blocks until the user selects an input, and during this time new exceptions can be added to
+											 // it's panel
+				
+				int result = optionPane.getValue() == null ? JOptionPane.CLOSED_OPTION : ( (Integer) optionPane.getValue() ).intValue();
+				dialog.dispose();
+				dialog = null;
+				switch ( result ) {
+					case JOptionPane.OK_OPTION:
+						displayedExceptions.clear();
+						break;
+					default:
+						while ( !displayedExceptions.isEmpty() ) {
+							exceptionQueue.add( displayedExceptions.pop() );
+						}
+						break;
+				}
+			}
+			else {
+				while ( !exceptionQueue.isEmpty() ) {
+					Exception e = exceptionQueue.pop();// Should be thread safe.
+					displayedExceptions.add( e );
+					JLabel label = new JLabel( e.getClass().getSimpleName() + ": " + e.getMessage() );
+					messagePanel.add( label, BorderLayout.LINE_START );
+				}
+				dialog.pack();
+			}
 		}
 	}
 	

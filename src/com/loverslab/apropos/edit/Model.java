@@ -405,11 +405,16 @@ public class Model {
 				try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
 					writePerspectives( getPerspectives( null, reader ), file );
 				}
-				catch ( IllegalStateException | MalformedJsonException e ) {
-					System.err.println( "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) );
-					System.err.println( e.getMessage() );
+				catch ( MalformedJsonException e ) {
+					String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
+					view.handleException( new MalformedJsonException(message, e) );
+				}
+				catch (IllegalStateException e) {
+					String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
+					view.handleException( new IllegalStateException(message, e) );
 				}
 				catch ( IOException e ) {
+					view.handleException( e );
 					e.printStackTrace();
 				}
 			}
