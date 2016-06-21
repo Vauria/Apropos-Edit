@@ -194,13 +194,11 @@ public class View extends JFrame implements ActionListener {
 			protected void done() {
 				try {
 					get();
+					side.publishingComplete( true );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
 					handleException( e );
 					e.printStackTrace();
-				}
-				finally {
-					side.publishingComplete( true );
 				}
 				
 			}
@@ -337,7 +335,7 @@ public class View extends JFrame implements ActionListener {
 					messagePanel.add( label, BorderLayout.LINE_START );
 				}
 				// Create the optionPane with this messagePanel
-				JOptionPane optionPane = new JOptionPane( messagePanel, JOptionPane.WARNING_MESSAGE, JOptionPane.OK_OPTION );
+				JOptionPane optionPane = new JOptionPane( messagePanel, JOptionPane.WARNING_MESSAGE, JOptionPane.OK_CANCEL_OPTION );
 				dialog = optionPane.createDialog( View.this, "Errors Occured" );
 				dialog.setLocationRelativeTo( View.this );
 				dialog.pack();

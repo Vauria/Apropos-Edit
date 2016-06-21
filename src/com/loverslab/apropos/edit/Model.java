@@ -2,6 +2,7 @@ package com.loverslab.apropos.edit;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -253,9 +254,11 @@ public class Model {
 		public List<String> doInBackground() {
 			File root = new File( db );
 			File[] files = root.listFiles();
-			for ( File file : files ) {
+			if ( files != null && files.length > 0 ) for ( File file : files ) {
 				if ( file.isDirectory() ) publish( file.getAbsolutePath().replace( db, "" ) );
 			}
+			else
+				view.handleException( new FileNotFoundException("No folders found in chosen directory") );
 			return null;
 		}
 		
@@ -276,21 +279,24 @@ public class Model {
 		public Object doInBackground() {
 			uniques = new TreeMap<String, Boolean>();
 			File file = new File( db + "UniqueAnimations.txt" );
-			try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
-				reader.beginObject();
-				while ( reader.hasNext() ) {
-					while ( reader.hasNext() )
-						uniques.put( reader.nextName(), reader.nextBoolean() );
+			if ( file.exists() )
+				try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
+					reader.beginObject();
+					while ( reader.hasNext() ) {
+						while ( reader.hasNext() )
+							uniques.put( reader.nextName(), reader.nextBoolean() );
+					}
 				}
-			}
-			catch ( IllegalStateException | MalformedJsonException e ) {
-				String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
-				view.handleException( new IllegalStateException( message, e ) );
-			}
-			catch ( IOException e ) {
-				view.handleException( e );
-				e.printStackTrace();
-			}
+				catch ( IllegalStateException | MalformedJsonException e ) {
+					String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
+					view.handleException( new IllegalStateException( message, e ) );
+				}
+				catch ( IOException e ) {
+					view.handleException( e );
+					e.printStackTrace();
+				}
+			else
+				view.handleException( new FileNotFoundException( "No UniqueAnimations.txt file found" ) );
 			return null;
 		}
 		

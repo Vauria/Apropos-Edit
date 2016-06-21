@@ -11,6 +11,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
+import java.net.URISyntaxException;
 
 import javax.swing.BorderFactory;
 import javax.swing.ComboBoxModel;
@@ -105,7 +106,13 @@ public class Banner extends JPanel implements ItemListener {
 				JSystemFileChooser fileChooser = new JSystemFileChooser();
 				fileChooser.setAcceptAllFileFilterUsed( false );
 				fileChooser.setFileSelectionMode( JFileChooser.DIRECTORIES_ONLY );
-				fileChooser.setCurrentDirectory( new File( "" ) );
+				try { // Set the default directory to the one the code was launched from
+					fileChooser.setCurrentDirectory( new File( ClassLoader.getSystemClassLoader().getResource(".").toURI().getPath() ) );
+				}
+				catch ( URISyntaxException ex ) {
+					parent.handleException( ex );
+					ex.printStackTrace();
+				}
 				int result = fileChooser.showOpenDialog( this );
 				
 				if ( result == JFileChooser.APPROVE_OPTION ) {
@@ -117,6 +124,10 @@ public class Banner extends JPanel implements ItemListener {
 									? parent.globals.delimiter : "" ) + chosenFile.getAbsolutePath() );
 					locations.insertItemAt( chosenFile.getAbsolutePath(), locations.getItemCount() - 1 );
 					locations.setSelectedIndex( locations.getItemCount() - 2 );
+				}
+				else {
+					locations.setSelectedIndex( 0 );
+					return;
 				}
 				
 			}
