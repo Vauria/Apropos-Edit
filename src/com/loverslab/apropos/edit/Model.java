@@ -93,7 +93,7 @@ public class Model {
 			AproposLabel stage = new AproposLabel( "Orgasm", parent );
 			data.put( stage, getPerspectives( stage, file ) );
 		}
-		if ( data.size() == 0 ) view.handleException( new Exception("No files found") );
+		if ( data.size() == 0 ) view.handleException( new Exception( "No files found" ) );
 		return data;
 	}
 	
@@ -111,10 +111,11 @@ public class Model {
 			data = getPerspectives( parent, reader );
 		}
 		catch ( IllegalStateException | MalformedJsonException e ) {
-			System.err.println( "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) );
-			System.err.println( e.getMessage() );
+			String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
+			view.handleException( new IllegalStateException( message, e ) );
 		}
 		catch ( IOException e ) {
+			view.handleException( e );
 			e.printStackTrace();
 		}
 		return data;
@@ -210,6 +211,7 @@ public class Model {
 			writer.endObject();
 		}
 		catch ( IOException e ) {
+			view.handleException( e );
 			e.printStackTrace();
 		}
 	}
@@ -282,10 +284,11 @@ public class Model {
 				}
 			}
 			catch ( IllegalStateException | MalformedJsonException e ) {
-				System.err.println( "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) );
-				System.err.println( e.getMessage() );
+				String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
+				view.handleException( new IllegalStateException( message, e ) );
 			}
 			catch ( IOException e ) {
+				view.handleException( e );
 				e.printStackTrace();
 			}
 			return null;
@@ -296,7 +299,7 @@ public class Model {
 				get();
 			}
 			catch ( InterruptedException | ExecutionException e ) {
-				// TODO Auto-generated catch block
+				view.handleException( e );
 				e.printStackTrace();
 			}
 		};
@@ -407,11 +410,11 @@ public class Model {
 				}
 				catch ( MalformedJsonException e ) {
 					String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
-					view.handleException( new MalformedJsonException(message, e) );
+					view.handleException( new MalformedJsonException( message, e ) );
 				}
-				catch (IllegalStateException e) {
+				catch ( IllegalStateException e ) {
 					String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
-					view.handleException( new IllegalStateException(message, e) );
+					view.handleException( new IllegalStateException( message, e ) );
 				}
 				catch ( IOException e ) {
 					view.handleException( e );
@@ -433,6 +436,7 @@ public class Model {
 				Files.walkFileTree( Paths.get( db ), rebuilder );
 			}
 			catch ( IOException e ) {
+				view.handleException( e );
 				e.printStackTrace();
 			}
 			return null;

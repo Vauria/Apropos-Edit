@@ -38,11 +38,10 @@ public class Globals extends Properties {
 			load( fis );
 		}
 		catch ( FileNotFoundException e ) {
-			// TODO Auto-generated catch block
+			// Should be immpossible
 			e.printStackTrace();
 		}
 		catch ( IOException e ) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return exists;
@@ -56,7 +55,6 @@ public class Globals extends Properties {
 			store( fos, "Apropos Edit Config" );
 		}
 		catch ( IOException e ) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

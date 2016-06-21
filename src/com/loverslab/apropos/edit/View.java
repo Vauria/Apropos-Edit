@@ -61,8 +61,10 @@ public class View extends JFrame implements ActionListener {
 				}
 			} );
 		}
-		catch ( InvocationTargetException | InterruptedException e1 ) {
-			e1.printStackTrace();
+		catch ( InvocationTargetException | InterruptedException e ) {
+			// View initialisation failed, run for the hill
+			e.printStackTrace();
+			System.exit( ABORT );
 		}
 		
 	}
@@ -194,6 +196,7 @@ public class View extends JFrame implements ActionListener {
 					get();
 				}
 				catch ( InterruptedException | ExecutionException e ) {
+					handleException( e );
 					e.printStackTrace();
 				}
 				finally {
@@ -217,6 +220,7 @@ public class View extends JFrame implements ActionListener {
 					System.out.println( "Files reformatted" );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
+					handleException( e );
 					e.printStackTrace();
 				}
 			}
@@ -260,6 +264,7 @@ public class View extends JFrame implements ActionListener {
 						display.load( get() );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
+					handleException( e );
 					e.printStackTrace();
 				}
 			}
@@ -274,6 +279,7 @@ public class View extends JFrame implements ActionListener {
 					System.out.println( "Written!" );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
+					handleException( e );
 					e.printStackTrace();
 				}
 			}
@@ -288,6 +294,7 @@ public class View extends JFrame implements ActionListener {
 					System.out.println( "Written!" );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
+					handleException( e );
 					e.printStackTrace();
 				}
 			}
@@ -301,6 +308,7 @@ public class View extends JFrame implements ActionListener {
 					display.load( get() );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
+					handleException( e );
 					e.printStackTrace();
 				}
 			}
