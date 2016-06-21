@@ -15,6 +15,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.AbstractAction;
@@ -45,7 +46,7 @@ public class View extends JFrame implements ActionListener {
 	protected SidePanel side;
 	protected DisplayPanel display;
 	protected JScrollPane displayScroll;
-	protected JDialog dialog;
+	protected JDialog dialog, dialogLock;
 	protected JPanel messagePanel;
 	protected ArrayList<JFrame> displayFrames = new ArrayList<JFrame>();
 	protected volatile LinkedList<Exception> exceptionQueue = new LinkedList<Exception>();
@@ -71,6 +72,7 @@ public class View extends JFrame implements ActionListener {
 	
 	public View() {
 		super();
+		dialogLock = new JDialog();
 		globals = new Globals( new File( "apropos-edit.config" ) );
 		globals.read();
 		model = new Model( this );
@@ -215,7 +217,7 @@ public class View extends JFrame implements ActionListener {
 			public void done() {
 				try {
 					get();
-					System.out.println( "Files reformatted" );
+					handleException( new Information( "File Reformatting Complete!" ) );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
 					handleException( e );
@@ -325,18 +327,29 @@ public class View extends JFrame implements ActionListener {
 	private class ExceptionDisplayer implements Runnable {
 		public void run() {
 			if ( dialog == null ) {
+				dialog = dialogLock; // Immediately make dialog non-null so as to claim the creation process
+				// It's a really shitty way to simulate synchronisation, and I should really be using an AtomicReference, but lazy
 				// Create the messagePanel
 				messagePanel = new JPanel();
 				messagePanel.setLayout( new BoxLayout( messagePanel, BoxLayout.PAGE_AXIS ) );
 				while ( !exceptionQueue.isEmpty() ) {
-					Exception e = exceptionQueue.pop();// Should be thread safe.
+					Exception e = null;
+					try {
+						e = exceptionQueue.pop();// Should be thread safe.
+					}
+					catch ( NoSuchElementException nsee ) {
+						// Our paltry attempt at thread safety failed (Another thread popped the element between this thread trying and
+						// check the queue was not empty, so re-enter the run (dialog will no longer be null) and then return
+						run();
+						return;
+					}
 					displayedExceptions.add( e );
 					JLabel label = new JLabel( e.getClass().getSimpleName() + ": " + e.getMessage() );
 					messagePanel.add( label, BorderLayout.LINE_START );
 				}
 				// Create the optionPane with this messagePanel
 				JOptionPane optionPane = new JOptionPane( messagePanel, JOptionPane.WARNING_MESSAGE, JOptionPane.OK_CANCEL_OPTION );
-				dialog = optionPane.createDialog( View.this, "Errors Occured" );
+				dialog = optionPane.createDialog( View.this, "Messages" );
 				dialog.setLocationRelativeTo( View.this );
 				dialog.pack();
 				dialog.setVisible( true ); // Blocks until the user selects an input, and during this time new exceptions can be added to

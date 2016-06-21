@@ -562,3 +562,14 @@ class FolderMap extends TreeMap<AproposLabel, PositionMap> {
 		return builder.toString();
 	}
 }
+
+/**
+ * I CBA to make a second message reporter for stuff that isn't exceptions, so I'm making an exception with a friendlier class name.
+ */
+class Information extends RuntimeException {
+	public Information( String string ) {
+		super( string );
+	}
+	
+	private static final long serialVersionUID = -1543550760928302667L;
+}
