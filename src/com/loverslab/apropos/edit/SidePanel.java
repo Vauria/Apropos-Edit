@@ -139,7 +139,7 @@ public class SidePanel extends JPanel {
 					}
 				}
 				else
-					parent.handleException( new Exception("You must load a file before you can Simulate it") );
+					parent.handleException( new Exception( "You must load a file before you can Simulate it" ) );
 			}
 		};
 		listenWrite = new ActionListener() {
@@ -147,7 +147,7 @@ public class SidePanel extends JPanel {
 				if ( parent.displayHasLabels() )
 					parent.writeDisplay();
 				else
-					parent.handleException( new Exception("You must load a file before you can write it") );
+					parent.handleException( new Exception( "You must load a file before you can write it" ) );
 			}
 		};
 		listenCopyNew = new ActionListener() {

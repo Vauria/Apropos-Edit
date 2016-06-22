@@ -3,6 +3,7 @@ package com.loverslab.apropos.edit;
 import java.awt.BorderLayout;
 import java.awt.DisplayMode;
 import java.awt.GraphicsEnvironment;
+import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -29,6 +30,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
@@ -234,6 +236,10 @@ public class View extends JFrame implements ActionListener {
 	}
 	
 	public void simulateLabels( String active, String primary ) {
+		simulateLabels( display, active, primary );
+	}
+	
+	public void simulateLabels( DisplayPanel display, String active, String primary ) {
 		StageMap stageMap = display.stageMap;
 		model.new LabelSimulator( stageMap, active, primary ) {
 			
@@ -246,6 +252,10 @@ public class View extends JFrame implements ActionListener {
 	}
 	
 	public void deSimLabels() {
+		deSimLabels( display );
+	}
+	
+	protected void deSimLabels( DisplayPanel displayNW ) {
 		StageMap stageMap = display.stageMap;
 		for ( AproposLabel stage : stageMap.keySet() ) {
 			PerspectiveMap persMap = stageMap.get( stage );
@@ -298,15 +308,59 @@ public class View extends JFrame implements ActionListener {
 							displayNWScroll.getVerticalScrollBar().setUnitIncrement( 16 );
 							displayPanel.add( displayNWScroll, BorderLayout.CENTER );
 							
-							JPanel writePanel = new JPanel();
+							JPanel buttonPanel = new JPanel();
 							JButton writeButton = new JButton( "Write" );
 							writeButton.addActionListener( new ActionListener() {
 								public void actionPerformed( ActionEvent e ) {
 									writeNWDisplay( displayNW );
 								}
 							} );
-							writePanel.add( writeButton );
-							displayPanel.add( writePanel, BorderLayout.PAGE_END );
+							final JButton simulateButton = new JButton( "Simulate" );
+							simulateButton.addActionListener( new ActionListener() {
+								public void actionPerformed( ActionEvent e ) {
+									View parent = View.this;
+									boolean simulating = simulateButton.getText() == "Reset";
+									if ( parent.displayHasLabels() ) {
+										simulating = !simulating;
+										if ( simulating ) {
+											JPanel panel = new JPanel( new GridLayout( 2, 2 ) );
+											JTextField activeField = new JTextField( parent.globals.getProperty( "active" ) );
+											JTextField primaryField = new JTextField( parent.globals.getProperty( "primary" ) );
+											
+											panel.add( new JLabel( "Name for Active (Your Partner's Name)" ) );
+											panel.add( activeField );
+											panel.add( new JLabel( "Name for Primary (Like your PC's Name)" ) );
+											panel.add( primaryField );
+											
+											int result = JOptionPane.showConfirmDialog( displayFrame, panel,
+													"Chose names for {ACTIVE} and {PRIMARY}", JOptionPane.OK_CANCEL_OPTION,
+													JOptionPane.QUESTION_MESSAGE );
+											
+											switch ( result ) {
+												case JOptionPane.OK_OPTION:
+													simulateButton.setText( "Reset" );
+													String active = activeField.getText();
+													String primary = primaryField.getText();
+													parent.globals.setProperty( "active", active );
+													parent.globals.setProperty( "primary", primary );
+													parent.simulateLabels( displayNW, active, primary );
+													break;
+												default:
+													break;
+											}
+										}
+										else {
+											simulateButton.setText( "Simulate" );
+											parent.deSimLabels( displayNW );
+										}
+									}
+									else
+										parent.handleException( new Exception( "You must load a file before you can Simulate it" ) );
+								}
+							} );
+							buttonPanel.add( writeButton );
+							buttonPanel.add( simulateButton );
+							displayPanel.add( buttonPanel, BorderLayout.PAGE_END );
 							
 							displayFrames.add( displayFrame );
 							displayFrame.setContentPane( displayPanel );
