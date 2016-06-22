@@ -105,42 +105,49 @@ public class SidePanel extends JPanel {
 		};
 		listenSimulate = new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
-				simulating = !simulating;
-				if ( simulating ) {
-					JPanel panel = new JPanel( new GridLayout( 2, 2 ) );
-					JTextField activeField = new JTextField( parent.globals.getProperty( "active" ) );
-					JTextField primaryField = new JTextField( parent.globals.getProperty( "primary" ) );
-					
-					panel.add( new JLabel( "Name for Active (Your Partner's Name)" ) );
-					panel.add( activeField );
-					panel.add( new JLabel( "Name for Primary (Like your PC's Name)" ) );
-					panel.add( primaryField );
-					
-					int result = JOptionPane.showConfirmDialog( parent, panel, "Chose names for {ACTIVE} and {PRIMARY}",
-							JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE );
-					
-					switch ( result ) {
-						case JOptionPane.OK_OPTION:
-							simulateButton.setText( "Reset" );
-							String active = activeField.getText();
-							String primary = primaryField.getText();
-							parent.globals.setProperty( "active", active );
-							parent.globals.setProperty( "primary", primary );
-							parent.simulateLabels( active, primary );
-							break;
-						default:
-							break;
+				if ( parent.displayHasLabels() ) {
+					simulating = !simulating;
+					if ( simulating ) {
+						JPanel panel = new JPanel( new GridLayout( 2, 2 ) );
+						JTextField activeField = new JTextField( parent.globals.getProperty( "active" ) );
+						JTextField primaryField = new JTextField( parent.globals.getProperty( "primary" ) );
+						
+						panel.add( new JLabel( "Name for Active (Your Partner's Name)" ) );
+						panel.add( activeField );
+						panel.add( new JLabel( "Name for Primary (Like your PC's Name)" ) );
+						panel.add( primaryField );
+						
+						int result = JOptionPane.showConfirmDialog( parent, panel, "Chose names for {ACTIVE} and {PRIMARY}",
+								JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE );
+						
+						switch ( result ) {
+							case JOptionPane.OK_OPTION:
+								simulateButton.setText( "Reset" );
+								String active = activeField.getText();
+								String primary = primaryField.getText();
+								parent.globals.setProperty( "active", active );
+								parent.globals.setProperty( "primary", primary );
+								parent.simulateLabels( active, primary );
+								break;
+							default:
+								break;
+						}
+					}
+					else {
+						simulateButton.setText( "Simulate" );
+						parent.deSimLabels();
 					}
 				}
-				else {
-					simulateButton.setText( "Simulate" );
-					parent.deSimLabels();
-				}
+				else
+					parent.handleException( new Exception("You must load a file before you can Simulate it") );
 			}
 		};
 		listenWrite = new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
-				parent.writeDisplay();
+				if ( parent.displayHasLabels() )
+					parent.writeDisplay();
+				else
+					parent.handleException( new Exception("You must load a file before you can write it") );
 			}
 		};
 		listenCopyNew = new ActionListener() {

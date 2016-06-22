@@ -189,6 +189,11 @@ public class View extends JFrame implements ActionListener {
 		setExtendedState( MAXIMIZED_BOTH );
 	}
 	
+	public boolean displayHasLabels() {
+		StageMap map = display.stageMap;
+		return map != null ? map.size() != 0 : false;
+	}
+	
 	public void actionPerformed( ActionEvent e ) {
 		model.setDataBase( e.getActionCommand() );
 		side.publishingComplete( false );
@@ -258,55 +263,58 @@ public class View extends JFrame implements ActionListener {
 		model.new PositionFetcher( folder, animString ) {
 			public void done() {
 				try {
-					if ( newWindow ) {
-						final JFrame displayFrame = new JFrame( animString );
-						displayFrame.setSize( 800, getHeight() );
-						displayFrame.setLocation( new Point( getLocation().x + getWidth(), getLocation().y ) );
-						displayFrame.setDefaultCloseOperation( DISPOSE_ON_CLOSE );
-						
-						displayFrame.addWindowListener( new WindowAdapter() {
-							public void windowDeiconified( WindowEvent e ) {
-								View.this.setState( NORMAL );
-								for ( JFrame frame : displayFrames ) {
-									frame.setState( NORMAL );
+					StageMap stageMap = get();
+					if ( stageMap != null && stageMap.size() != 0 ) {
+						if ( newWindow ) {
+							final JFrame displayFrame = new JFrame( animString );
+							displayFrame.setSize( 800, getHeight() );
+							displayFrame.setLocation( new Point( getLocation().x + getWidth(), getLocation().y ) );
+							displayFrame.setDefaultCloseOperation( DISPOSE_ON_CLOSE );
+							
+							displayFrame.addWindowListener( new WindowAdapter() {
+								public void windowDeiconified( WindowEvent e ) {
+									View.this.setState( NORMAL );
+									for ( JFrame frame : displayFrames ) {
+										frame.setState( NORMAL );
+									}
 								}
-							}
-						} );
-						
-						// Add key listener to allow closing the application with CTRL + W;
-						displayFrame.getRootPane().getInputMap( JComponent.WHEN_IN_FOCUSED_WINDOW )
-								.put( KeyStroke.getKeyStroke( KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK, true ), "CLOSE" );
-						displayFrame.getRootPane().getActionMap().put( "CLOSE", new AbstractAction() {
-							public void actionPerformed( ActionEvent e ) {
-								displayFrame.dispatchEvent( new WindowEvent( displayFrame, WindowEvent.WINDOW_CLOSING ) );
-							}
-						} );
-						
-						JPanel displayPanel = new JPanel( new BorderLayout() );
-						JScrollPane displayNWScroll = new JScrollPane( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-								JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED );
-						DisplayPanel displayNW = new DisplayPanel( null, displayNWScroll );
-						displayNW.load( get() );
-						displayNWScroll.setViewportView( displayNW );
-						displayNWScroll.getVerticalScrollBar().setUnitIncrement( 16 );
-						displayPanel.add( displayNWScroll, BorderLayout.CENTER );
-						
-						JPanel writePanel = new JPanel();
-						JButton writeButton = new JButton( "Write" );
-						writeButton.addActionListener( new ActionListener() {
-							public void actionPerformed( ActionEvent e ) {
-								writeNWDisplay( displayNW );
-							}
-						} );
-						writePanel.add( writeButton );
-						displayPanel.add( writePanel, BorderLayout.PAGE_END );
-						
-						displayFrames.add( displayFrame );
-						displayFrame.setContentPane( displayPanel );
-						displayFrame.setVisible( true );
+							} );
+							
+							// Add key listener to allow closing the application with CTRL + W;
+							displayFrame.getRootPane().getInputMap( JComponent.WHEN_IN_FOCUSED_WINDOW )
+									.put( KeyStroke.getKeyStroke( KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK, true ), "CLOSE" );
+							displayFrame.getRootPane().getActionMap().put( "CLOSE", new AbstractAction() {
+								public void actionPerformed( ActionEvent e ) {
+									displayFrame.dispatchEvent( new WindowEvent( displayFrame, WindowEvent.WINDOW_CLOSING ) );
+								}
+							} );
+							
+							JPanel displayPanel = new JPanel( new BorderLayout() );
+							JScrollPane displayNWScroll = new JScrollPane( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+									JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED );
+							DisplayPanel displayNW = new DisplayPanel( null, displayNWScroll );
+							displayNW.load( stageMap );
+							displayNWScroll.setViewportView( displayNW );
+							displayNWScroll.getVerticalScrollBar().setUnitIncrement( 16 );
+							displayPanel.add( displayNWScroll, BorderLayout.CENTER );
+							
+							JPanel writePanel = new JPanel();
+							JButton writeButton = new JButton( "Write" );
+							writeButton.addActionListener( new ActionListener() {
+								public void actionPerformed( ActionEvent e ) {
+									writeNWDisplay( displayNW );
+								}
+							} );
+							writePanel.add( writeButton );
+							displayPanel.add( writePanel, BorderLayout.PAGE_END );
+							
+							displayFrames.add( displayFrame );
+							displayFrame.setContentPane( displayPanel );
+							displayFrame.setVisible( true );
+						}
+						else
+							display.load( stageMap );
 					}
-					else
-						display.load( get() );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
 					handleException( e );
