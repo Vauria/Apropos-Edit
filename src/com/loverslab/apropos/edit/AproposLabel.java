@@ -1,6 +1,7 @@
 package com.loverslab.apropos.edit;
 
 import java.awt.CardLayout;
+import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -210,11 +211,10 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		hoverState = hover;
 		if ( hover )
 			cl.show( this, "HOVER" );
+		else if ( simulateState )
+			cl.show( this, "SIMULATE" );
 		else
-			if(simulateState)
-				cl.show( this, "SIMULATE" );
-			else
-				cl.show( this, "NORMAL" );
+			cl.show( this, "NORMAL" );
 	}
 	
 	public boolean getHoverState() {
@@ -241,18 +241,31 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	public boolean isHighlighted() {
 		return highlighted;
 	}
-
+	
 	public void setHighlighted( boolean highlighted ) {
 		this.highlighted = highlighted;
 	}
-
-	public void setSimulateString(String string) {
+	
+	public void highlight( boolean b ) {
+		simuLabel.setForeground( b ? Color.RED : Color.BLACK );
+	}
+	
+	public void setSimulateString( String string ) {
 		simulateString = string;
 	}
 	
 	public void simulate() {
 		simuLabel.setText( simulateString );
+		if ( highlighted ) highlight( true );
 		setSimulateState( true );
+	}
+	
+	public void deSimulate() {
+		if ( highlighted ) {
+			highlight( false );
+			highlighted = false;
+		}
+		setSimulateState( false );
 	}
 	
 	/**

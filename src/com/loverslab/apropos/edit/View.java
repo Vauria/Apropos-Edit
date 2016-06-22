@@ -247,7 +247,7 @@ public class View extends JFrame implements ActionListener {
 				LabelList list = persMap.get( perspec );
 				for ( AproposLabel label : list ) {
 					if ( label.getText().equals( "" ) ) continue;
-					label.setSimulateState( false );
+					label.deSimulate();
 				}
 			}
 		}
