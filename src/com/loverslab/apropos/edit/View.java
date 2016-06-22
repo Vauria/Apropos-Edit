@@ -13,7 +13,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
@@ -435,7 +434,7 @@ public class View extends JFrame implements ActionListener {
 	public void handleException( Exception e ) {
 		Throwable error = e;
 		do
-			if ( error instanceof NullPointerException || e instanceof IOException ) {
+			if ( error instanceof NullPointerException ) {
 				// These sorts of exceptions are really dangeroos and can attak at any tiem, so ve must deal vith it.
 				
 				StringWriter stack = new StringWriter();
@@ -456,7 +455,7 @@ public class View extends JFrame implements ActionListener {
 				
 				return;
 			}
-		while ( ( error = e.getCause() ) != null ); // In case e was a InterruptedException or ExecutionException caused by one of the above
+		while ( ( error = error.getCause() ) != null ); // In case e was a InterruptedException or ExecutionException caused by one of the above
 		exceptionQueue.add( e );
 		SwingUtilities.invokeLater( new ExceptionDisplayer() );
 	}
