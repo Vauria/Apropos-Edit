@@ -234,6 +234,9 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 				System.err.println( "Clear was called on a label that shouldn't have clear available" );
 				break;
 		}
+
+		layout.getConstraints( sep ).gridy += distance*5;
+		sep.invalidate();
 		
 		revalidate();
 	}
@@ -258,7 +261,8 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 					JMenuItem clearItem = new JMenuItem( "Clear" );
 					clearItem.addActionListener( new ClearListener( label ) );
 					add( clearItem );
-					JMenu copyReplace = new JMenu( "Copy & Replace" );
+					//@formatter:off // Disabling these options until I have a way to make them actually work dynamically
+					/*JMenu copyReplace = new JMenu( "Copy & Replace" );
 					JMenu copyAppend = new JMenu( "Copy & Append" );
 					add( copyReplace );
 					add( copyAppend );
@@ -278,7 +282,8 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 								}
 							}
 						}
-					}
+					}*/
+					//@formatter:on
 					break;
 				case 5:
 					JMenuItem removeItem = new JMenuItem( "Remove" );
@@ -287,7 +292,8 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 					JMenuItem duplicateItem = new JMenuItem( "Duplicate" );
 					duplicateItem.addActionListener( new DuplicateListener( label ) );
 					add( duplicateItem );
-					JMenu copyTo = new JMenu( "Copy To" );
+					//@formatter:off
+					/*JMenu copyTo = new JMenu( "Copy To" );
 					add( copyTo );
 					AproposLabel perspecSource = label.getParentLabel();
 					if ( stageMap != null ) {
@@ -302,7 +308,8 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 								}
 							}
 						}
-					}
+					}*/
+					//@formatter:on
 					break;
 				default:
 					break;
