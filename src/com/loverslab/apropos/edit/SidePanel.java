@@ -2,6 +2,7 @@ package com.loverslab.apropos.edit;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -18,6 +19,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
+import javax.swing.JTextField;
 
 /**
  * Left Side Panel to hold all buttons and options for interacting with the database or an animation.
@@ -31,6 +33,8 @@ public class SidePanel extends JPanel {
 	private JComboBox<Position> positions;
 	private ComboBoxModel<Position> positionsModel;
 	private JCheckBox rapeCheck;
+	private JButton simulateButton;
+	private boolean simulating;
 	private ActionListener listenVerify, listenLoad, listenNWLoad, listenSimulate, listenWrite, listenCopyNew, listenCopyAppend;
 	private ItemListener listenFolder;
 	
@@ -59,6 +63,7 @@ public class SidePanel extends JPanel {
 	
 	/**
 	 * Adds an Animation to the animations <code>ComboBox</code>.
+	 * 
 	 * @param str <code>animString</code> to denote the Animation
 	 */
 	public void publishAnimation( String str ) {
@@ -84,6 +89,8 @@ public class SidePanel extends JPanel {
 		};
 		listenLoad = new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
+				simulating = false;
+				simulateButton.setText( "Simulate" );
 				String folder = (String) animations.getSelectedItem();
 				String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), rapeCheck.isSelected() );
 				parent.displayPosition( folder, animString, false );
@@ -98,7 +105,37 @@ public class SidePanel extends JPanel {
 		};
 		listenSimulate = new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
-				System.out.println( "Yeah, I'll get right on it" );
+				simulating = !simulating;
+				if ( simulating ) {
+					JPanel panel = new JPanel( new GridLayout( 2, 2 ) );
+					JTextField activeField = new JTextField( parent.globals.getProperty( "active" ) );
+					JTextField primaryField = new JTextField( parent.globals.getProperty( "primary" ) );
+					
+					panel.add( new JLabel( "Name for Active (Your Partner's Name)" ) );
+					panel.add( activeField );
+					panel.add( new JLabel( "Name for Primary (Like your PC's Name)" ) );
+					panel.add( primaryField );
+					
+					int result = JOptionPane.showConfirmDialog( parent, panel, "Chose names for {ACTIVE} and {PRIMARY}",
+							JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE );
+					
+					switch ( result ) {
+						case JOptionPane.OK_OPTION:
+							simulateButton.setText( "Reset" );
+							String active = activeField.getText();
+							String primary = primaryField.getText();
+							parent.globals.setProperty( "active", active );
+							parent.globals.setProperty( "primary", primary );
+							parent.simulateLabels( active, primary );
+							break;
+						default:
+							break;
+					}
+				}
+				else {
+					simulateButton.setText( "Simulate" );
+					parent.deSimLabels();
+				}
 			}
 		};
 		listenWrite = new ActionListener() {
@@ -360,7 +397,7 @@ public class SidePanel extends JPanel {
 		c.gridx++ ;
 		add( loadCopyToExistInfo, c );
 		
-		JButton simulateButton = new JButton( "Simulate" );
+		simulateButton = new JButton( "Simulate" );
 		simulateButton.addActionListener( listenSimulate );
 		JLabel simulateInfo = new JLabel( "(?)" );
 		simulateInfo.setToolTipText( "<html>I 'unno. Something.</html>" );

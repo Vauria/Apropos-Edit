@@ -18,7 +18,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 /**
- * A JLabel disguised as JPanel designed to be initialised without fully creating all the sup-components and then allow editing.
+ * A JLabel disguised as JPanel designed to be initialised without fully creating all the sub-components and then allow editing.
  * 
  * Original Author James McMinn
  * github.com/JamesMcMinn/EditableJLabel
@@ -26,13 +26,13 @@ import javax.swing.JTextField;
 @SuppressWarnings("serial")
 public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	
-	private String string;
+	private String string, simulateString;
 	private AproposLabel parent;
 	private GridBagLayout layout;
 	private GridBagConstraints cons;
-	private JLabel label;
+	private JLabel label, simuLabel;
 	private JTextField textField;
-	private boolean hoverState;
+	private boolean hoverState, simulateState, highlighted;
 	
 	/**
 	 * Creates a non-displayable AproposLabel with the given parent and given text
@@ -63,9 +63,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		// Create the JPanel for the "normal" state
 		JPanel labelPanel = new JPanel( new GridLayout( 1, 1 ) );
 		label = new JLabel( string.equals( "" ) ? "<add new>" : string );
-		// label.addMouseListener( hl );
 		labelPanel.add( label );
-		// labelPanel.addMouseListener( hl );
 		
 		// Create the JPanel for the "hover state"
 		JPanel inputPanel = new JPanel( new GridLayout( 1, 1 ) );
@@ -75,16 +73,17 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		textField.addFocusListener( hl );
 		inputPanel.add( textField );
 		
-		// label.addMouseWheelListener( mwtl );
-		// labelPanel.addMouseWheelListener( mwtl );
-		// textField.addMouseWheelListener( mwtl );
-		// inputPanel.addMouseWheelListener( mwtl );
+		JPanel simulatePanel = new JPanel( new GridLayout( 1, 1 ) );
+		simulateString = "<pending simulation>";
+		simuLabel = new JLabel( simulateString );
+		simulatePanel.add( simuLabel );
 		
 		this.addMouseListener( hl );
 		
 		// Set the states
 		this.add( labelPanel, "NORMAL" );
 		this.add( inputPanel, "HOVER" );
+		this.add( simulatePanel, "SIMULATE" );
 		
 		// Show the correct panel to begin with
 		layout.show( this, "NORMAL" );
@@ -212,11 +211,48 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		if ( hover )
 			cl.show( this, "HOVER" );
 		else
-			cl.show( this, "NORMAL" );
+			if(simulateState)
+				cl.show( this, "SIMULATE" );
+			else
+				cl.show( this, "NORMAL" );
 	}
 	
 	public boolean getHoverState() {
 		return hoverState;
+	}
+	
+	/**
+	 * @param simulate Shows simulated text on true, normal Label on false
+	 */
+	public void setSimulateState( boolean simulate ) {
+		CardLayout cl = (CardLayout) ( this.getLayout() );
+		
+		simulateState = simulate;
+		if ( simulate )
+			cl.show( this, "SIMULATE" );
+		else
+			cl.show( this, "NORMAL" );
+	}
+	
+	public boolean getSimulateState() {
+		return simulateState;
+	}
+	
+	public boolean isHighlighted() {
+		return highlighted;
+	}
+
+	public void setHighlighted( boolean highlighted ) {
+		this.highlighted = highlighted;
+	}
+
+	public void setSimulateString(String string) {
+		simulateString = string;
+	}
+	
+	public void simulate() {
+		simuLabel.setText( simulateString );
+		setSimulateState( true );
 	}
 	
 	/**
@@ -226,6 +262,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		super.setEnabled( enabled );
 		textField.setEnabled( enabled );
 		label.setEnabled( enabled );
+		simuLabel.setEnabled( enabled );
 	}
 	
 	/**

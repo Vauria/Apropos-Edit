@@ -13,7 +13,9 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
@@ -34,6 +36,7 @@ public class Model {
 	View view;
 	AproposLabel root = new AproposLabel( db, null );
 	TreeMap<String, Boolean> uniques = null;
+	TreeMap<String, ArrayList<String>> synonyms;
 	
 	public Model( View view ) {
 		super();
@@ -49,6 +52,7 @@ public class Model {
 		db = path + "\\";
 		uniques = null;
 		new UniquesFetcher().execute();
+		new SynonymsFetcher().execute();
 	}
 	
 	/**
@@ -245,6 +249,24 @@ public class Model {
 	}
 	
 	/**
+	 * Takes a string and replaces any tags that have matches in the Synonyms table with a randomly selected element.
+	 * 
+	 * @param str String containing {TAGS}
+	 * @return String containing porn words
+	 */
+	public String insert( String str ) {
+		if ( synonyms.size() == 0 ) return str;
+		Random r = new Random();
+		for ( String key : synonyms.keySet() ) {
+			List<String> list = synonyms.get( key );
+			if ( list.size() == 0 ) continue;
+			String synonym = list.get( list.size() == 1 ? 0 : r.nextInt( list.size() ) );
+			str = str.replace( key, synonym );
+		}
+		return str;
+	}
+	
+	/**
 	 * SwingWorker that fetches the name of every folder in the model db's directory, and publishes them as they are found.
 	 * <br>
 	 * <code>public void process( List&lt;String&gt; strings )</code> must be implemented
@@ -254,11 +276,12 @@ public class Model {
 		public List<String> doInBackground() {
 			File root = new File( db );
 			File[] files = root.listFiles();
-			if ( files != null && files.length > 0 ) for ( File file : files ) {
-				if ( file.isDirectory() ) publish( file.getAbsolutePath().replace( db, "" ) );
-			}
+			if ( files != null && files.length > 0 )
+				for ( File file : files ) {
+					if ( file.isDirectory() ) publish( file.getAbsolutePath().replace( db, "" ) );
+				}
 			else
-				view.handleException( new FileNotFoundException("No folders found in chosen directory") );
+				view.handleException( new FileNotFoundException( "No folders found in chosen directory" ) );
 			return null;
 		}
 		
@@ -282,10 +305,8 @@ public class Model {
 			if ( file.exists() )
 				try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
 					reader.beginObject();
-					while ( reader.hasNext() ) {
-						while ( reader.hasNext() )
-							uniques.put( reader.nextName(), reader.nextBoolean() );
-					}
+					while ( reader.hasNext() )
+						uniques.put( reader.nextName(), reader.nextBoolean() );
 				}
 				catch ( IllegalStateException | MalformedJsonException e ) {
 					String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
@@ -297,6 +318,120 @@ public class Model {
 				}
 			else
 				view.handleException( new FileNotFoundException( "No UniqueAnimations.txt file found" ) );
+			return null;
+		}
+		
+		public void done() {
+			try {
+				get();
+			}
+			catch ( InterruptedException | ExecutionException e ) {
+				view.handleException( e );
+				e.printStackTrace();
+			}
+		};
+		
+		public void process( Object o ) {};
+		
+	}
+	
+	/**
+	 * SwingWorker that loads the database's Synonyms.txt for simulating.
+	 * 
+	 * Does not publish
+	 */
+	public class SynonymsFetcher extends SwingWorker<Object, Object> {
+		
+		public Object doInBackground() {
+			synonyms = new TreeMap<String, ArrayList<String>>();
+			File file = new File( db + "Synonyms.txt" );
+			if ( file.exists() ) {
+				try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
+					reader.beginObject();
+					while ( reader.hasNext() ) {
+						String key = reader.nextName();
+						ArrayList<String> list = new ArrayList<String>();
+						reader.beginArray();
+						while ( reader.hasNext() )
+							list.add( reader.nextString() );
+						reader.endArray();
+						System.out.println( key + ":" + Prototype.concatenate( list.toArray( new String[ list.size() ] ), ", " ) );
+						synonyms.put( key, list );
+					}
+				}
+				catch ( IllegalStateException | MalformedJsonException e ) {
+					String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
+					view.handleException( new IllegalStateException( message, e ) );
+				}
+				catch ( IOException e ) {
+					view.handleException( e );
+					e.printStackTrace();
+				}
+			}
+			else
+				view.handleException( new FileNotFoundException( "No Synonyms.txt file found" ) );
+			file = new File( db + "Arousal_Descriptors.txt" );
+			if ( file.exists() ) {
+				try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
+					reader.beginObject();
+					while ( reader.hasNext() ) {
+						String key = reader.nextName();
+						ArrayList<String> list = new ArrayList<String>();
+						reader.beginObject();
+						while ( reader.hasNext() ) {
+							reader.nextName();
+							reader.beginArray();
+							while ( reader.hasNext() )
+								list.add( reader.nextString() );
+							reader.endArray();
+						}
+						reader.endObject();
+						System.out.println( key + ":" + Prototype.concatenate( list.toArray( new String[ list.size() ] ), ", " ) );
+						synonyms.put( key, list );
+					}
+				}
+				catch ( IllegalStateException | MalformedJsonException e ) {
+					String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
+					view.handleException( new IllegalStateException( message, e ) );
+				}
+				catch ( IOException e ) {
+					view.handleException( e );
+					e.printStackTrace();
+				}
+			}
+			else
+				view.handleException( new FileNotFoundException( "No Arousal_Descriptors.txt file found" ) );
+			if ( file.exists() ) {
+				file = new File( db + "WearAndTear_Descriptors.txt" );
+				try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
+					reader.beginObject();
+					reader.nextName();
+					ArrayList<String> list = new ArrayList<String>();
+					reader.beginObject();
+					while ( reader.hasNext() ) {
+						reader.nextName();
+						reader.beginArray();
+						while ( reader.hasNext() )
+							list.add( reader.nextString() );
+						reader.endArray();
+					}
+					reader.endObject();
+					System.out.println( "{WT}" + ":" + Prototype.concatenate( list.toArray( new String[ list.size() ] ), ", " ) );
+					synonyms.put( "{WTVAGINAL}", list );
+					synonyms.put( "{WTORAL}", list );
+					synonyms.put( "{WTANAL}", list );
+				}
+				catch ( IllegalStateException | MalformedJsonException e ) {
+					String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
+					view.handleException( new IllegalStateException( message, e ) );
+				}
+				catch ( IOException e ) {
+					view.handleException( e );
+					e.printStackTrace();
+				}
+			}
+			else
+				view.handleException( new FileNotFoundException( "No WearAndTear_Descriptors.txt file found" ) );
 			return null;
 		}
 		
@@ -452,6 +587,75 @@ public class Model {
 		
 		public void process( Object o ) {};
 		
+	}
+	
+	/**
+	 * Takes every line in a Map of AproposLabels, replaces the synonyms, toggles the display state and highlights one from each perspective
+	 */
+	public abstract class LabelSimulator extends SwingWorker<Object, AproposLabel> {
+		
+		StageMap stageMap;
+		String active, primary;
+		Random r = new Random();
+		
+		public LabelSimulator( StageMap stageMap, String active, String primary ) {
+			super();
+			this.stageMap = stageMap;
+			this.active = active;
+			this.primary = primary;
+		}
+		
+		public Object doInBackground() {
+			// Put the Active and Primary names into the Synonyms Map
+			synonyms.put( "{ACTIVE}", new ArrayList<String>( Arrays.asList( new String[] { active } ) ) );
+			synonyms.put( "{PRIMARY}", new ArrayList<String>( Arrays.asList( new String[] { primary } ) ) );
+			
+			// Create a new StageMap with only one label randomly selected from the original map
+			StageMap selectedMap = new StageMap();
+			for ( AproposLabel stage : stageMap.keySet() ) {
+				PerspectiveMap persMap = stageMap.get( stage );
+				PerspectiveMap selPersMap = new PerspectiveMap();
+				selectedMap.put( stage, selPersMap );
+				for ( AproposLabel perspec : persMap.keySet() ) {
+					LabelList list = persMap.get( perspec );
+					if ( list.size() == 0 ) continue;
+					LabelList selList = new LabelList();
+					selPersMap.put( perspec, selList );
+					// Select one element at random and add it to the selectedMap
+					selList.add( list.get( list.size() == 1 ? 0 : r.nextInt( list.size() - 1 ) ) );
+				}
+			}
+			
+			// Iterate through every label and insert words
+			for ( AproposLabel stage : stageMap.keySet() ) {
+				PerspectiveMap persMap = stageMap.get( stage );
+				for ( AproposLabel perspec : persMap.keySet() ) {
+					LabelList list = persMap.get( perspec );
+					LabelList selList = selectedMap.get( stage ).get( perspec );
+					AproposLabel selected = selList.size() == 0 ? null : selList.get( 0 );
+					for ( AproposLabel label : list ) {
+						if ( label.getText().equals( "" ) ) continue;
+						if ( label == selected ) label.setHighlighted( true );
+						label.setSimulateString( insert( label.getText() ) );
+						publish( label );
+					}
+				}
+			}
+			
+			return null;
+		}
+		
+		public void done() {
+			try {
+				get();
+			}
+			catch ( InterruptedException | ExecutionException e ) {
+				view.handleException( e );
+				e.printStackTrace();
+			}
+		};
+		
+		public abstract void process( List<AproposLabel> labels );
 	}
 	
 }

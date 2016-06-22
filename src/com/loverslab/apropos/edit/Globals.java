@@ -18,6 +18,8 @@ public class Globals extends Properties {
 			setProperty( "locations", "" );
 			setProperty( "size", "auto" );
 			setProperty( "position", "auto" );
+			setProperty( "active", "Sven" );
+			setProperty( "primary", "Dovahkiin" );
 		}
 	};
 	

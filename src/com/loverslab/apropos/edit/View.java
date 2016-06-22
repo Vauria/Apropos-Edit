@@ -227,6 +227,32 @@ public class View extends JFrame implements ActionListener {
 		}.execute();
 	}
 	
+	public void simulateLabels( String active, String primary ) {
+		StageMap stageMap = display.stageMap;
+		model.new LabelSimulator( stageMap, active, primary ) {
+			
+			public void process( List<AproposLabel> labels ) {
+				for ( AproposLabel label : labels )
+					label.simulate();
+			}
+			
+		}.execute();
+	}
+	
+	public void deSimLabels() {
+		StageMap stageMap = display.stageMap;
+		for ( AproposLabel stage : stageMap.keySet() ) {
+			PerspectiveMap persMap = stageMap.get( stage );
+			for ( AproposLabel perspec : persMap.keySet() ) {
+				LabelList list = persMap.get( perspec );
+				for ( AproposLabel label : list ) {
+					if ( label.getText().equals( "" ) ) continue;
+					label.setSimulateState( false );
+				}
+			}
+		}
+	}
+	
 	public void displayPosition( String folder, String animString, boolean newWindow ) {
 		model.new PositionFetcher( folder, animString ) {
 			public void done() {
