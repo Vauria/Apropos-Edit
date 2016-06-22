@@ -158,6 +158,7 @@ public class View extends JFrame implements ActionListener {
 				globals.setProperty( "position", isMaximized() ? "max" : getLocation().getX() + globals.delimiter + getLocation().getY() );
 				globals.write();
 				dispose();
+				System.exit( 0 );
 			}
 			public void windowIconified( WindowEvent e ) {
 				for ( JFrame frame : displayFrames )
@@ -258,10 +259,28 @@ public class View extends JFrame implements ActionListener {
 			public void done() {
 				try {
 					if ( newWindow ) {
-						JFrame displayFrame = new JFrame( animString );
+						final JFrame displayFrame = new JFrame( animString );
 						displayFrame.setSize( 800, getHeight() );
 						displayFrame.setLocation( new Point( getLocation().x + getWidth(), getLocation().y ) );
 						displayFrame.setDefaultCloseOperation( DISPOSE_ON_CLOSE );
+						
+						displayFrame.addWindowListener( new WindowAdapter() {
+							public void windowDeiconified( WindowEvent e ) {
+								View.this.setState( NORMAL );
+								for ( JFrame frame : displayFrames ) {
+									frame.setState( NORMAL );
+								}
+							}
+						} );
+						
+						// Add key listener to allow closing the application with CTRL + W;
+						displayFrame.getRootPane().getInputMap( JComponent.WHEN_IN_FOCUSED_WINDOW )
+								.put( KeyStroke.getKeyStroke( KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK, true ), "CLOSE" );
+						displayFrame.getRootPane().getActionMap().put( "CLOSE", new AbstractAction() {
+							public void actionPerformed( ActionEvent e ) {
+								displayFrame.dispatchEvent( new WindowEvent( displayFrame, WindowEvent.WINDOW_CLOSING ) );
+							}
+						} );
 						
 						JPanel displayPanel = new JPanel( new BorderLayout() );
 						JScrollPane displayNWScroll = new JScrollPane( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
