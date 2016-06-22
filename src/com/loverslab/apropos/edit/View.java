@@ -1,6 +1,7 @@
 package com.loverslab.apropos.edit;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.DisplayMode;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
@@ -12,6 +13,9 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -30,6 +34,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
@@ -41,7 +46,7 @@ import javax.swing.SwingUtilities;
 @SuppressWarnings("serial") // No one Serialises Swing anymore
 public class View extends JFrame implements ActionListener {
 	
-	private final String version = "0.9b";
+	private final String version = "1.0";
 	protected Globals globals;
 	protected Model model;
 	protected Banner banner;
@@ -205,6 +210,7 @@ public class View extends JFrame implements ActionListener {
 				try {
 					get();
 					side.publishingComplete( true );
+					revalidate();
 				}
 				catch ( InterruptedException | ExecutionException e ) {
 					handleException( e );
@@ -383,7 +389,7 @@ public class View extends JFrame implements ActionListener {
 			public void done() {
 				try {
 					get();
-					System.out.println( "Written!" );
+					handleException( new Information( "Write Complete!" ) );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
 					handleException( e );
@@ -398,7 +404,7 @@ public class View extends JFrame implements ActionListener {
 			public void done() {
 				try {
 					get();
-					System.out.println( "Written!" );
+					handleException( new Information( "Write Complete!" ) );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
 					handleException( e );
@@ -427,6 +433,30 @@ public class View extends JFrame implements ActionListener {
 	}
 	
 	public void handleException( Exception e ) {
+		Throwable error = e;
+		do
+			if ( error instanceof NullPointerException || e instanceof IOException ) {
+				// These sorts of exceptions are really dangeroos and can attak at any tiem, so ve must deal vith it.
+				
+				StringWriter stack = new StringWriter();
+				e.printStackTrace( new PrintWriter( stack ) );
+				
+				JPanel errorPanel = new JPanel( new BorderLayout() );
+				JTextArea stackTrace = new JTextArea( stack.toString() );
+				stackTrace.setLineWrap( true );
+				stackTrace.setWrapStyleWord( true );
+				stackTrace.setEditable( false );
+				JScrollPane stackScroll = new JScrollPane( stackTrace, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+						JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
+				stackScroll.setPreferredSize( new Dimension( 600, 200 ) );
+				errorPanel.add( new JLabel( e.getMessage() ), BorderLayout.PAGE_START );
+				errorPanel.add( stackScroll, BorderLayout.CENTER );
+				
+				JOptionPane.showMessageDialog( this, errorPanel, e.getClass().getSimpleName(), JOptionPane.ERROR_MESSAGE );
+				
+				return;
+			}
+		while ( ( error = e.getCause() ) != null ); // In case e was a InterruptedException or ExecutionException caused by one of the above
 		exceptionQueue.add( e );
 		SwingUtilities.invokeLater( new ExceptionDisplayer() );
 	}
