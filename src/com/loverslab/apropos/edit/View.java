@@ -200,6 +200,11 @@ public class View extends JFrame implements ActionListener {
 		return map != null ? map.size() != 0 : false;
 	}
 	
+	public boolean displayHasLabels( DisplayPanel display ) {
+		StageMap map = display.stageMap;
+		return map != null ? map.size() != 0 : false;
+	}
+	
 	public void actionPerformed( ActionEvent e ) {
 		model.setDataBase( e.getActionCommand() );
 		side.publishingComplete( false );
@@ -260,7 +265,7 @@ public class View extends JFrame implements ActionListener {
 		deSimLabels( display );
 	}
 	
-	protected void deSimLabels( DisplayPanel displayNW ) {
+	protected void deSimLabels( DisplayPanel display ) {
 		StageMap stageMap = display.stageMap;
 		for ( AproposLabel stage : stageMap.keySet() ) {
 			PerspectiveMap persMap = stageMap.get( stage );
@@ -325,7 +330,7 @@ public class View extends JFrame implements ActionListener {
 								public void actionPerformed( ActionEvent e ) {
 									View parent = View.this;
 									boolean simulating = simulateButton.getText() == "Reset";
-									if ( parent.displayHasLabels() ) {
+									if ( parent.displayHasLabels( displayNW ) ) {
 										simulating = !simulating;
 										if ( simulating ) {
 											JPanel panel = new JPanel( new GridLayout( 2, 2 ) );
@@ -455,7 +460,8 @@ public class View extends JFrame implements ActionListener {
 				
 				return;
 			}
-		while ( ( error = error.getCause() ) != null ); // In case e was a InterruptedException or ExecutionException caused by one of the above
+		while ( ( error = error.getCause() ) != null ); // In case e was a InterruptedException or ExecutionException caused by one of the
+														 // above
 		exceptionQueue.add( e );
 		SwingUtilities.invokeLater( new ExceptionDisplayer() );
 	}
