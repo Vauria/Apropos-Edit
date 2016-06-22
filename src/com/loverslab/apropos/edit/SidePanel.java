@@ -407,7 +407,10 @@ public class SidePanel extends JPanel {
 		simulateButton = new JButton( "Simulate" );
 		simulateButton.addActionListener( listenSimulate );
 		JLabel simulateInfo = new JLabel( "(?)" );
-		simulateInfo.setToolTipText( "<html>I 'unno. Something.</html>" );
+		simulateInfo.setToolTipText( "<html>Replaces all the {TAGS} in the open lines with randomly selected <br>"
+				+ "Synonyms and the Active and Primary names you provide, then highlights<br>"
+				+ "one line at random from each perspective, simulating how lines could be<br>"
+				+ "chosen in-game.</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.weightx = 1;
