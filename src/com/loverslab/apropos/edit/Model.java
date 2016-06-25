@@ -163,7 +163,7 @@ public class Model {
 	 */
 	public void writeStages( StageMap stageMap ) {
 		File file;
-		AproposLabel first = stageMap.keySet().iterator().next();
+		AproposLabel first = stageMap.firstKey();
 		String folder = db + first.getParentLabel().getParentLabel().getText();
 		new File( folder ).mkdirs();
 		String path = folder + "\\" + first.getParentLabel().getText();
@@ -517,7 +517,7 @@ public class Model {
 		public StageMap doInBackground() {
 			AproposLabel parent = new AproposLabel( animString, new AproposLabel( folder, root ) );
 			StageMap toCopy = getStages( parent );
-			AproposLabel first = toCopy.keySet().iterator().next();
+			AproposLabel first = toCopy.firstKey();
 			AproposLabel position = first.getParentLabel();
 			AproposLabel folder = position.getParentLabel();
 			
