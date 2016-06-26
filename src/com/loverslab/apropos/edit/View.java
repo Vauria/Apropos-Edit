@@ -313,7 +313,7 @@ public class View extends JFrame implements ActionListener {
 							JScrollPane displayNWScroll = new JScrollPane( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
 									JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED );
 							DisplayPanel displayNW = new DisplayPanel( null, displayNWScroll );
-							displayNW.load( stageMap );
+							displayNW.load( stageMap, true );
 							displayNWScroll.setViewportView( displayNW );
 							displayNWScroll.getVerticalScrollBar().setUnitIncrement( 16 );
 							displayPanel.add( displayNWScroll, BorderLayout.CENTER );
@@ -377,7 +377,7 @@ public class View extends JFrame implements ActionListener {
 							displayFrame.setVisible( true );
 						}
 						else
-							display.load( stageMap );
+							display.load( stageMap, true );
 					}
 				}
 				catch ( InterruptedException | ExecutionException e ) {
@@ -422,7 +422,7 @@ public class View extends JFrame implements ActionListener {
 		model.new PositionCopier( folder, animString, newAnim ) {
 			public void done() {
 				try {
-					display.load( get() );
+					display.load( get(), true );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
 					handleException( e );

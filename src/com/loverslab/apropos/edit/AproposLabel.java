@@ -33,7 +33,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	private GridBagConstraints cons;
 	private JLabel label, simuLabel;
 	private JTextField textField;
-	private boolean hoverState, simulateState, highlighted;
+	private boolean displayed, hoverState, simulateState, highlighted;
 	
 	/**
 	 * Creates a non-displayable AproposLabel with the given parent and given text
@@ -53,8 +53,12 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	 * @param gbl The GridBagLayout used in the container this Label is initialised in.
 	 * @return This AproposLabel
 	 */
-	public AproposLabel display( GridBagLayout gbl ) {
+	public AproposLabel display( GridBagLayout gbl, LineChangedListener lcL, PopupMenuListener pmL ) {
 		layout = gbl;
+		if ( displayed ) {
+			cons = null;
+			return this;
+		}
 		
 		// Create the listener and the layout
 		CardLayout layout = new CardLayout( 0, 0 );
@@ -80,6 +84,8 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		simulatePanel.add( simuLabel );
 		
 		this.addMouseListener( hl );
+		this.addLineChangedListener( lcL );
+		this.addPopupMenuListener( pmL );
 		
 		// Set the states
 		this.add( labelPanel, "NORMAL" );
@@ -89,6 +95,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		// Show the correct panel to begin with
 		layout.show( this, "NORMAL" );
 		revalidate();
+		displayed = true;
 		
 		return this;
 	}
@@ -100,8 +107,12 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	 * @param editable Ignored
 	 * @return This AproposLabel
 	 */
-	public AproposLabel display( GridBagLayout gbl, boolean editable ) {
+	public AproposLabel display( GridBagLayout gbl, LineChangedListener lcL, PopupMenuListener pmL, boolean editable ) {
 		layout = gbl;
+		if ( displayed ) {
+			cons = null;
+			return this;
+		}
 		
 		setLayout( new GridLayout( 1, 1 ) );
 		AproposListener al = new AproposListener();
@@ -110,8 +121,11 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		add( label );
 		
 		this.addMouseListener( al );
+		this.addLineChangedListener( lcL );
+		this.addPopupMenuListener( pmL );
 		
 		revalidate();
+		displayed = true;
 		
 		return this;
 	}
@@ -162,10 +176,11 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	
 	public AproposLabel getParentLabel( int depth ) {
 		int d = getDepth();
-		if(depth > d) return null;
+		if ( depth > d ) return null;
 		AproposLabel label = getParentLabel();
 		d = label.getDepth();
-		while(label.getDepth() > depth) label = label.getParentLabel();
+		while ( label.getDepth() > depth )
+			label = label.getParentLabel();
 		d = label.getDepth();
 		return label;
 	}

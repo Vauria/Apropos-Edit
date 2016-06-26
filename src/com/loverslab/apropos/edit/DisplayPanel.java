@@ -42,7 +42,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 	
 	public DisplayPanel( View parent, JScrollPane scroll, StageMap stageMap ) {
 		this( parent, scroll );
-		load( stageMap );
+		load( stageMap, true );
 	}
 	
 	public void help() {
@@ -50,13 +50,13 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		add( new JLabel( "HALP" ) );
 	}
 	
-	public void load( StageMap stageMap ) {
+	public void load( StageMap stageMap, boolean resetScroll ) {
 		this.stageMap = stageMap;
 		
 		menuManager = new MenuManager();
 		
 		removeAll();
-		scroll.getVerticalScrollBar().setValue( 0 );
+		if ( resetScroll ) scroll.getVerticalScrollBar().setValue( 0 );
 		GridBagConstraints c = new GridBagConstraints();
 		
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
@@ -71,23 +71,17 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 			c.gridx = 0;
 			c.gridwidth = 1;
 			c.gridheight = 1;
-			add( stage.display( layout, false ), c );
-			stage.addLineChangedListener( this );
-			stage.addPopupMenuListener( this );
+			add( stage.display( layout, this, this, false ), c );
 			PerspectiveMap persMap = stageMap.get( stage );
 			for ( AproposLabel perspec : persMap.keySet() ) {
 				c.insets = new Insets( 0, 40, 0, 5 );
 				c.gridy++ ;
-				add( perspec.display( layout, false ), c );
-				perspec.addLineChangedListener( this );
-				perspec.addPopupMenuListener( this );
+				add( perspec.display( layout, this, this, false ), c );
 				LabelList list = persMap.get( perspec );
 				c.insets = new Insets( 0, 70, 0, 5 );
 				for ( AproposLabel label : list ) {
 					c.gridy++ ;
-					add( label.display( layout ), c );
-					label.addLineChangedListener( this );
-					label.addPopupMenuListener( this );
+					add( label.display( layout, this, this ), c );
 				}
 			}
 		}
@@ -104,185 +98,67 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		revalidate();
 	}
 	
+	public void refresh() {
+		load( stageMap, false );
+	}
+	
 	public void lineInserted( AproposLabel above ) {
 		lineInserted( above, new AproposLabel( "", above.getParentLabel() ) );
 	}
 	
 	public void lineInserted( AproposLabel above, AproposLabel toAdd ) {
 		if ( stageMap != null ) {
-			GridBagConstraints cAbove = above.getGridBagCons();
-			GridBagConstraints c;
-			boolean found = false;
-			LabelList insertList = null;
-			for ( AproposLabel stage : stageMap.keySet() ) {
-				PerspectiveMap persMap = stageMap.get( stage );
-				if ( found ) stage.bump();
-				for ( AproposLabel perspec : persMap.keySet() ) {
-					LabelList list = persMap.get( perspec );
-					if ( found ) perspec.bump();
-					for ( AproposLabel label : list ) {
-						c = label.getGridBagCons();
-						if ( found ) label.bump();
-						if ( !found & c.gridy >= cAbove.gridy ) {
-							found = true;
-							insertList = list;
-						}
-					}
-				}
-			}
+			LabelList target = stageMap.query( above.getParentLabel() ).labelList;
+			int i = target.indexOf( above ) + 1;
+			target.add( i, toAdd );
 			
-			c = (GridBagConstraints) cAbove.clone();
-			c.gridy++ ;
-			toAdd.display( layout );
-			insertList.add( toAdd );
-			add( toAdd, c );
+			refresh();
+			
 			toAdd.setHoverState( true );
 			toAdd.getTextField().grabFocus();
-			toAdd.addLineChangedListener( this );
-			toAdd.addPopupMenuListener( this );
-			
-			layout.getConstraints( sep ).gridy++ ;
-			sep.invalidate();
 		}
 	}
 	
 	public void lineRemoved( AproposLabel removed ) {
 		if ( stageMap != null ) {
-			GridBagConstraints cRemoved = removed.getGridBagCons();
-			GridBagConstraints c;
-			boolean found = false;
-			LabelList removeList = null;
-			for ( AproposLabel stage : stageMap.keySet() ) {
-				PerspectiveMap persMap = stageMap.get( stage );
-				if ( found ) stage.boop();
-				for ( AproposLabel perspec : persMap.keySet() ) {
-					LabelList list = persMap.get( perspec );
-					if ( found ) perspec.boop();
-					for ( AproposLabel label : list ) {
-						c = label.getGridBagCons();
-						if ( found ) label.boop();
-						if ( !found & c.gridy >= cRemoved.gridy ) {
-							found = true;
-							removeList = list;
-						}
-					}
-				}
-			}
+			LabelList target = stageMap.query( removed.getParentLabel() ).labelList;
+			target.remove( removed );
 			
-			remove( removed );
-			removeList.remove( removed );
-			
-			layout.getConstraints( sep ).gridy-- ;
-			sep.invalidate();
-			
-			revalidate();
+			refresh();
 		}
 	}
 	
 	public void sectionRemoved( AproposLabel section ) {
-		int distance = 0;
-		boolean found = false;
 		switch ( section.getDepth() ) {
 			case 3:
 				for ( AproposLabel pers : stageMap.get( section ).keySet() ) {
 					LabelList labelList = stageMap.get( section ).get( pers );
-					for ( int i = 0; i < labelList.size() - 1; i++ )
-						remove( labelList.get( i ) );
-					LabelList replaceList = new LabelList();
-					replaceList.add( labelList.get( labelList.size() - 1 ) );
-					distance += ( labelList.size() - 1 );
-					stageMap.get( section ).put( pers, replaceList );
-					for ( AproposLabel stage : stageMap.keySet() ) {
-						PerspectiveMap persMap = stageMap.get( stage );
-						if ( found ) stage.poke( distance );
-						for ( AproposLabel perspec : persMap.keySet() ) {
-							LabelList list = persMap.get( perspec );
-							if ( found ) {
-								perspec.poke( distance );
-								for ( AproposLabel label : list ) {
-									label.poke( distance );
-								}
-							}
-						}
-						if ( !found & stage == section ) found = true;
-					}
+					for ( int i = labelList.size() - 2; i >= 0; i-- )
+						labelList.remove( i );
 				}
 				break;
 			case 4:
-				LabelList labelList = stageMap.get( section.getParentLabel() ).get( section );
-				for ( int i = 0; i < labelList.size() - 1; i++ )
-					remove( labelList.get( i ) );
-				LabelList replaceList = new LabelList();
-				replaceList.add( labelList.get( labelList.size() - 1 ) );
-				distance += ( labelList.size() - 1 );
-				stageMap.get( section.getParentLabel() ).put( section, replaceList );
-				for ( AproposLabel stage : stageMap.keySet() ) {
-					PerspectiveMap persMap = stageMap.get( stage );
-					if ( found ) stage.poke( distance );
-					for ( AproposLabel perspec : persMap.keySet() ) {
-						LabelList list = persMap.get( perspec );
-						if ( found ) {
-							perspec.poke( distance );
-							for ( AproposLabel label : list ) {
-								label.poke( distance );
-							}
-						}
-						if ( !found & perspec == section ) found = true;
-					}
-				}
+				LabelList labelList = stageMap.query( section ).labelList;
+				for ( int i = labelList.size() - 2; i >= 0; i-- )
+					labelList.remove( i );
 				break;
 			default:
 				System.err.println( "Clear was called on a label that shouldn't have clear available" );
 				break;
 		}
 		
-		layout.getConstraints( sep ).gridy += distance * 5;
-		sep.invalidate();
-		
-		revalidate();
+		refresh();
 	}
 	
 	public void copyTo( AproposLabel line, AproposLabel to ) {
 		LabelList target = stageMap.query( to ).labelList;
 		if ( target.size() > 1 ) {
-			AproposLabel secondLast = target.get( target.size() - 2 );
-			lineInserted( secondLast, new AproposLabel( line.getText(), to ) );
+			target.add( target.size() - 2, line.clone() );
 		}
 		else {
-			AproposLabel last = target.get( 0 );
-			GridBagConstraints cLast = last.getGridBagCons();
-			GridBagConstraints c;
-			boolean found = false;
-			for ( AproposLabel stage : stageMap.keySet() ) {
-				PerspectiveMap persMap = stageMap.get( stage );
-				if ( found ) stage.bump();
-				for ( AproposLabel perspec : persMap.keySet() ) {
-					LabelList list = persMap.get( perspec );
-					if ( found ) perspec.bump();
-					for ( AproposLabel label : list ) {
-						c = label.getGridBagCons();
-						if ( found ) label.bump();
-						if ( !found & c.gridy >= cLast.gridy ) {
-							found = true;
-						}
-					}
-				}
-			}
-			
-			c = (GridBagConstraints) cLast.clone();
-			last.bump();
-			target.add( 0, line.display( layout ) );
-			add( line, c );
-			line.setHoverState( true );
-			line.getTextField().grabFocus();
-			line.addLineChangedListener( this );
-			line.addPopupMenuListener( this );
-			
-			layout.getConstraints( sep ).gridy++ ;
-			sep.invalidate();
+			target.add( 0, line.clone() );
 		}
-		
-		revalidate();
+		refresh();
 	}
 	
 	public void copySection( AproposLabel section, AproposLabel dest, boolean replace ) {
@@ -418,9 +294,9 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 			if ( item == clearItem )
 				sectionRemoved( invoker );
 			else if ( item == removeItem )
-				invoker.fireLineRemoved( invoker );
+				lineRemoved( invoker );
 			else if ( item == duplicateItem )
-				invoker.fireLineInserted( invoker, invoker.clone() );
+				lineInserted( invoker, invoker.clone() );
 			else if ( item instanceof LabelMenuItem ) {
 				LabelMenuItem lMI = ( (LabelMenuItem) item );
 				LabelMenu root = lMI.parent;
