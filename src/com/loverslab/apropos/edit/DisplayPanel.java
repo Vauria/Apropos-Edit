@@ -1,7 +1,6 @@
 package com.loverslab.apropos.edit;
 
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -245,6 +244,14 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		revalidate();
 	}
 	
+	public void copyTo( AproposLabel line, AproposLabel to ) {
+		
+	}
+	
+	public void copySection( AproposLabel section, AproposLabel dest, boolean replace ) {
+		
+	}
+	
 	public void popupMenuTriggered( AproposLabel label, MouseEvent e ) {
 		menuManager.show( label, e );
 	}
@@ -254,9 +261,10 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		protected AproposLabel invoker;
 		private JPopupMenu[] popups = new JPopupMenu[ 6 ];
 		private JMenuItem clearItem, removeItem, duplicateItem;
-		private JMenu copyToMenu;
-		private JMenu[] copyReplaceMenu = new JMenu[ 6 ], copyAppendMenu = new JMenu[ 6 ], stageSubMenus = new JMenu[ stageMap.size() ];
-		private JMenuItem[] stageItems = new JMenuItem[ stageMap.size() ], perspectiveItems = new JMenuItem[ 3 ];
+		private String copyTo = "Copy To", copyAppend = "Copy & Append", copyReplace = "Copy & Replace";
+		// private JMenu copyToMenu;
+		// private JMenu[] copyReplaceMenu = new JMenu[ 6 ], copyAppendMenu = new JMenu[ 6 ], stageSubMenus = new JMenu[ stageMap.size() ];
+		// private JMenuItem[] stageItems = new JMenuItem[ stageMap.size() ], perspectiveItems = new JMenuItem[ 3 ];
 		
 		public MenuManager() {}
 		
@@ -276,16 +284,16 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 					case 2: // Position Level
 						break;
 					case 3: // Stage Level
-						popup.add( getClearItem() );
-						popup.add( getCopyReplaceMenu( depth ) );
-						break;
+						// Fall through
 					case 4: // Perspective Level
 						popup.add( getClearItem() );
-						popup.add( getCopyReplaceMenu( depth ) );
+						popup.add( getCopyMenu( depth, copyAppend ) );
+						popup.add( getCopyMenu( depth, copyReplace ) );
 						break;
 					case 5: // Line Level
 						popup.add( getRemoveItem() );
 						popup.add( getDuplicateItem() );
+						popup.add( getCopyMenu( depth, copyTo ) );
 						break;
 					default:
 						break;
@@ -317,162 +325,116 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 			return duplicateItem;
 		}
 		
-		protected JMenu getCopyReplaceMenu( int depth ) {
-			JMenu menu = null;
+		protected JMenu getCopyMenu( int depth, String text ) {
+			LabelMenu menu = null;
 			switch ( depth ) {
 				case 3:
-					if ( copyReplaceMenu[depth] != null ) return copyReplaceMenu[depth];
-					menu = new JMenu( "Copy & Replace" );
-					copyReplaceMenu[depth] = menu;
+					// if ( copyAppendMenu[depth] != null ) return copyAppendMenu[depth];
+					menu = new LabelMenu( text );
 					for ( int i = 0; i < stageMap.size(); i++ )
-						menu.add( getStageItem( i ) );
+						menu.add( getStageItem( i, menu ) );
 					return menu;
 				case 4:
-					if ( copyReplaceMenu[depth] != null ) return copyReplaceMenu[depth];
-					menu = new JMenu( "Copy & Replace" );
-					copyReplaceMenu[depth] = menu;
+					// Fall Through
+				case 5:
+					// if ( copyAppendMenu[depth] != null ) return copyAppendMenu[depth];
+					menu = new LabelMenu( text );
+					for ( int i = 0; i < stageMap.size(); i++ )
+						menu.add( getStageSubMenu( i, menu ) );
 					return menu;
 				default:
 					return null;
 			}
 		}
 		
-		protected JMenuItem getStageItem( int i ) {
-			if ( stageItems[i] != null ) return stageItems[i];
+		protected JMenu getStageSubMenu( int i, LabelMenu parent ) {
+			// if ( stageSubMenus[i] != null ) return stageSubMenus[i];
 			AproposLabel label = ( stageMap.keySet().toArray( new AproposLabel[ stageMap.size() ] ) )[i];
-			JMenuItem item = new JMenuItem( label.getText() );
+			LabelMenu menu = new LabelMenu( parent, label );
+			for ( i = 0; i < 3; i++ )
+				menu.add( getPerspectiveItem( i, menu ) );
+			return menu;
+		}
+		
+		protected JMenuItem getStageItem( int i, LabelMenu parent ) {
+			// if ( stageItems[i] != null ) return stageItems[i];
+			AproposLabel label = ( stageMap.keySet().toArray( new AproposLabel[ stageMap.size() ] ) )[i];
+			JMenuItem item = new LabelMenuItem( parent, label );
 			item.addActionListener( this );
-			stageItems[i] = item;
+			// stageItems[i] = item;
 			return item;
 		}
 		
-		protected JMenuItem getPerspectiveItem( int i ) {
-			if ( perspectiveItems[i] != null ) return perspectiveItems[i];
+		protected JMenuItem getPerspectiveItem( int i, LabelMenu parent ) {
+			// if ( perspectiveItems[i] != null ) return perspectiveItems[i];
 			AproposLabel label = ( stageMap.get( stageMap.firstKey() ).keySet().toArray( new AproposLabel[ stageMap.size() ] ) )[i];
-			// Equivalent command for a FolderMap named f. The f of course stands for 'Fuck me' //@formatter:off 
-			/*AproposLabel label = ( (AproposLabel[]) f.get( f.keySet().iterator().next() )
-					.get( f.get( f.keySet().iterator().next() ).keySet().iterator().next() ).get( f.get( f.keySet().iterator().next() )
-							.get( f.get( f.keySet().iterator().next() ).keySet().iterator().next() ).keySet().iterator().next() )
-					.keySet().toArray() )[i]; */
-			//@formatter:on
-			JMenuItem item = new JMenuItem( label.getText() );
+			JMenuItem item = new LabelMenuItem( parent, label );
 			item.addActionListener( this );
-			perspectiveItems[i] = item;
+			// perspectiveItems[i] = item;
 			return item;
 		}
 		
 		public void actionPerformed( ActionEvent e ) {
-			// Casting galore!
 			JMenuItem item = (JMenuItem) e.getSource();
-			JMenu menu = null;
-			Container parent = item;
-			while ( ( parent = parent.getParent() ) != null ) {
-				System.out.println( parent );
-				if ( parent instanceof JPopupMenu ) menu = (JMenu) ((JPopupMenu) parent).getInvoker();
-			}
-			AproposLabel label = invoker;
-			
-			if ( menu == null ) {
-				if ( item == clearItem )
-					sectionRemoved( label );
-				else if ( item == removeItem )
-					label.fireLineRemoved( label );
-				else if ( item == duplicateItem ) label.fireLineInserted( label, label.clone() );
+			if ( item == clearItem )
+				sectionRemoved( invoker );
+			else if ( item == removeItem )
+				invoker.fireLineRemoved( invoker );
+			else if ( item == duplicateItem )
+				invoker.fireLineInserted( invoker, invoker.clone() );
+			else if ( item instanceof LabelMenuItem ) {
+				LabelMenuItem lMI = ( (LabelMenuItem) item );
+				LabelMenu root = lMI.parent;
+				while ( root.parent != null )
+					root = root.parent;
+				AproposLabel label = lMI.label;
+				if ( root.getText().equals( copyTo ) )
+					copyTo( invoker, label );
+				else if ( root.getText().equals( copyReplace ) )
+					copySection( invoker, label, true );
+				else if ( root.getText().equals( copyAppend ) )
+					copySection( invoker, label, false );
+				else
+					System.out.println( "SOL :/ " + item );
 			}
 			else
-				System.out.println( menu );
+				System.out.println( "SOL :/ " + item );
 		}
 		
-		public void weee( AproposLabel label ) {
-			switch ( label.getDepth() ) {
-				case 3: // Fall Through
-				case 4:
-					JMenuItem clearItem = new JMenuItem( "Clear" );
-					clearItem.addActionListener( new ClearListener( label ) );
-					add( clearItem );
-					JMenu copyReplace = new JMenu( "Copy & Replace" );
-					JMenu copyAppend = new JMenu( "Copy & Append" );
-					add( copyReplace );
-					add( copyAppend );
-					if ( stageMap != null ) {
-						for ( AproposLabel stage : stageMap.keySet() ) {
-							PerspectiveMap persMap = stageMap.get( stage );
-							JMenu stageMenuRep = new JMenu( stage.getText() );
-							JMenu stageMenuApp = new JMenu( stage.getText() );
-							copyReplace.add( stageMenuRep );
-							copyAppend.add( stageMenuApp );
-							for ( AproposLabel perspec : persMap.keySet() ) {
-								if ( perspec != label ) {
-									JMenuItem persItemRep = new JMenuItem( perspec.getText() );
-									JMenuItem persItemApp = new JMenuItem( perspec.getText() );
-									stageMenuRep.add( persItemRep );
-									stageMenuApp.add( persItemApp );
-								}
-							}
-						}
-					}
-					break;
-				case 5:
-					JMenuItem removeItem = new JMenuItem( "Remove" );
-					removeItem.addActionListener( new RemoveListener( label ) );
-					add( removeItem );
-					JMenuItem duplicateItem = new JMenuItem( "Duplicate" );
-					duplicateItem.addActionListener( new DuplicateListener( label ) );
-					add( duplicateItem );
-					JMenu copyTo = new JMenu( "Copy To" );
-					add( copyTo );
-					AproposLabel perspecSource = label.getParentLabel();
-					if ( stageMap != null ) {
-						for ( AproposLabel stage : stageMap.keySet() ) {
-							PerspectiveMap persMap = stageMap.get( stage );
-							JMenu stageMenu = new JMenu( stage.getText() );
-							copyTo.add( stageMenu );
-							for ( AproposLabel perspec : persMap.keySet() ) {
-								if ( perspec != perspecSource ) {
-									JMenuItem persItem = new JMenuItem( perspec.getText() );
-									stageMenu.add( persItem );
-								}
-							}
-						}
-					}
-					break;
-			}
-		}
-		
-		public class RemoveListener implements ActionListener {
-			AproposLabel label;
+		public class LabelMenuItem extends JMenuItem {
+			public AproposLabel label;
+			public LabelMenu parent;
 			
-			public RemoveListener( AproposLabel label ) {
+			public LabelMenuItem( LabelMenu parent, AproposLabel label ) {
+				super( label.getText() );
+				this.parent = parent;
 				this.label = label;
 			}
-			public void actionPerformed( ActionEvent e ) {
-				label.fireLineRemoved( label );
-			}
-			
-		}
-		
-		public class ClearListener implements ActionListener {
-			AproposLabel label;
-			
-			public ClearListener( AproposLabel label ) {
+			public LabelMenuItem( LabelMenu parent, AproposLabel label, String text ) {
+				super( text );
+				this.parent = parent;
 				this.label = label;
 			}
-			public void actionPerformed( ActionEvent e ) {
-				sectionRemoved( label );
-			}
-			
 		}
 		
-		public class DuplicateListener implements ActionListener {
-			AproposLabel label;
+		public class LabelMenu extends JMenu {
+			public AproposLabel label;
+			public LabelMenu parent;
 			
-			public DuplicateListener( AproposLabel label ) {
+			public LabelMenu( LabelMenu parent, AproposLabel label ) {
+				super( label.getText() );
+				this.parent = parent;
 				this.label = label;
 			}
-			public void actionPerformed( ActionEvent e ) {
-				label.fireLineInserted( label, label.clone() );
+			public LabelMenu( LabelMenu parent, AproposLabel label, String text ) {
+				super( text );
+				this.parent = parent;
+				this.label = label;
 			}
-			
+			public LabelMenu( String text ) {
+				super( text );
+				this.parent = null;
+			}
 		}
 		
 	}
