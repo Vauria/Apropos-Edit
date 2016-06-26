@@ -161,9 +161,12 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	public AproposLabel getParentLabel( int depth ) {
-		if(depth < getDepth()) return null;
+		int d = getDepth();
+		if(depth > d) return null;
 		AproposLabel label = getParentLabel();
+		d = label.getDepth();
 		while(label.getDepth() > depth) label = label.getParentLabel();
+		d = label.getDepth();
 		return label;
 	}
 	

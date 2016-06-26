@@ -245,11 +245,12 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 	}
 	
 	public void copyTo( AproposLabel line, AproposLabel to ) {
-		
+		System.out.println( stageMap.query( line.getParentLabel() ) );
+		System.out.println( stageMap.query( to ) );
 	}
 	
 	public void copySection( AproposLabel section, AproposLabel dest, boolean replace ) {
-		
+		System.out.println( stageMap );
 	}
 	
 	public void popupMenuTriggered( AproposLabel label, MouseEvent e ) {

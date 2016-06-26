@@ -34,7 +34,7 @@ public class Model {
 	
 	String db;
 	View view;
-	AproposLabel root = new AproposLabel( db, null );
+	AproposLabel root;
 	TreeMap<String, Boolean> uniques = null;
 	TreeMap<String, ArrayList<String>> synonyms;
 	
@@ -50,6 +50,7 @@ public class Model {
 	 */
 	public void setDataBase( String path ) {
 		db = path + "\\";
+		root = new AproposLabel( db, null );
 		uniques = null;
 		new UniquesFetcher().execute();
 		new SynonymsFetcher().execute();
@@ -681,32 +682,42 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 
 class PerspectiveMap extends LabelMap<LabelList> {
 	private static final long serialVersionUID = 1659741172660975737L;
-	String indent = "\n\t\t\t\t";
-	int keyDepth = 4;
+	{
+		indent = "\n\t\t\t\t";
+		keyDepth = 4;
+	}
 }
 
 class StageMap extends LabelMap<PerspectiveMap> {
 	private static final long serialVersionUID = -4569924813567288184L;
-	String indent = "\n\t\t\t";
-	int keyDepth = 3;
+	{
+		indent = "\n\t\t\t";
+		keyDepth = 3;
+	}
 }
 
 class PositionMap extends LabelMap<StageMap> {
 	private static final long serialVersionUID = 8253283878828610516L;
-	String indent = "\n\t\t";
-	int keyDepth = 2;
+	{
+		indent = "\n\t\t";
+		keyDepth = 2;
+	}
 }
 
 class FolderMap extends LabelMap<PositionMap> {
 	private static final long serialVersionUID = 3997804667766094854L;
-	String indent = "\n\t";
-	int keyDepth = 1;
+	{
+		indent = "\n\t";
+		keyDepth = 1;
+	}
 }
 
 class DatabaseMap extends LabelMap<FolderMap> {
 	private static final long serialVersionUID = 6214629552869731592L;
-	String indent = "\n";
-	int keyDepth = 0;
+	{
+		indent = "\n";
+		keyDepth = 0;
+	}
 }
 
 abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> implements AproposMap {
@@ -715,8 +726,13 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 	int keyDepth;
 	
 	public Result query( AproposLabel key ) {
-		if ( key.getDepth() == keyDepth ) return new Result( get( key ) );
-		T map = get( key.getParentLabel( keyDepth ) );
+		if ( key.getDepth() == keyDepth ) {
+			T map = get( key );
+			Result res = new Result( map );
+			return res;
+		}
+		AproposLabel levelKey = key.getParentLabel( keyDepth );
+		T map = get( levelKey );
 		return map.query( key );
 	}
 	
@@ -764,6 +780,10 @@ class Result {
 	public Result( PositionMap posMap ) {
 		this.posMap = posMap;
 		this.found = true;
+	}
+	public String toString() {
+		return Result.class + "@" + hashCode() + " [found=" + found + ",LabelList=" + labelList + ",PerspectiveMap=" + perspecMap
+				+ ",StageMap=" + stageMap + ",PositionMap=" + posMap + "]";
 	}
 }
 
