@@ -160,6 +160,13 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		return parent;
 	}
 	
+	public AproposLabel getParentLabel( int depth ) {
+		if(depth < getDepth()) return null;
+		AproposLabel label = getParentLabel();
+		while(label.getDepth() > depth) label = label.getParentLabel();
+		return label;
+	}
+	
 	/**
 	 * @return the GridBagConstraints that directly represent how this object is positioned.
 	 */
@@ -480,7 +487,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 					return lstr.compareTo( ostr );
 				case 4: // The Animation Perspective
 					return lstr.compareTo( ostr );
-				default: // The lines themselves? We're fucked
+				default: // The lines themselves? We fucked up
 					return 0;
 			}
 		}
