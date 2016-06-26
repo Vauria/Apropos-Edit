@@ -115,7 +115,7 @@ public class Prototype {
 				while ( reader.hasNext() )
 					list.add( reader.nextString() );
 				reader.endArray();
-				System.out.println( key + ":" + concatenate( list.toArray( new String[ list.size() ] ), ", " ) );
+				System.out.println( key + ":" + concatenate( list.toArray( new String[ 0 ] ), ", " ) );
 				synonyms.put( key, list );
 			}
 		}
@@ -141,7 +141,7 @@ public class Prototype {
 					reader.endArray();
 				}
 				reader.endObject();
-				System.out.println( key + ":" + concatenate( list.toArray( new String[ list.size() ] ), ", " ) );
+				System.out.println( key + ":" + concatenate( list.toArray( new String[ 0 ] ), ", " ) );
 				synonyms.put( key, list );
 			}
 		}
@@ -166,7 +166,7 @@ public class Prototype {
 				reader.endArray();
 			}
 			reader.endObject();
-			System.out.println( "{WT}" + ":" + concatenate( list.toArray( new String[ list.size() ] ), ", " ) );
+			System.out.println( "{WT}" + ":" + concatenate( list.toArray( new String[ 0 ] ), ", " ) );
 			synonyms.put( "{WTVAGINAL}", list );
 			synonyms.put( "{WTORAL}", list );
 			synonyms.put( "{WTANAL}", list );

@@ -264,7 +264,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		
 		protected JMenu getStageSubMenu( int i, LabelMenu parent ) {
 			// if ( stageSubMenus[i] != null ) return stageSubMenus[i];
-			AproposLabel label = ( stageMap.keySet().toArray( new AproposLabel[ stageMap.size() ] ) )[i];
+			AproposLabel label = ( stageMap.keySet().toArray( new AproposLabel[ 0 ] ) )[i];
 			LabelMenu menu = new LabelMenu( parent, label );
 			for ( i = 0; i < 3; i++ )
 				menu.add( getPerspectiveItem( i, menu ) );
@@ -273,7 +273,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		
 		protected JMenuItem getStageItem( int i, LabelMenu parent ) {
 			// if ( stageItems[i] != null ) return stageItems[i];
-			AproposLabel label = ( stageMap.keySet().toArray( new AproposLabel[ stageMap.size() ] ) )[i];
+			AproposLabel label = ( stageMap.keySet().toArray( new AproposLabel[ 0 ] ) )[i];
 			JMenuItem item = new LabelMenuItem( parent, label );
 			item.addActionListener( this );
 			// stageItems[i] = item;
@@ -282,7 +282,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		
 		protected JMenuItem getPerspectiveItem( int i, LabelMenu parent ) {
 			// if ( perspectiveItems[i] != null ) return perspectiveItems[i];
-			AproposLabel label = ( stageMap.get( parent.label ).keySet().toArray( new AproposLabel[ stageMap.size() ] ) )[i];
+			AproposLabel label = ( stageMap.get( parent.label ).keySet().toArray( new AproposLabel[ 0 ] ) )[i];
 			JMenuItem item = new LabelMenuItem( parent, label );
 			item.addActionListener( this );
 			// perspectiveItems[i] = item;

@@ -746,8 +746,7 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 	
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		Set<AproposLabel> keySet = keySet();
-		AproposLabel[] keys = keySet.toArray( new AproposLabel[ keySet.size() ] );
+		AproposLabel[] keys = keySet().toArray( new AproposLabel[ 0 ] );
 		for ( int i = 0; i < size(); i++ ) {
 			if ( i > 0 ) builder.append( indent );
 			builder.append( keys[i].toString() + indent + "\t" + get( keys[i] ) );
