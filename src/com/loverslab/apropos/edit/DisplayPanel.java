@@ -153,18 +153,48 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 	public void copyTo( AproposLabel line, AproposLabel to ) {
 		LabelList target = stageMap.query( to ).labelList;
 		if ( target.size() > 1 ) {
-			target.add( target.size() - 2, line.clone() );
+			target.add( target.size() - 2, new AproposLabel( line.getText(), to ) );
 		}
 		else {
-			target.add( 0, line.clone() );
+			target.add( 0, new AproposLabel( line.getText(), to ) );
 		}
 		refresh();
 	}
 	
 	public void copySection( AproposLabel section, AproposLabel dest, boolean replace ) {
-		System.out.println( dest.toString() + dest.hashCode() );
-		System.out.println( stageMap.query( dest ) );
-		System.out.println( stageMap.query( dest ).perspecMap.size() );
+		if ( section == dest ) {
+			parent.handleException( new IllegalStateException( "Do you really need to copy to the same section?" ) );
+			return;
+		}
+		switch ( section.getDepth() ) {
+			case 3:
+				AproposLabel[] sectionPersArray = stageMap.get( section ).keySet().toArray( new AproposLabel[ 3 ] );
+				AproposLabel[] destPersArray = stageMap.get( dest ).keySet().toArray( new AproposLabel[ 3 ] );
+				for ( int i = 0; i < 3; i++ ) {
+					AproposLabel sectionPers = sectionPersArray[i];
+					AproposLabel destPers = destPersArray[i];
+					LabelList sectionList = stageMap.query( sectionPers ).labelList;
+					LabelList destList = stageMap.query( destPers ).labelList;
+					if ( replace ) for ( int j = destList.size() - 2; j >= 0; j-- )
+						destList.remove( j );
+					for ( int j = 0; j < sectionList.size() - 1; j++ )
+						destList.add( Math.max( destList.size() - 2, 0 ), new AproposLabel( sectionList.get( j ).getText(), destPers ) );
+				}
+				break;
+			case 4:
+				LabelList sectionList = stageMap.query( section ).labelList;
+				LabelList destList = stageMap.query( dest ).labelList;
+				if ( replace ) for ( int i = destList.size() - 2; i >= 0; i-- )
+					destList.remove( i );
+				for ( int i = 0; i < sectionList.size() - 1; i++ )
+					destList.add( Math.max( destList.size() - 2, 0 ), new AproposLabel( sectionList.get( i ).getText(), dest ) );
+				break;
+			default:
+				System.err.println( "Clear was called on a label that shouldn't have clear available" );
+				break;
+		}
+		
+		refresh();
 	}
 	
 	public void popupMenuTriggered( AproposLabel label, MouseEvent e ) {
