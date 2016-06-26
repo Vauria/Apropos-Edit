@@ -763,42 +763,32 @@ class Result {
 	public StageMap stageMap;
 	public PositionMap posMap;
 	
-	public Result() {}
-	public Result( AproposMap t ) {}
-	public Result( LabelList labelList ) {
-		this.labelList = labelList;
+	public <T extends AproposMap> Result( T map ) {
+		if(map instanceof LabelList) labelList = (LabelList) map;
+		else if(map instanceof PerspectiveMap) perspecMap = (PerspectiveMap) map;
+		else if(map instanceof StageMap) stageMap = (StageMap) map;
+		else if(map instanceof PositionMap) posMap = (PositionMap) map;
 		this.found = true;
 	}
-	public Result( PerspectiveMap perspecMap ) {
-		this.perspecMap = perspecMap;
-		this.found = true;
-	}
-	public Result( StageMap stageMap ) {
-		this.stageMap = stageMap;
-		this.found = true;
-	}
-	public Result( PositionMap posMap ) {
-		this.posMap = posMap;
-		this.found = true;
-	}
+	
 	public String toString() {
 		return Result.class + "@" + hashCode() + " [found=" + found + ",LabelList=" + labelList + ",PerspectiveMap=" + perspecMap
 				+ ",StageMap=" + stageMap + ",PositionMap=" + posMap + "]";
 	}
 }
-
-interface AproposMap {
-	public int totalSize();
-	public Result query( AproposLabel key );
-}
-
-/**
- * I CBA to make a second message reporter for stuff that isn't exceptions, so I'm making an exception with a friendlier class name.
- */
-class Information extends RuntimeException {
-	public Information( String string ) {
-		super( string );
+	
+	interface AproposMap {
+		public int totalSize();
+		public Result query( AproposLabel key );
 	}
 	
-	private static final long serialVersionUID = -1543550760928302667L;
+	/**
+	 * I CBA to make a second message reporter for stuff that isn't exceptions, so I'm making an exception with a friendlier class name.
+	 */
+	class Information extends RuntimeException {
+		public Information( String string ) {
+			super( string );
+		}
+		
+		private static final long serialVersionUID = -1543550760928302667L;
 }
