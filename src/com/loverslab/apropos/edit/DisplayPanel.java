@@ -143,8 +143,6 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 			
 			layout.getConstraints( sep ).gridy++ ;
 			sep.invalidate();
-			// System.out.println( stageMap );
-			
 		}
 	}
 	
@@ -245,12 +243,52 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 	}
 	
 	public void copyTo( AproposLabel line, AproposLabel to ) {
-		System.out.println( stageMap.query( line.getParentLabel() ) );
-		System.out.println( stageMap.query( to ) );
+		LabelList target = stageMap.query( to ).labelList;
+		if ( target.size() > 1 ) {
+			AproposLabel secondLast = target.get( target.size() - 2 );
+			lineInserted( secondLast, new AproposLabel( line.getText(), to ) );
+		}
+		else {
+			AproposLabel last = target.get( 0 );
+			GridBagConstraints cLast = last.getGridBagCons();
+			GridBagConstraints c;
+			boolean found = false;
+			for ( AproposLabel stage : stageMap.keySet() ) {
+				PerspectiveMap persMap = stageMap.get( stage );
+				if ( found ) stage.bump();
+				for ( AproposLabel perspec : persMap.keySet() ) {
+					LabelList list = persMap.get( perspec );
+					if ( found ) perspec.bump();
+					for ( AproposLabel label : list ) {
+						c = label.getGridBagCons();
+						if ( found ) label.bump();
+						if ( !found & c.gridy >= cLast.gridy ) {
+							found = true;
+						}
+					}
+				}
+			}
+			
+			c = (GridBagConstraints) cLast.clone();
+			last.bump();
+			target.add( 0, line.display( layout ) );
+			add( line, c );
+			line.setHoverState( true );
+			line.getTextField().grabFocus();
+			line.addLineChangedListener( this );
+			line.addPopupMenuListener( this );
+			
+			layout.getConstraints( sep ).gridy++ ;
+			sep.invalidate();
+		}
+		
+		revalidate();
 	}
 	
 	public void copySection( AproposLabel section, AproposLabel dest, boolean replace ) {
-		System.out.println( stageMap );
+		System.out.println( dest.toString() + dest.hashCode() );
+		System.out.println( stageMap.query( dest ) );
+		System.out.println( stageMap.query( dest ).perspecMap.size() );
 	}
 	
 	public void popupMenuTriggered( AproposLabel label, MouseEvent e ) {
@@ -368,7 +406,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		
 		protected JMenuItem getPerspectiveItem( int i, LabelMenu parent ) {
 			// if ( perspectiveItems[i] != null ) return perspectiveItems[i];
-			AproposLabel label = ( stageMap.get( stageMap.firstKey() ).keySet().toArray( new AproposLabel[ stageMap.size() ] ) )[i];
+			AproposLabel label = ( stageMap.get( parent.label ).keySet().toArray( new AproposLabel[ stageMap.size() ] ) )[i];
 			JMenuItem item = new LabelMenuItem( parent, label );
 			item.addActionListener( this );
 			// perspectiveItems[i] = item;
