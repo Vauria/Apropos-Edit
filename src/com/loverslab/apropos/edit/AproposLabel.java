@@ -2,6 +2,7 @@ package com.loverslab.apropos.edit;
 
 import java.awt.CardLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -17,6 +18,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
 /**
  * A JLabel disguised as JPanel designed to be initialised without fully creating all the sub-components and then allow editing.
@@ -454,10 +456,14 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 			this.locked = false;
 		}
 		public void focusLost( FocusEvent e ) {
-			if ( !locked ) setText( oldValue );
-			setHoverState( false );
-			release();
-			mouseExited( null );
+			if ( e.getOppositeComponent() != null ) {
+				Component opp = e.getOppositeComponent();
+				if ( SwingUtilities.getRoot( opp ) == SwingUtilities.getRoot( AproposLabel.this ) ) {
+					if ( !locked ) setText( oldValue );
+					setHoverState( false );
+					release();
+				}
+			}
 		}
 		public void keyTyped( KeyEvent e ) {
 			if ( e.getKeyChar() == KeyEvent.VK_ENTER ) {
@@ -465,7 +471,6 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 				fireValueChanged( textField.getText() );
 				setHoverState( false );
 				locked = true;
-				mouseExited( null );
 			}
 			else if ( e.getKeyChar() == KeyEvent.VK_ESCAPE ) {
 				setHoverState( false );
