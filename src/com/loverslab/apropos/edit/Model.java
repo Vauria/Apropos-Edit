@@ -307,7 +307,7 @@ public class Model {
 	/**
 	 * SwingWorker that loads the database's UniqueAnimations.txt file into the member TreeMap, for future writing or querying with
 	 * <code>isUnique(String string)</code>
-	 *
+	 * <br>
 	 * Does not Publish.
 	 */
 	public class UniquesFetcher extends SwingWorker<Object, Object> {
@@ -379,10 +379,10 @@ public class Model {
 		}
 		
 	}
-
+	
 	/**
 	 * SwingWorker that loads the database's Synonyms.txt for simulating.
-	 * 
+	 * <br>
 	 * Does not publish
 	 */
 	public class SynonymsFetcher extends SwingWorker<Object, Object> {
@@ -496,7 +496,7 @@ public class Model {
 	
 	/**
 	 * SwingWorker that fetches a <code>StageMap</code> to be processed by done() for displaying
-	 *
+	 * <br>
 	 * Does not Publish.
 	 */
 	public abstract class PositionFetcher extends SwingWorker<StageMap, Object> {
@@ -520,7 +520,7 @@ public class Model {
 	
 	/**
 	 * SwingWorker that writes a given <code>StageMap</code> to disk
-	 * 
+	 * <br>
 	 * Does not Publish.
 	 */
 	public abstract class PositionWriter extends SwingWorker<Object, Object> {
@@ -546,7 +546,7 @@ public class Model {
 	/**
 	 * SwingWorker that loads the <code>StageMap</code> denoted by the <code>folder</code> and <code>animString</code> constructor
 	 * parameters, changes the parent's text to assign a new write location, then completes the write.
-	 *
+	 * <br>
 	 * Does not Publish.
 	 */
 	public class PositionCopier extends SwingWorker<StageMap, Object> {
@@ -570,6 +570,59 @@ public class Model {
 			folder.setText( extractFolder( newAnim ) );
 			writeStages( toCopy );
 			return toCopy;
+		}
+		
+		public void done() {};
+		
+		public void process( Object o ) {};
+		
+	}
+	
+	/**
+	 * SwingWorker that loads the <code>StageMap</code> denoted by the <code>folder</code> and <code>animString</code> constructor
+	 * parameters, changes the parent's text to match those of the passed <code>newFolder</code> and <code>newAnim</code>, merges the each
+	 * child <code>LabelList</code> then completes the write.
+	 * <br>
+	 * Does not Publish.
+	 */
+	public class PositionAppender extends SwingWorker<StageMap, Object> {
+		String folder, animString, newFolder, newAnim;
+		
+		public PositionAppender( String folder, String animString, String newFolder, String newAnim ) {
+			super();
+			this.folder = folder;
+			this.animString = animString;
+			this.newFolder = newFolder;
+			this.newAnim = newAnim;
+		}
+		
+		public StageMap doInBackground() {
+			AproposLabel parent = new AproposLabel( animString, new AproposLabel( folder, root ) );
+			StageMap toCopy = getStages( parent );
+			
+			AproposLabel parentDest = new AproposLabel( newAnim, new AproposLabel( newFolder, root ) );
+			StageMap dest = getStages( parentDest );
+			
+			AproposLabel first = toCopy.firstKey();
+			AproposLabel position = first.getParentLabel();
+			AproposLabel folder = position.getParentLabel();
+			
+			position.setText( newAnim );
+			folder.setText( extractFolder( newAnim ) );
+			
+			for ( AproposLabel stage : toCopy.keySet() ) {
+				PerspectiveMap persMap = toCopy.get( stage );
+				PerspectiveMap persMapDest = dest.getEquivalent( stage );
+				if ( persMapDest != null ) for ( AproposLabel pers : persMap.keySet() ) {
+					LabelList list = persMap.get( pers );
+					LabelList listDest = persMapDest.getEquivalent( pers );
+					listDest.remove( listDest.size() - 1 );
+					listDest.addAll( list );
+				}
+			}
+			
+			writeStages( dest );
+			return dest;
 		}
 		
 		public void done() {};
@@ -633,7 +686,7 @@ public class Model {
 		public void process( Object o ) {};
 		
 	}
-
+	
 	/**
 	 * Takes every line in a Map of AproposLabels, replaces the synonyms, toggles the display state and highlights one from each perspective
 	 */
@@ -778,6 +831,13 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 		AproposLabel levelKey = key.getParentLabel( keyDepth );
 		T map = get( levelKey );
 		return map.query( key );
+	}
+	
+	public T getEquivalent( AproposLabel equivKey ) {
+		for ( AproposLabel key : keySet() ) {
+			if ( key.getText().equals( equivKey.getText() ) ) return get( key );
+		}
+		return null;
 	}
 	
 	public int totalSize() {

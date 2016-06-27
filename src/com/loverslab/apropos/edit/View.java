@@ -434,7 +434,17 @@ public class View extends JFrame implements ActionListener {
 	}
 	
 	public void copyAppend( String folder, String animString, String newFolder, String newAnim ) {
-		System.out.println( "Unimplemented" );
+		model.new PositionAppender( folder, animString, newFolder, newAnim ) {
+			public void done() {
+				try {
+					display.load( get(), true );
+				}
+				catch ( InterruptedException | ExecutionException e ) {
+					handleException( e );
+					e.printStackTrace();
+				}
+			}
+		}.execute();
 	}
 	
 	public void handleException( Exception e ) {

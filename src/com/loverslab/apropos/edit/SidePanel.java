@@ -165,12 +165,22 @@ public class SidePanel extends JPanel {
 		};
 		listenCopyAppend = new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
-				ComboBoxModel<String> animationsModel = new DefaultComboBoxModel<String>( new String[ 0 ] );
-				JComboBox<String> animations = new JComboBox<String>( animationsModel );
+				
+				JComboBox<String> animations = new JComboBox<String>( new DefaultComboBoxModel<String>( new String[ 0 ] ) );
 				for ( int i = 0; i < SidePanel.this.animationsModel.getSize(); i++ )
 					animations.addItem( SidePanel.this.animations.getItemAt( i ) );
-				ComboBoxModel<Position> positionsModel = new DefaultComboBoxModel<Position>( Position.values() );
-				JComboBox<Position> positions = new JComboBox<Position>( positionsModel );
+				
+				JComboBox<Position> positions = new JComboBox<Position>( new DefaultComboBoxModel<Position>( Position.values() ) );
+				
+				animations.addItemListener( new ItemListener() {
+					public void itemStateChanged( ItemEvent e ) {
+						positions.removeAllItems();
+						for ( Position position : parent.model.getPositions( (String) animations.getSelectedItem() ) )
+							positions.addItem( position );
+					}
+				});
+				
+				
 				JCheckBox rapeCheck = new JCheckBox( "Rape", false );
 				JComponent[] components = new JComponent[] { animations, positions, rapeCheck };
 				if ( JOptionPane.showConfirmDialog( parent, components, "Select an Existing Position", JOptionPane.OK_CANCEL_OPTION,
@@ -190,7 +200,6 @@ public class SidePanel extends JPanel {
 					positions.removeAllItems();
 					for ( Position position : parent.model.getPositions( (String) animations.getSelectedItem() ) )
 						positions.addItem( position );
-					// if ( parent.model.isUnique( (String) animations.getSelectedItem() ) ) positions.setSelectedItem( Position.Unique );
 				}
 			}
 		};
@@ -390,7 +399,6 @@ public class SidePanel extends JPanel {
 		
 		JButton loadCopyToExist = new JButton( "Copy to Existing Position" );
 		loadCopyToExist.addActionListener( listenCopyAppend );
-		loadCopyToExist.setEnabled( false );
 		JLabel loadCopyToExistInfo = new JLabel( "(?)" );
 		loadCopyToExistInfo.setToolTipText( "<html>Fetches the files for the animation selected above, and adds<br>"
 				+ "every line on top of the existing lines for the second animation<br>"
