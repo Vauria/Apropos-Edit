@@ -177,19 +177,18 @@ public class Model {
 			switch ( key ) {
 				case "Intro":
 					file = new File( path + ".txt" );
-					writePerspectives( persMap, file );
 					break;
 				case "Stage":
 					file = new File( path + "_Stage" + split[1] + ".txt" );
-					writePerspectives( persMap, file );
 					break;
 				case "Orgasm":
 					file = new File( path + "_Orgasm.txt" );
-					writePerspectives( persMap, file );
 					break;
 				default:
-					break;
+					view.handleException( new IllegalStateException( "Unsupported Stage Identifier: " + key ) );
+					return;
 			}
+			writePerspectives( persMap, file );
 		}
 	}
 	
@@ -225,8 +224,25 @@ public class Model {
 	}
 	
 	public void deleteStage( AproposLabel stageLabel ) {
-		String path = db + stageLabel.getParentLabel().getParentLabel().getText() + "//" + stageLabel.getParentLabel().getText();
-		System.out.println( path );
+		String path = db + stageLabel.getParentLabel().getParentLabel().getText() + "\\" + stageLabel.getParentLabel().getText();
+		String[] split = stageLabel.getText().split( " " );
+		String key = split[0];
+		File file;
+		switch ( key ) {
+			case "Intro":
+				file = new File( path + ".txt" );
+				break;
+			case "Stage":
+				file = new File( path + "_Stage" + split[1] + ".txt" );
+				break;
+			case "Orgasm":
+				file = new File( path + "_Orgasm.txt" );
+				break;
+			default:
+				view.handleException( new IllegalStateException( "Unsupported Stage Identifier: " + key ) );
+				return;
+		}
+		file.delete();
 	}
 	
 	/**

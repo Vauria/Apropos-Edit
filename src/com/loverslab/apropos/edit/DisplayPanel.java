@@ -149,6 +149,39 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		refresh();
 	}
 	
+	public void stageRemoved( AproposLabel stage ) {
+		if ( stage.getDepth() != 3 ) {
+			System.err.println( "Stage Remove Called on not a stage: " + stage );
+			return;
+		}
+		if ( stage.getText().indexOf( "Stage" ) == -1 ) {
+			parent.handleException( new IllegalStateException( "You can't remove an " + stage.getText() + " Stage" ) );
+			return;
+		}
+		boolean found = false;
+		AproposLabel lastStage = null;
+		for ( AproposLabel stageLabel : stageMap.keySet() ) {
+			if ( found ) {
+				String text = stageLabel.getText();
+				if ( text.indexOf( "Stage" ) > -1 ) {
+					if ( stageLabel.compareTo( lastStage ) > -1 ) lastStage = stageLabel.clone();
+					int n = Character.getNumericValue( text.trim().charAt( text.length() - 1 ) );
+					System.out.println( text + " to " + text.substring( 0, text.length() - 1 ) + ( n - 1 ) );
+					stageLabel.setText( text.substring( 0, text.length() - 1 ) + ( n - 1 ) );
+				}
+			}
+			else if ( stageLabel == stage ) {
+				found = true;
+				if ( stageLabel.compareTo( lastStage ) > -1 ) lastStage = stageLabel.clone();
+			}
+		}
+		stageMap.remove( stage );
+		System.out.println( lastStage );
+		if ( lastStage != null ) parent.model.deleteStage( lastStage );
+		
+		refresh();
+	}
+	
 	public void copyTo( AproposLabel line, AproposLabel to ) {
 		LabelList target = stageMap.query( to ).labelList;
 		if ( target.size() > 1 ) {
@@ -204,7 +237,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		// Gonna try this Composition over inheritance stuff all the kids are talking about
 		protected AproposLabel invoker;
 		private JPopupMenu[] popups = new JPopupMenu[ 6 ];
-		private JMenuItem clearItem, removeItem, duplicateItem;
+		private JMenuItem clearItem, removeStage, addStageBelow, addStageAbove, removeItem, duplicateItem;
 		private String copyTo = "Copy To", copyAppend = "Copy & Append", copyReplace = "Copy & Replace";
 		// private JMenu copyToMenu;
 		// private JMenu[] copyReplaceMenu = new JMenu[ 6 ], copyAppendMenu = new JMenu[ 6 ], stageSubMenus = new JMenu[ stageMap.size() ];
@@ -228,6 +261,9 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 					case 2: // Position Level
 						break;
 					case 3: // Stage Level
+						popup.add( getRemoveStageItem() );
+						popup.add( getStageAboveItem() );
+						popup.add( getStageBelowItem() );
 						// Fall through
 					case 4: // Perspective Level
 						popup.add( getClearItem() );
@@ -249,24 +285,34 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		}
 		
 		protected JMenuItem getClearItem() {
-			if ( clearItem != null ) return clearItem;
-			clearItem = new JMenuItem( "Clear" );
-			clearItem.addActionListener( this );
-			return clearItem;
+			return clearItem = initMenuItem( clearItem, "Clear" );
 		}
 		
 		protected JMenuItem getRemoveItem() {
-			if ( removeItem != null ) return removeItem;
-			removeItem = new JMenuItem( "Remove" );
-			removeItem.addActionListener( this );
-			return removeItem;
+			return removeItem = initMenuItem( removeItem, "Remove" );
 		}
 		
 		protected JMenuItem getDuplicateItem() {
-			if ( duplicateItem != null ) return duplicateItem;
-			duplicateItem = new JMenuItem( "Duplicate" );
-			duplicateItem.addActionListener( this );
-			return duplicateItem;
+			return duplicateItem = initMenuItem( duplicateItem, "Duplicate" );
+		}
+		
+		protected JMenuItem getRemoveStageItem() {
+			return removeStage = initMenuItem( removeStage, "Remove Stage" );
+		}
+		
+		protected JMenuItem getStageAboveItem() {
+			return addStageBelow = initMenuItem( addStageBelow, "Add New Stage Below" );
+		}
+		
+		protected JMenuItem getStageBelowItem() {
+			return addStageAbove = initMenuItem( addStageAbove, "Add New Stage Above" );
+		}
+		
+		protected JMenuItem initMenuItem( JMenuItem ref, String text ) {
+			if ( ref != null ) return ref;
+			ref = new JMenuItem( text );
+			ref.addActionListener( this );
+			return ref;
 		}
 		
 		protected JMenu getCopyMenu( int depth, String text ) {
@@ -326,6 +372,12 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 				lineRemoved( invoker );
 			else if ( item == duplicateItem )
 				lineInserted( invoker, invoker.clone() );
+			else if ( item == removeStage )
+				stageRemoved( invoker );
+			else if ( item == addStageBelow )
+				lineRemoved( invoker );
+			else if ( item == addStageAbove )
+				lineRemoved( invoker );
 			else if ( item instanceof LabelMenuItem ) {
 				LabelMenuItem lMI = ( (LabelMenuItem) item );
 				LabelMenu root = lMI.parent;

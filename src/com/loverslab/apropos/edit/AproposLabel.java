@@ -142,6 +142,11 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 			this.string = text;
 			return;
 		}
+		if ( this.textField == null ) {
+			this.string = text;
+			this.label.setText( text );
+			return;
+		}
 		if ( getText().equals( "" ) ) {
 			if ( !text.equals( "" ) ) {
 				this.label.setText( text );
@@ -491,6 +496,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	public int compareTo( AproposLabel o ) {
+		if(o == null) return 1;
 		int ldepth = getDepth(), odepth = o.getDepth();
 		String lstr = toString(), ostr = o.toString();
 		if ( ldepth == odepth ) {
