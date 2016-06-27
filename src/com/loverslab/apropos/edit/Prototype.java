@@ -28,6 +28,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -59,7 +60,8 @@ import com.google.gson.stream.JsonWriter;
 public class Prototype {
 	
 	// Variables
-	String db = "C:\\Program Files (x86)\\Steam\\SteamApps\\common\\Skyrim\\Mod Organizer\\mods\\Apropos Beta 2015 04 24 01\\Apropos\\dbOfficial\\";
+	//String db = "C:\\Program Files (x86)\\Steam\\SteamApps\\common\\Skyrim\\Mod Organizer\\mods\\Apropos Beta 2015 04 24 01\\Apropos\\dbOfficial\\";
+	String db = "E:\\User Files\\Dumps\\Workspace\\Apropos Diffing\\dbOfficial\\";
 	String outputDir = db + "Combined\\";
 	String folder = "FemaleActor_SexLabAggrMissionary";
 	String active = "Vilkas";
@@ -76,13 +78,15 @@ public class Prototype {
 	public static void main( String[] args ) throws Exception {
 		Prototype ae = new Prototype();
 		ae.init();
+		ae.findPositions();
 		// ae.synonyms();
 		// ae.findBrokenReferences();
 		
 		if ( ae.files.size() > 0 )
 			// ae.combine();
 			// ae.simulate();
-			ae.display();
+			//ae.display();
+			;
 		else
 			System.out.println( "No files found" );
 		
@@ -228,6 +232,17 @@ public class Prototype {
 		checker.results();
 	}
 	
+	public void findPositions() {
+		PositionFinder finder = new PositionFinder();
+		try {
+			Files.walkFileTree( Paths.get( db ), finder );
+		}
+		catch ( IOException e ) {
+			e.printStackTrace();
+		}
+		finder.results();
+	}
+	
 	public void combine() {
 		File output = new File( outputDir + name + "_All.txt" );
 		new File( outputDir ).mkdirs();
@@ -345,8 +360,23 @@ public class Prototype {
 		
 	}
 	
-	enum Position {
-		Anal, BoobJob, Fisting, FootJob, GangBang, HandJob, MMF, Oral, Vaginal, Unique
+	class PositionFinder extends SimpleFileVisitor<Path> {
+		
+		Set<String> positions = new TreeSet<String>();
+		
+		public FileVisitResult visitFile( Path path, BasicFileAttributes attr ) {
+			File file = path.toFile();
+			if ( file.getName().endsWith( ".txt" ) && !file.getParentFile().getName().equals( "dbOfficial" ) ) {
+				String name = file.getName().replace( ".txt", "" ).replace( file.getParentFile().getName(), "" );
+				positions.addAll( Arrays.asList( name.split( "_" ) ) );
+			}
+			return FileVisitResult.CONTINUE;
+		}
+		
+		public void results() {
+			System.out.println( "All Positions: " + positions.toString() );
+		}
+		
 	}
 	
 	class Order implements Comparator<String> {

@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.SwingWorker;
@@ -243,10 +244,21 @@ public class Model {
 	 * @return
 	 */
 	public String extractFolder( String animString ) {
-		animString = animString.replace( ".txt", "" ).replace( "_Rape", "" ).replace( "_Orgasm", "" ).replaceAll( "_Stage[1-9]", "" );
+		animString = animString.replace( ".txt", "" ).replace( "_Rape", "" ).replace( "_Orgasm", "" ).replaceAll( "_Stage[1-9]+", "" );
 		for ( Position p : Position.values() )
-			animString = animString.replace( "_" + p.name(), "" );
+			animString = animString.replaceAll( "_" + p.name() + "$", "" );
 		return animString;
+	}
+	
+	public Position[] getPositions( String folder ) {
+		PositionFinder finder = new PositionFinder( folder );
+		try {
+			Files.walkFileTree( Paths.get( db + folder ), finder );
+		}
+		catch ( IOException e ) {
+			e.printStackTrace();
+		}
+		return finder.getPositions();
 	}
 	
 	/**
@@ -336,6 +348,38 @@ public class Model {
 		
 	}
 	
+	protected class PositionFinder extends SimpleFileVisitor<Path> {
+		private String folder;
+		private Set<Position> positions;
+		
+		public PositionFinder( String folder ) {
+			super();
+			this.folder = folder;
+			this.positions = new TreeSet<Position>();
+		}
+		
+		public FileVisitResult visitFile( Path path, BasicFileAttributes attr ) {
+			File file = path.toFile();
+			String name = file.getName().replace( ".txt", "" ).replace( "_Rape", "" ).replace( "_Orgasm", "" )
+					.replaceAll( "_Stage[1-9]+", "" ).replaceAll( "(?i)" + folder, "" ).replaceAll( "^_", "" );
+			Position p = Position.lookup( name );
+			if ( p == null ) {
+				if ( name.equals( "" ) )
+					positions.add( Position.Unique );
+				else
+					System.err.println( "Unknown Position: " + name );
+				return FileVisitResult.CONTINUE;
+			}
+			positions.add( p );
+			return FileVisitResult.CONTINUE;
+		}
+		
+		public Position[] getPositions() {
+			return positions.toArray( new Position[ 0 ] );
+		}
+		
+	}
+
 	/**
 	 * SwingWorker that loads the database's Synonyms.txt for simulating.
 	 * 
@@ -589,7 +633,7 @@ public class Model {
 		public void process( Object o ) {};
 		
 	}
-	
+
 	/**
 	 * Takes every line in a Map of AproposLabels, replaces the synonyms, toggles the display state and highlights one from each perspective
 	 */
@@ -763,10 +807,13 @@ class Result {
 	public PositionMap posMap;
 	
 	public <T extends AproposMap> Result( T map ) {
-		if(map instanceof LabelList) labelList = (LabelList) map;
-		else if(map instanceof PerspectiveMap) perspecMap = (PerspectiveMap) map;
-		else if(map instanceof StageMap) stageMap = (StageMap) map;
-		else if(map instanceof PositionMap) posMap = (PositionMap) map;
+		if ( map instanceof LabelList )
+			labelList = (LabelList) map;
+		else if ( map instanceof PerspectiveMap )
+			perspecMap = (PerspectiveMap) map;
+		else if ( map instanceof StageMap )
+			stageMap = (StageMap) map;
+		else if ( map instanceof PositionMap ) posMap = (PositionMap) map;
 		this.found = true;
 	}
 	
@@ -775,19 +822,19 @@ class Result {
 				+ ",StageMap=" + stageMap + ",PositionMap=" + posMap + "]";
 	}
 }
-	
-	interface AproposMap {
-		public int totalSize();
-		public Result query( AproposLabel key );
+
+interface AproposMap {
+	public int totalSize();
+	public Result query( AproposLabel key );
+}
+
+/**
+ * I CBA to make a second message reporter for stuff that isn't exceptions, so I'm making an exception with a friendlier class name.
+ */
+class Information extends RuntimeException {
+	public Information( String string ) {
+		super( string );
 	}
 	
-	/**
-	 * I CBA to make a second message reporter for stuff that isn't exceptions, so I'm making an exception with a friendlier class name.
-	 */
-	class Information extends RuntimeException {
-		public Information( String string ) {
-			super( string );
-		}
-		
-		private static final long serialVersionUID = -1543550760928302667L;
+	private static final long serialVersionUID = -1543550760928302667L;
 }

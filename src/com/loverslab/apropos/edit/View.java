@@ -61,6 +61,7 @@ public class View extends JFrame implements ActionListener {
 	public static void main( String[] args ) {
 		// Create and initialise the UI on the EDT (Event Dispatch Thread)
 		final View view = new View();
+		
 		try {
 			SwingUtilities.invokeAndWait( new Runnable() {
 				public void run() {

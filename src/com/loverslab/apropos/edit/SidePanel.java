@@ -187,7 +187,10 @@ public class SidePanel extends JPanel {
 		listenFolder = new ItemListener() {
 			public void itemStateChanged( ItemEvent e ) {
 				if ( e.getStateChange() == ItemEvent.SELECTED ) {
-					if ( parent.model.isUnique( (String) animations.getSelectedItem() ) ) positions.setSelectedItem( Position.Unique );
+					positions.removeAllItems();
+					for ( Position position : parent.model.getPositions( (String) animations.getSelectedItem() ) )
+						positions.addItem( position );
+					// if ( parent.model.isUnique( (String) animations.getSelectedItem() ) ) positions.setSelectedItem( Position.Unique );
 				}
 			}
 		};
@@ -409,8 +412,7 @@ public class SidePanel extends JPanel {
 		JLabel simulateInfo = new JLabel( "(?)" );
 		simulateInfo.setToolTipText( "<html>Replaces all the {TAGS} in the open lines with randomly selected <br>"
 				+ "Synonyms and the Active and Primary names you provide, then highlights<br>"
-				+ "one line at random from each perspective, simulating how lines could be<br>"
-				+ "chosen in-game.</html>" );
+				+ "one line at random from each perspective, simulating how lines could be<br>" + "chosen in-game.</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.weightx = 1;

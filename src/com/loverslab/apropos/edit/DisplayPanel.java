@@ -18,7 +18,6 @@ import javax.swing.JSeparator;
 
 @SuppressWarnings("serial")
 public class DisplayPanel extends JPanel implements LineChangedListener, PopupMenuListener {
-	@SuppressWarnings("unused")
 	private View parent;
 	private JScrollPane scroll;
 	private MenuManager menuManager;
