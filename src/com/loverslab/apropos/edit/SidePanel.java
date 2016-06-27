@@ -36,7 +36,7 @@ public class SidePanel extends JPanel {
 	private JButton simulateButton;
 	private boolean simulating;
 	private ActionListener listenVerify, listenLoad, listenNWLoad, listenSimulate, listenWrite, listenCopyNew, listenCopyAppend;
-	private ItemListener listenFolder;
+	private ItemListener listenFolder, listenPosition;
 	
 	public SidePanel( View parent ) {
 		super( true );
@@ -178,10 +178,22 @@ public class SidePanel extends JPanel {
 						for ( Position position : parent.model.getPositions( (String) animations.getSelectedItem() ) )
 							positions.addItem( position );
 					}
-				});
-				
+				} );
 				
 				JCheckBox rapeCheck = new JCheckBox( "Rape", false );
+				
+				positions.addItemListener( new ItemListener() {
+					public void itemStateChanged( ItemEvent e ) {
+						if ( e.getStateChange() == ItemEvent.SELECTED ) {
+							String folder = (String) animations.getSelectedItem();
+							String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), false );
+							int rape = parent.model.hasRape( folder, animString );
+							rapeCheck.setSelected( rape == 2 );
+							rapeCheck.setEnabled( rape > 2 || rape < 1 );
+						}
+					}
+				} );
+				
 				JComponent[] components = new JComponent[] { animations, positions, rapeCheck };
 				if ( JOptionPane.showConfirmDialog( parent, components, "Select an Existing Position", JOptionPane.OK_CANCEL_OPTION,
 						JOptionPane.QUESTION_MESSAGE ) == JOptionPane.OK_OPTION ) {
@@ -202,6 +214,18 @@ public class SidePanel extends JPanel {
 						positions.addItem( position );
 				}
 			}
+		};
+		listenPosition = new ItemListener() {
+			public void itemStateChanged( ItemEvent e ) {
+				if ( e.getStateChange() == ItemEvent.SELECTED ) {
+					String folder = (String) animations.getSelectedItem();
+					String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), false );
+					int rape = parent.model.hasRape( folder, animString );
+					rapeCheck.setSelected( rape == 2 );
+					rapeCheck.setEnabled( rape > 2 || rape < 1 );
+				}
+			}
+			
 		};
 	}
 	
@@ -334,6 +358,7 @@ public class SidePanel extends JPanel {
 		
 		positionsModel = new DefaultComboBoxModel<Position>( Position.values() );
 		positions = new JComboBox<Position>( positionsModel );
+		positions.addItemListener( listenPosition );
 		rapeCheck = new JCheckBox( "Rape", false );
 		c.insets = new Insets( 0, 3, 0, 0 );
 		c.gridwidth = 1;

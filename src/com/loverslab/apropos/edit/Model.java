@@ -223,6 +223,11 @@ public class Model {
 		}
 	}
 	
+	public void deleteStage( AproposLabel stageLabel ) {
+		String path = db + stageLabel.getParentLabel().getParentLabel().getText() + "//" + stageLabel.getParentLabel().getText();
+		System.out.println( path );
+	}
+	
 	/**
 	 * Checks a string against UniqueAnimations.txt
 	 * 
@@ -250,6 +255,24 @@ public class Model {
 		return animString;
 	}
 	
+	public Position getPosition( String animString ) {
+		return getPosition( extractFolder( animString ), animString );
+	}
+	
+	public Position getPosition( String folder, String animString ) {
+		animString = animString.replace( ".txt", "" ).replace( "_Rape", "" ).replace( "_Orgasm", "" ).replaceAll( "_Stage[1-9]+", "" )
+				.replaceAll( "(?i)" + folder, "" ).replaceAll( "^_", "" );
+		Position p = Position.lookup( animString );
+		if ( p == null ) {
+			if ( animString.equals( "" ) )
+				return Position.Unique;
+			else
+				System.err.println( "Unknown Position: " + animString );
+			return null;
+		}
+		return p;
+	}
+	
 	public Position[] getPositions( String folder ) {
 		PositionFinder finder = new PositionFinder( folder );
 		try {
@@ -259,6 +282,47 @@ public class Model {
 			e.printStackTrace();
 		}
 		return finder.getPositions();
+	}
+	
+	public int hasRape( String animString ) {
+		return hasRape( extractFolder( animString ), animString );
+	}
+	
+	/**
+	 * Checks if this animation has the normal files, rape files or both
+	 * 
+	 * @param folder
+	 * @param animString
+	 * @return Neither=0, ConsOnly=1, RapeOnly=2, Both=3
+	 */
+	public int hasRape( String folder, String animString ) {
+		animString = animString.replace( "_Rape", "" );
+		String path = db + folder + "//" + animString;
+		String[] stages = new String[] { ".txt", "_Stage1.txt", "_StageN.txt", "_Orgasm.txt" };
+		boolean consen = false, rape = false;
+		for ( int i = 0; i < 2; i++ ) {
+			String localPath = path + ( i == 1 ? "_Rape" : "" );
+			boolean bool = false;
+			int j = 0;
+			while ( bool == false && j < stages.length ) {
+				File file = new File( localPath + stages[j] );
+				if ( j == 2 ) {
+					int k = 2;
+					while ( bool == false && k < 10 ) {
+						file = new File( localPath + "_Stage" + k + ".txt" );
+						if ( file.exists() ) bool = true;
+						k++ ;
+					}
+				}
+				else if ( file.exists() ) bool = true;
+				j++ ;
+			}
+			if ( i == 0 )
+				consen = bool;
+			else
+				rape = bool;
+		}
+		return ( consen ? 1 << 0 : 0 ) + ( rape ? 1 << 1 : 0 ); // Neither=0, ConsOnly=1, RapeOnly=2, Both=3
 	}
 	
 	/**
@@ -360,16 +424,8 @@ public class Model {
 		
 		public FileVisitResult visitFile( Path path, BasicFileAttributes attr ) {
 			File file = path.toFile();
-			String name = file.getName().replace( ".txt", "" ).replace( "_Rape", "" ).replace( "_Orgasm", "" )
-					.replaceAll( "_Stage[1-9]+", "" ).replaceAll( "(?i)" + folder, "" ).replaceAll( "^_", "" );
-			Position p = Position.lookup( name );
-			if ( p == null ) {
-				if ( name.equals( "" ) )
-					positions.add( Position.Unique );
-				else
-					System.err.println( "Unknown Position: " + name );
-				return FileVisitResult.CONTINUE;
-			}
+			Position p = getPosition( folder, file.getName() );
+			if ( p == null ) return FileVisitResult.CONTINUE;
 			positions.add( p );
 			return FileVisitResult.CONTINUE;
 		}
