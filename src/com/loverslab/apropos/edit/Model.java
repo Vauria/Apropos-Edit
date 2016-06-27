@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Pattern;
 
 import javax.swing.SwingWorker;
 
@@ -260,14 +261,14 @@ public class Model {
 	}
 	
 	public Position getPosition( String folder, String animString ) {
-		animString = animString.replace( ".txt", "" ).replace( "_Rape", "" ).replace( "_Orgasm", "" ).replaceAll( "_Stage[1-9]+", "" )
-				.replaceAll( "(?i)" + folder, "" ).replaceAll( "^_", "" );
-		Position p = Position.lookup( animString );
+		String position = animString.replace( ".txt", "" ).replace( "_Rape", "" ).replace( "_Orgasm", "" ).replaceAll( "_Stage[1-9]+", "" )
+				.replaceAll( "(?i)" + Pattern.quote( folder ), "" ).replaceAll( "^_", "" );
+		Position p = Position.lookup( position );
 		if ( p == null ) {
-			if ( animString.equals( "" ) )
+			if ( position.equals( "" ) )
 				return Position.Unique;
 			else
-				System.err.println( "Unknown Position: " + animString );
+				System.err.println( "Unknown Position: \"" + position + "\" (" + folder + "\\" + animString + ")" );
 			return null;
 		}
 		return p;
