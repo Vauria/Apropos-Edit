@@ -5,12 +5,16 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
 
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -20,6 +24,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 
 /**
  * Left Side Panel to hold all buttons and options for interacting with the database or an animation.
@@ -35,7 +40,7 @@ public class SidePanel extends JPanel {
 	private JCheckBox rapeCheck;
 	private JButton simulateButton;
 	private boolean simulating;
-	private ActionListener listenVerify, listenLoad, listenNWLoad, listenSimulate, listenWrite, listenCopyNew, listenCopyAppend;
+	private AbstractAction listenVerify, listenLoad, listenNWLoad, listenSimulate, listenWrite, listenCopyNew, listenCopyAppend;
 	private ItemListener listenFolder, listenPosition;
 	
 	public SidePanel( View parent ) {
@@ -86,12 +91,12 @@ public class SidePanel extends JPanel {
 	 * Create all the listeners for this panel
 	 */
 	private void initListeners() {
-		listenVerify = new ActionListener() {
+		listenVerify = new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
 				parent.verifyDatabase();
 			}
 		};
-		listenLoad = new ActionListener() {
+		listenLoad = new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
 				simulating = false;
 				simulateButton.setText( "Simulate" );
@@ -100,14 +105,14 @@ public class SidePanel extends JPanel {
 				parent.displayPosition( folder, animString, false );
 			}
 		};
-		listenNWLoad = new ActionListener() {
+		listenNWLoad = new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
 				String folder = (String) animations.getSelectedItem();
 				String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), rapeCheck.isSelected() );
 				parent.displayPosition( folder, animString, true );
 			}
 		};
-		listenSimulate = new ActionListener() {
+		listenSimulate = new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
 				if ( parent.displayHasLabels() ) {
 					simulating = !simulating;
@@ -146,7 +151,7 @@ public class SidePanel extends JPanel {
 					parent.handleException( new Exception( "You must load a file before you can Simulate it" ) );
 			}
 		};
-		listenWrite = new ActionListener() {
+		listenWrite = new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
 				if ( parent.displayHasLabels() )
 					parent.writeDisplay();
@@ -154,7 +159,7 @@ public class SidePanel extends JPanel {
 					parent.handleException( new Exception( "You must load a file before you can write it" ) );
 			}
 		};
-		listenCopyNew = new ActionListener() {
+		listenCopyNew = new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
 				String newAnim = JOptionPane.showInputDialog( parent,
 						new String[] { "Enter the filename for the new position, excluding Stages",
@@ -167,7 +172,7 @@ public class SidePanel extends JPanel {
 				}
 			}
 		};
-		listenCopyAppend = new ActionListener() {
+		listenCopyAppend = new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
 				
 				JComboBox<String> animations = new JComboBox<String>( new DefaultComboBoxModel<String>( new String[ 0 ] ) );
@@ -231,6 +236,57 @@ public class SidePanel extends JPanel {
 			}
 			
 		};
+	}
+	
+	public void registerKeybinds( InputMap input, ActionMap action ) {
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK, true ), "OPEN" );
+		action.put( "OPEN", listenLoad );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK, true ), "OPENNW" );
+		action.put( "OPENNW", listenNWLoad );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK, true ), "COPYNEW" );
+		action.put( "COPYNEW", listenCopyNew );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK, true ), "COPYAPPEND" );
+		action.put( "COPYAPPEND", listenCopyAppend );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK, true ), "SAVE" );
+		action.put( "SAVE", listenWrite );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK, true ), "SIMULATE" );
+		action.put( "SIMULATE", listenSimulate );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK, true ), "SIMULATESKIP" );
+		action.put( "SIMULATESKIP", new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				if ( parent.displayHasLabels() ) {
+					simulating = !simulating;
+					if ( simulating ) {
+						simulateButton.setText( "Reset" );
+						parent.simulateLabels( parent.globals.getProperty( "active" ), parent.globals.getProperty( "primary" ) );
+					}
+					else {
+						simulateButton.setText( "Simulate" );
+						parent.deSimLabels();
+					}
+				}
+				else
+					parent.handleException( new Exception( "You must load a file before you can Simulate it" ) );
+			}
+		} );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_F, InputEvent.ALT_DOWN_MASK, true ), "GRABFOLDER" );
+		action.put( "GRABFOLDER", new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				animations.grabFocus();
+			}
+		} );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_P, InputEvent.ALT_DOWN_MASK, true ), "GRABPOSITION" );
+		action.put( "GRABPOSITION", new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				positions.grabFocus();
+			}
+		} );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_R, InputEvent.ALT_DOWN_MASK, true ), "GRABRAPE" );
+		action.put( "GRABRAPE", new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				rapeCheck.grabFocus();
+			}
+		} );
 	}
 	
 	/**
@@ -374,7 +430,8 @@ public class SidePanel extends JPanel {
 		c.gridx++ ;
 		add( rapeCheck, c );
 		
-		JButton loadButton = new JButton( "Load" );
+		JButton loadButton = new JButton( "Open" );
+		loadButton.setToolTipText( "CTRL + O" );
 		loadButton.addActionListener( listenLoad );
 		JLabel loadInfo = new JLabel( "(?)" );
 		loadInfo.setToolTipText( "<html>Loads every stage to be found under the paramaters given by the <br>" + "above options.</html>" );
@@ -390,7 +447,8 @@ public class SidePanel extends JPanel {
 		c.gridx++ ;
 		add( loadInfo, c );
 		
-		JButton loadNWButton = new JButton( "Load in New Window" );
+		JButton loadNWButton = new JButton( "Open in New Window" );
+		loadNWButton.setToolTipText( "CTRL + SHIFT + O" );
 		loadNWButton.addActionListener( listenNWLoad );
 		JLabel loadNWInfo = new JLabel( "(?)" );
 		loadNWInfo.setToolTipText( "<html>Loads every stage to be found under the parameters given by the <br>"
@@ -409,6 +467,7 @@ public class SidePanel extends JPanel {
 		add( loadNWInfo, c );
 		
 		JButton loadCopyToNew = new JButton( "Copy to New Position" );
+		loadCopyToNew.setToolTipText( "CTRL + N" );
 		loadCopyToNew.addActionListener( listenCopyNew );
 		JLabel loadCopyToNewInfo = new JLabel( "(?)" );
 		loadCopyToNewInfo.setToolTipText( "<html>Fetches the files for the animation selected above, and writes<br>"
@@ -427,6 +486,7 @@ public class SidePanel extends JPanel {
 		add( loadCopyToNewInfo, c );
 		
 		JButton loadCopyToExist = new JButton( "Copy to Existing Position" );
+		loadCopyToExist.setToolTipText( "CTRL + SHIFT + N" );
 		loadCopyToExist.addActionListener( listenCopyAppend );
 		JLabel loadCopyToExistInfo = new JLabel( "(?)" );
 		loadCopyToExistInfo.setToolTipText( "<html>Fetches the files for the animation selected above, and adds<br>"
@@ -445,6 +505,7 @@ public class SidePanel extends JPanel {
 		add( loadCopyToExistInfo, c );
 		
 		simulateButton = new JButton( "Simulate" );
+		simulateButton.setToolTipText( "CTRL + R (CTRL + SHIFT + R to skip dialog)" );
 		simulateButton.addActionListener( listenSimulate );
 		JLabel simulateInfo = new JLabel( "(?)" );
 		simulateInfo.setToolTipText( "<html>Replaces all the {TAGS} in the open lines with randomly selected <br>"
@@ -462,11 +523,12 @@ public class SidePanel extends JPanel {
 		c.gridx++ ;
 		add( simulateInfo, c );
 		
-		JButton writeButton = new JButton( "Write" );
+		JButton writeButton = new JButton( "Save" );
+		writeButton.setToolTipText( "CTRL + S" );
 		writeButton.addActionListener( listenWrite );
 		JLabel writeInfo = new JLabel( "(?)" );
 		writeInfo.setToolTipText(
-				"<html>Writes the file loaded in the right display area to the database,<br>" + "overwriting the existing files.</html>" );
+				"<html>Saves the file loaded in the right display area to the database,<br>" + "overwriting the existing files.</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.weightx = 1;

@@ -27,8 +27,10 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
@@ -115,6 +117,7 @@ public class View extends JFrame implements ActionListener {
 		main.add( banner, BorderLayout.PAGE_START );
 		
 		side = new SidePanel( this );
+		side.registerKeybinds( getRootPane().getInputMap( JComponent.WHEN_IN_FOCUSED_WINDOW ), getRootPane().getActionMap() );
 		JScrollPane sideScroll = new JScrollPane( side, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
 		sideScroll.getVerticalScrollBar().setUnitIncrement( 16 );
 		sideScroll.setBorder( BorderFactory.createRaisedSoftBevelBorder() );
@@ -343,15 +346,6 @@ public class View extends JFrame implements ActionListener {
 								}
 							} );
 							
-							// Add key listener to allow closing the application with CTRL + W;
-							displayFrame.getRootPane().getInputMap( JComponent.WHEN_IN_FOCUSED_WINDOW )
-									.put( KeyStroke.getKeyStroke( KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK, true ), "CLOSE" );
-							displayFrame.getRootPane().getActionMap().put( "CLOSE", new AbstractAction() {
-								public void actionPerformed( ActionEvent e ) {
-									displayFrame.dispatchEvent( new WindowEvent( displayFrame, WindowEvent.WINDOW_CLOSING ) );
-								}
-							} );
-							
 							JPanel displayPanel = new JPanel( new BorderLayout() );
 							JScrollPane displayNWScroll = new JScrollPane( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
 									JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED );
@@ -362,14 +356,17 @@ public class View extends JFrame implements ActionListener {
 							displayPanel.add( displayNWScroll, BorderLayout.CENTER );
 							
 							JPanel buttonPanel = new JPanel();
-							JButton writeButton = new JButton( "Write" );
-							writeButton.addActionListener( new ActionListener() {
+							JButton writeButton = new JButton( "Save" );
+							writeButton.setToolTipText( "CTRL + S" );
+							AbstractAction listenWrite = new AbstractAction() {
 								public void actionPerformed( ActionEvent e ) {
 									writeNWDisplay( displayNW );
 								}
-							} );
+							};
+							writeButton.addActionListener( listenWrite );
 							final JButton simulateButton = new JButton( "Simulate" );
-							simulateButton.addActionListener( new ActionListener() {
+							simulateButton.setToolTipText( "CTRL + R (CTRL + SHIFT + R to skip dialog)" );
+							AbstractAction listenSimulate = new AbstractAction() {
 								public void actionPerformed( ActionEvent e ) {
 									View parent = View.this;
 									boolean simulating = simulateButton.getText() == "Reset";
@@ -410,10 +407,46 @@ public class View extends JFrame implements ActionListener {
 									else
 										parent.handleException( new Exception( "You must load a file before you can Simulate it" ) );
 								}
-							} );
+							};
+							simulateButton.addActionListener( listenSimulate );
 							buttonPanel.add( writeButton );
 							buttonPanel.add( simulateButton );
 							displayPanel.add( buttonPanel, BorderLayout.PAGE_END );
+							
+							// Add key listener to allow closing the application with CTRL + W;
+							InputMap input = displayFrame.getRootPane().getInputMap( JComponent.WHEN_IN_FOCUSED_WINDOW );
+							ActionMap action = displayFrame.getRootPane().getActionMap();
+							input.put( KeyStroke.getKeyStroke( KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK, true ), "CLOSE" );
+							action.put( "CLOSE", new AbstractAction() {
+								public void actionPerformed( ActionEvent e ) {
+									displayFrame.dispatchEvent( new WindowEvent( displayFrame, WindowEvent.WINDOW_CLOSING ) );
+								}
+							} );
+							input.put( KeyStroke.getKeyStroke( KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK, true ), "SAVE" );
+							action.put( "SAVE", listenWrite );
+							input.put( KeyStroke.getKeyStroke( KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK, true ), "SIMULATE" );
+							action.put( "SIMULATE", listenSimulate );
+							input.put(
+									KeyStroke.getKeyStroke( KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK, true ),
+									"SIMULATESKIP" );
+							action.put( "SIMULATESKIP", new AbstractAction() {
+								public void actionPerformed( ActionEvent e ) {
+									boolean simulating = simulateButton.getText() == "Reset";
+									if ( displayHasLabels( displayNW ) ) {
+										simulating = !simulating;
+										if ( simulating ) {
+											simulateButton.setText( "Reset" );
+											simulateLabels( displayNW, globals.getProperty( "active" ), globals.getProperty( "primary" ) );
+										}
+										else {
+											simulateButton.setText( "Simulate" );
+											deSimLabels( displayNW );
+										}
+									}
+									else
+										handleException( new Exception( "You must load a file before you can Simulate it" ) );
+								}
+							} );
 							
 							displayFrames.add( displayFrame );
 							displayFrame.setContentPane( displayPanel );
