@@ -78,6 +78,10 @@ public class SidePanel extends JPanel {
 		animations.setEnabled( b );
 	}
 	
+	public void setSelectedAnim( String str ) {
+		animations.setSelectedItem( str );
+	}
+	
 	/**
 	 * Create all the listeners for this panel
 	 */

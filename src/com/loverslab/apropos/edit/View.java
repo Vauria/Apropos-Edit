@@ -465,6 +465,28 @@ public class View extends JFrame implements ActionListener {
 		model.new PositionCopier( folder, animString, newAnim ) {
 			public void done() {
 				try {
+					side.publishingComplete( false );
+					model.new FolderListFetcher() {
+						
+						protected void done() {
+							try {
+								get();
+								side.publishingComplete( true );
+								side.setSelectedAnim( model.extractFolder( newAnim ) );
+								revalidate();
+							}
+							catch ( InterruptedException | ExecutionException e ) {
+								handleException( e );
+								e.printStackTrace();
+							}
+							
+						}
+						
+						public void process( List<String> strings ) {
+							for ( String s : strings )
+								side.publishAnimation( s );
+						}
+					}.execute();
 					display.load( get(), true );
 				}
 				catch ( InterruptedException | ExecutionException e ) {

@@ -260,6 +260,27 @@ public class Model {
 		return b == null ? false : b;
 	}
 	
+	public void writeUniques() {
+		File file = new File( db + "UniqueAnimations.txt" );
+		try ( JsonWriter writer = new JsonWriter( new FileWriter( file ) ) ) {
+			writer.setIndent( "    " );
+			writer.beginObject();
+			for ( String key : uniques.keySet() ) {
+				writer.name( key );
+				writer.value( uniques.get( key ) );
+			}
+			writer.endObject();
+		}
+		catch ( IllegalStateException | MalformedJsonException e ) {
+			String message = "Error writing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
+			view.handleException( new IllegalStateException( message, e ) );
+		}
+		catch ( IOException e ) {
+			view.handleException( e );
+			e.printStackTrace();
+		}
+	}
+	
 	/**
 	 * Extracts the folder part of an animation file name
 	 * 
@@ -395,7 +416,7 @@ public class Model {
 	public class UniquesFetcher extends SwingWorker<Object, Object> {
 		
 		public Object doInBackground() {
-			uniques = new TreeMap<String, Boolean>();
+			uniques = new TreeMap<String, Boolean>( String.CASE_INSENSITIVE_ORDER );
 			File file = new File( db + "UniqueAnimations.txt" );
 			if ( file.exists() )
 				try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
@@ -643,6 +664,13 @@ public class Model {
 			position.setText( newAnim );
 			folder.setText( extractFolder( newAnim ) );
 			writeStages( toCopy );
+			
+			if ( getPosition( newAnim ) == Position.Unique ) {
+				System.out.println( newAnim + " is unique!" );
+				uniques.put( newAnim.substring( newAnim.indexOf( '_' ) + 1 ), true );
+				writeUniques();
+			}
+			
 			return toCopy;
 		}
 		
@@ -752,6 +780,9 @@ public class Model {
 				view.handleException( e );
 				e.printStackTrace();
 			}
+			
+			if ( uniques == null ) new UniquesFetcher().doInBackground();
+			writeUniques();
 			return null;
 		}
 		
