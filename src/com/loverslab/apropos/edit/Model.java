@@ -928,6 +928,13 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 		return i;
 	}
 	
+	public void modifyKey( AproposLabel key, String newText ) {
+		T map = get( key );
+		remove( key );
+		key.setText( newText );
+		put( key, map );
+	}
+	
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
 		AproposLabel[] keys = keySet().toArray( new AproposLabel[ 0 ] );

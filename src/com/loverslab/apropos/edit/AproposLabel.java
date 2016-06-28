@@ -502,19 +502,23 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		if ( ldepth == odepth ) {
 			switch ( ldepth ) {
 				case 0: // The Database
+					if ( lstr.equals( ostr ) ) return (int) Math.signum( hashCode() - o.hashCode() );
 					return lstr.compareTo( ostr );
 				case 1: // The Folder
+					if ( lstr.equals( ostr ) ) return (int) Math.signum( hashCode() - o.hashCode() );
 					return lstr.compareTo( ostr );
 				case 2: // The Position
+					if ( lstr.equals( ostr ) ) return (int) Math.signum( hashCode() - o.hashCode() );
 					return lstr.compareTo( ostr );
 				case 3: // The Animation Stage
-					if ( lstr.equals( ostr ) ) return 0;
+					if ( lstr.equals( ostr ) ) return (int) Math.signum( hashCode() - o.hashCode() );
 					if ( lstr.equals( "Intro" ) ) return -1;
 					if ( ostr.equals( "Intro" ) ) return 1;
 					if ( lstr.equals( "Orgasm" ) ) return 1;
 					if ( ostr.equals( "Orgasm" ) ) return -1;
 					return lstr.compareTo( ostr );
 				case 4: // The Animation Perspective
+					if ( lstr.equals( ostr ) ) return (int) Math.signum( hashCode() - o.hashCode() );
 					return lstr.compareTo( ostr );
 				default: // The lines themselves? We fucked up
 					return 0;

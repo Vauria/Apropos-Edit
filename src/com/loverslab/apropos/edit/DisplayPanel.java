@@ -7,7 +7,9 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
+import java.util.LinkedList;
 
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -73,6 +75,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 			c.gridheight = 1;
 			add( stage.display( layout, this, this, false ), c );
 			PerspectiveMap persMap = stageMap.get( stage );
+			if(persMap == null) System.out.println( stageMap );
 			for ( AproposLabel perspec : persMap.keySet() ) {
 				c.insets = new Insets( 0, 40, 0, 5 );
 				c.gridy++ ;
@@ -160,20 +163,32 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 			return;
 		}
 		boolean found = false;
-		AproposLabel lastStage = null;
+		AproposLabel lastStage = null; // Queue to hold key/value parings that need to be re-inserted into the StageMap
+		LinkedList<SimpleImmutableEntry<AproposLabel, PerspectiveMap>> updateQueue = new LinkedList<SimpleImmutableEntry<AproposLabel, PerspectiveMap>>();
 		for ( AproposLabel stageLabel : stageMap.keySet() ) {
 			if ( found ) {
 				String text = stageLabel.getText();
 				if ( text.indexOf( "Stage" ) > -1 ) {
 					if ( stageLabel.compareTo( lastStage ) > -1 ) lastStage = stageLabel.clone();
 					int n = Character.getNumericValue( text.trim().charAt( text.length() - 1 ) );
+					PerspectiveMap map = stageMap.get( stageLabel );
 					stageLabel.setText( text.substring( 0, text.length() - 1 ) + ( n - 1 ) );
+					updateQueue.add( new SimpleImmutableEntry<AproposLabel, PerspectiveMap>( stageLabel, map ) );
 				}
 			}
 			else if ( stageLabel == stage ) {
 				found = true;
 				if ( stageLabel.compareTo( lastStage ) > -1 ) lastStage = stageLabel.clone();
+				// PerspectiveMap map = stageMap.get( stageLabel );
+				//stageLabel.setText( "ded" );
+				//updateQueue.add( new SimpleImmutableEntry<AproposLabel, PerspectiveMap>( stageLabel, map ) );
 			}
+		}
+		
+		while ( !updateQueue.isEmpty() ) {
+			SimpleImmutableEntry<AproposLabel, PerspectiveMap> pair = updateQueue.pop();
+			stageMap.remove( pair.getKey() ); // Remove the key to re-balance the tree
+			stageMap.put( pair.getKey(), pair.getValue() ); // Re-insert the key
 		}
 		System.out.println( lastStage );
 		stageMap.remove( stage );
@@ -197,6 +212,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		}
 		boolean found = false;
 		int i = 0, s = 0;
+		LinkedList<SimpleImmutableEntry<AproposLabel, PerspectiveMap>> updateQueue = new LinkedList<SimpleImmutableEntry<AproposLabel, PerspectiveMap>>();
 		AproposLabel[] stageLabels = stageMap.keySet().toArray( new AproposLabel[ 0 ] );
 		for ( i = 0; i < stageLabels.length; i++ ) {
 			AproposLabel stageLabel = stageLabels[i];
@@ -204,7 +220,9 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 				String text = stageLabel.getText();
 				if ( text.indexOf( "Stage" ) > -1 ) {
 					int n = Character.getNumericValue( text.trim().charAt( text.length() - 1 ) );
+					PerspectiveMap map = stageMap.get( stageLabel );
 					stageLabel.setText( text.substring( 0, text.length() - 1 ) + ( n + 1 ) );
+					updateQueue.add( new SimpleImmutableEntry<AproposLabel, PerspectiveMap>( stageLabel, map ) );
 				}
 			}
 			else if ( stageLabel == stage ) {
@@ -213,7 +231,9 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 					String text = stageLabel.getText();
 					if ( text.indexOf( "Stage" ) > -1 ) {
 						int n = Character.getNumericValue( text.trim().charAt( text.length() - 1 ) );
+						PerspectiveMap map = stageMap.get( stageLabel );
 						stageLabel.setText( text.substring( 0, text.length() - 1 ) + ( n + 1 ) );
+						updateQueue.add( new SimpleImmutableEntry<AproposLabel, PerspectiveMap>( stageLabel, map ) );
 						s = n;
 					}
 				}
@@ -239,6 +259,12 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		for ( AproposLabel pers : stageMap.get( stageLabels[0] ).keySet() ) {
 			AproposLabel newPers = new AproposLabel( pers.getText(), newKey );
 			newMap.put( newPers, new LabelList( Arrays.asList( new AproposLabel[] { new AproposLabel( "", newPers ) } ) ) );
+		}
+		
+		while ( !updateQueue.isEmpty() ) {
+			SimpleImmutableEntry<AproposLabel, PerspectiveMap> pair = updateQueue.pop();
+			stageMap.remove( pair.getKey() ); // Remove the key to re-balance the tree
+			stageMap.put( pair.getKey(), pair.getValue() ); // Re-insert the key
 		}
 		
 		stageMap.put( newKey, newMap );
