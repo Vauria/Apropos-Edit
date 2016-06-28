@@ -167,7 +167,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	public String toString() {
-		return string;
+		return (parent != null ? parent.toString() : "") + getText() + "\\";
 	}
 	
 	/**
@@ -498,7 +498,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	public int compareTo( AproposLabel o ) {
 		if(o == null) return 1;
 		int ldepth = getDepth(), odepth = o.getDepth();
-		String lstr = toString(), ostr = o.toString();
+		String lstr = getText(), ostr = o.getText();
 		if ( ldepth == odepth ) {
 			switch ( ldepth ) {
 				case 0: // The Database

@@ -7,6 +7,7 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.util.Arrays;
 
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -166,7 +167,6 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 				if ( text.indexOf( "Stage" ) > -1 ) {
 					if ( stageLabel.compareTo( lastStage ) > -1 ) lastStage = stageLabel.clone();
 					int n = Character.getNumericValue( text.trim().charAt( text.length() - 1 ) );
-					System.out.println( text + " to " + text.substring( 0, text.length() - 1 ) + ( n - 1 ) );
 					stageLabel.setText( text.substring( 0, text.length() - 1 ) + ( n - 1 ) );
 				}
 			}
@@ -175,9 +175,73 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 				if ( stageLabel.compareTo( lastStage ) > -1 ) lastStage = stageLabel.clone();
 			}
 		}
-		stageMap.remove( stage );
 		System.out.println( lastStage );
+		stageMap.remove( stage );
 		if ( lastStage != null ) parent.model.deleteStage( lastStage );
+		
+		refresh();
+	}
+	
+	public void stageAdd( AproposLabel stage, boolean above ) {
+		if ( stage.getDepth() != 3 ) {
+			System.err.println( "Stage Remove Called on not a stage: " + stage );
+			return;
+		}
+		if ( stage.getText().indexOf( "Intro" ) > -1 && above ) {
+			parent.handleException( new IllegalStateException( "You can't add a stage above the " + stage.getText() + " Stage" ) );
+			return;
+		}
+		if ( stage.getText().indexOf( "Orgasm" ) > -1 && !above ) {
+			parent.handleException( new IllegalStateException( "You can't add a stage below the " + stage.getText() + " Stage" ) );
+			return;
+		}
+		boolean found = false;
+		int i = 0, s = 0;
+		AproposLabel[] stageLabels = stageMap.keySet().toArray( new AproposLabel[ 0 ] );
+		for ( i = 0; i < stageLabels.length; i++ ) {
+			AproposLabel stageLabel = stageLabels[i];
+			if ( found ) {
+				String text = stageLabel.getText();
+				if ( text.indexOf( "Stage" ) > -1 ) {
+					int n = Character.getNumericValue( text.trim().charAt( text.length() - 1 ) );
+					stageLabel.setText( text.substring( 0, text.length() - 1 ) + ( n + 1 ) );
+				}
+			}
+			else if ( stageLabel == stage ) {
+				found = true;
+				if ( above ) {
+					String text = stageLabel.getText();
+					if ( text.indexOf( "Stage" ) > -1 ) {
+						int n = Character.getNumericValue( text.trim().charAt( text.length() - 1 ) );
+						stageLabel.setText( text.substring( 0, text.length() - 1 ) + ( n + 1 ) );
+						s = n;
+					}
+				}
+				else {
+					String text = stageLabel.getText();
+					if ( text.indexOf( "Stage" ) > -1 ) {
+						int n = Character.getNumericValue( text.trim().charAt( text.length() - 1 ) );
+						s = n + 1;
+					}
+				}
+			}
+		}
+		
+		AproposLabel parent = stageLabels[0].getParentLabel();
+		if ( s == 0 ) {
+			if ( stage.getText().indexOf( "Intro" ) > -1 )
+				s = 1;
+			else if ( stage.getText().indexOf( "Orgasm" ) > -1 ) s = stageLabels.length - 1;
+		}
+		AproposLabel newKey = new AproposLabel( "Stage " + s, parent );
+		
+		PerspectiveMap newMap = new PerspectiveMap();
+		for ( AproposLabel pers : stageMap.get( stageLabels[0] ).keySet() ) {
+			AproposLabel newPers = new AproposLabel( pers.getText(), newKey );
+			newMap.put( newPers, new LabelList( Arrays.asList( new AproposLabel[] { new AproposLabel( "", newPers ) } ) ) );
+		}
+		
+		stageMap.put( newKey, newMap );
 		
 		refresh();
 	}
@@ -300,11 +364,11 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 			return removeStage = initMenuItem( removeStage, "Remove Stage" );
 		}
 		
-		protected JMenuItem getStageAboveItem() {
+		protected JMenuItem getStageBelowItem() {
 			return addStageBelow = initMenuItem( addStageBelow, "Add New Stage Below" );
 		}
 		
-		protected JMenuItem getStageBelowItem() {
+		protected JMenuItem getStageAboveItem() {
 			return addStageAbove = initMenuItem( addStageAbove, "Add New Stage Above" );
 		}
 		
@@ -375,9 +439,9 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 			else if ( item == removeStage )
 				stageRemoved( invoker );
 			else if ( item == addStageBelow )
-				lineRemoved( invoker );
+				stageAdd( invoker, false );
 			else if ( item == addStageAbove )
-				lineRemoved( invoker );
+				stageAdd( invoker, true );
 			else if ( item instanceof LabelMenuItem ) {
 				LabelMenuItem lMI = ( (LabelMenuItem) item );
 				LabelMenu root = lMI.parent;

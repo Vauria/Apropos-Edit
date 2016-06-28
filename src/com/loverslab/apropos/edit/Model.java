@@ -14,6 +14,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -77,7 +78,7 @@ public class Model {
 	 */
 	public StageMap getStages( AproposLabel parent ) {
 		StageMap data = new StageMap();
-		String path = db + parent.getParentLabel().toString() + "\\" + parent.toString();
+		String path = db + parent.getParentLabel().getText() + "\\" + parent.getText();
 		System.out.println( path );
 		File file = new File( path + ".txt" );
 		if ( file.exists() ) {
@@ -150,7 +151,7 @@ public class Model {
 			if ( list.size() == 0 ) {
 				list.add( new AproposLabel( "", key ) );
 			}
-			else if ( ! ( list.size() == 1 & list.get( 0 ).toString().equals( "" ) ) ) {
+			else if ( ! ( list.size() == 1 & list.get( 0 ).getText().equals( "" ) ) ) {
 				list.add( new AproposLabel( "", key ) );
 			}
 			data.put( key, list );
@@ -834,6 +835,12 @@ public class Model {
 class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 	private static final long serialVersionUID = -3091716550688577792L;
 	
+	public LabelList() {}
+	
+	public LabelList( Collection<? extends AproposLabel> list ) {
+		super( list );
+	}
+	
 	public int totalSize() {
 		return size();
 	}
@@ -926,7 +933,7 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 		AproposLabel[] keys = keySet().toArray( new AproposLabel[ 0 ] );
 		for ( int i = 0; i < size(); i++ ) {
 			if ( i > 0 ) builder.append( indent );
-			builder.append( keys[i].toString() + indent + "\t" + get( keys[i] ) );
+			builder.append( keys[i].getText() + indent + "\t" + get( keys[i] ) );
 		}
 		return builder.toString();
 	}
