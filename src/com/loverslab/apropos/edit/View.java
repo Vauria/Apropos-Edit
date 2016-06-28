@@ -3,9 +3,13 @@ package com.loverslab.apropos.edit;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.DisplayMode;
+import java.awt.Frame;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
@@ -196,6 +200,44 @@ public class View extends JFrame implements ActionListener {
 		setExtendedState( MAXIMIZED_BOTH );
 	}
 	
+	public void ensureOnScreen( Frame frame, Point position, Dimension dimension ) {
+		Rectangle bounds = null;
+		Point pos = new Point( position.x + dimension.width, position.y );
+		Dimension size = new Dimension( dimension );
+		double distance = Double.MAX_VALUE;
+		for ( GraphicsDevice device : GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices() )
+			for ( GraphicsConfiguration config : device.getConfigurations() ) {
+				Rectangle temp = config.getBounds();
+				if ( temp.contains( pos ) ) {
+					bounds = temp;
+					pos.x = pos.x - size.width;
+					distance = -1;
+				}
+				else if ( temp.getLocation().distance( pos ) < distance ) {
+					bounds = temp;
+				}
+			}
+		if ( distance > 0 ) {
+			pos.x = pos.x - size.width;
+			pos = clampPoint( pos, bounds.getLocation(), new Point( bounds.x + bounds.width, bounds.y + bounds.height ) );
+		}
+		// Check right bound
+		int rightOverflow = pos.x + size.width - bounds.x - bounds.width;
+		if ( rightOverflow > 0 ) pos.x = pos.x - rightOverflow;
+		
+		// Check lower bound
+		int lowerOverflow = pos.y + size.height - bounds.y - bounds.height;
+		if ( lowerOverflow > 0 ) size = new Dimension( size.width, size.height - lowerOverflow );
+		
+		frame.setLocation( pos );
+		frame.setSize( size );
+	}
+	
+	public Point clampPoint( Point point, Point topLeft, Point bottomRight ) {
+		return new Point( Math.max( topLeft.x, Math.min( bottomRight.x, point.x ) ),
+				Math.max( topLeft.y, Math.min( bottomRight.y, point.y ) ) );
+	}
+	
 	public boolean displayHasLabels() {
 		StageMap map = display.stageMap;
 		return map != null ? map.size() != 0 : false;
@@ -288,8 +330,8 @@ public class View extends JFrame implements ActionListener {
 					if ( stageMap != null && stageMap.size() != 0 ) {
 						if ( newWindow ) {
 							final JFrame displayFrame = new JFrame( animString );
-							displayFrame.setSize( 800, getHeight() );
-							displayFrame.setLocation( new Point( getLocation().x + getWidth(), getLocation().y ) );
+							ensureOnScreen( displayFrame, new Point( getLocation().x + getWidth(), getLocation().y ),
+									new Dimension( 800, getHeight() ) );
 							displayFrame.setDefaultCloseOperation( DISPOSE_ON_CLOSE );
 							
 							displayFrame.addWindowListener( new WindowAdapter() {
