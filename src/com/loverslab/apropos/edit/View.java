@@ -7,7 +7,10 @@ import java.awt.Frame;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -38,6 +41,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -60,6 +64,8 @@ public class View extends JFrame implements ActionListener {
 	protected JScrollPane displayScroll;
 	protected JDialog dialog, dialogLock;
 	protected JPanel messagePanel;
+	protected JLabel progressLabel;
+	protected JProgressBar progressBar;
 	protected ArrayList<JFrame> displayFrames = new ArrayList<JFrame>();
 	protected volatile LinkedList<Exception> exceptionQueue = new LinkedList<Exception>();
 	protected volatile LinkedList<Exception> displayedExceptions = new LinkedList<Exception>();
@@ -128,6 +134,22 @@ public class View extends JFrame implements ActionListener {
 		displayScroll.setViewportView( display );
 		displayScroll.getVerticalScrollBar().setUnitIncrement( 16 );
 		main.add( displayScroll, BorderLayout.CENTER );
+		
+		JPanel infoPanel = new JPanel( new GridBagLayout() );
+		progressLabel = new JLabel( "Counting Files: 700..." );
+		progressBar = new JProgressBar();
+		progressBar.setValue( 35 );
+		GridBagConstraints c = new GridBagConstraints();
+		c.insets = new Insets( 2, 10, 2, 10 );
+		c.anchor = GridBagConstraints.FIRST_LINE_START;
+		c.gridx = 0;
+		c.gridwidth = 2;
+		infoPanel.add( progressBar, c );
+		c.gridx = 2;
+		c.gridwidth = 1;
+		c.weightx = 1;
+		infoPanel.add( progressLabel, c );
+		main.add( infoPanel, BorderLayout.PAGE_END );
 	}
 	
 	/**
