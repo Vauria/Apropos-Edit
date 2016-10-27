@@ -15,7 +15,10 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
@@ -380,6 +383,79 @@ public class Model {
 			str = str.replace( key, synonym );
 		}
 		return str;
+	}
+	
+	private static float perDiff( int n, int m ) {
+		float diff = Math.abs( n - m );
+		return diff / (float) Math.max( 1, Math.max( n, m ) );
+	}
+	
+	private static String stripPunctuation( String str ) {
+		str = str.toLowerCase( Locale.ENGLISH );
+		str = str.replaceAll( "[\\.,!?'\\(\\)]", "" );
+		return str;
+	}
+	
+	private static HashMap<String, Integer> getBagOfWords( String str ) {
+		HashMap<String, Integer> map = new HashMap<String, Integer>();
+		String[] split = str.split( " " );
+		for ( String word : split ) {
+			Integer get = map.get( word );
+			map.put( word, get != null ? get + 1 : 1 );
+		}
+		return map;
+	}
+	
+	private static <T> int sum( HashMap<T, Integer> map ) {
+		int ret = 0;
+		for ( T key : map.keySet() )
+			ret += map.get( key );
+		return ret;
+	}
+	
+	public static boolean fuzzyMatches( String st1, String st2 ) {
+		int l1 = st1.length(), l2 = st2.length();
+		if ( st1.equals( st2 ) ) return true; // Run the equal string comparison
+		if ( perDiff( l1, l2 ) > 0.25f ) return false; // If the length of the two strings is different by over 25%, discard
+		st1 = stripPunctuation( st1 );
+		st2 = stripPunctuation( st2 );
+		if ( st1.equals( st2 ) ) return true; // Run the equal string comparison again
+		HashMap<String, Integer> map1 = getBagOfWords( st1 ), map2 = getBagOfWords( st2 );
+		int c1 = map1.size(), c2 = map2.size();
+		int sum1 = sum( map1 ), sum2 = sum( map2 );
+		int misses = (int) Math.ceil( (float) Math.max( sum1, sum2 ) / 4f );
+		System.out.printf( "c1: %d, c2: %d, s1: %d, s2: %d, misses: %d\n", c1, c2, sum1, sum2, misses );
+		if ( Math.abs( sum1 - sum2 ) > misses ) return false;
+		Set<String> left = new HashSet<String>( map1.keySet() ), right = new HashSet<String>( map2.keySet() );
+		left.removeAll( map2.keySet() );
+		right.removeAll( map1.keySet() );
+		left.addAll( right );
+		if ( left.size() > misses ) return false;
+		return true;
+	}
+	
+	public static void main( String[] args ) {
+		String[] one = new String[ 8 ];
+		String[] two = new String[ 8 ];
+		one[0] = "Oh, my Gods! Oh, he's {CUMMING} in my {ASS}! {SWEARING}, this is so intense...";
+		two[0] = "Oh, my Gods! Oh, he's squirting in my {ASS}! Oh shit, this is so intense...";
+		one[1] = "My toes curl painfully and my whole body convulses as I pleasure myself to orgasm.";
+		two[1] = "My toes curl painfully and my whole body convulses as I pleasure myself to orgasm.";
+		one[2] = "My fingers piston deeply into my {FAROUSAL} {PUSSY}, as I finger fuck myself to climax.";
+		two[2] = "I draw in a sharp breath and hold it. My pelvis spasms and thrusts against my fingers.";
+		one[3] = "To anyone paying attention, it's obvious that the naked girl writhing on the floor is cumming, hard.";
+		two[3] = "My body shakes violently, driven to one thunderous climax after another.";
+		one[4] = "I feel my breath catch in my chest, and my heart pounds so hard I think I'm going to die.";
+		two[4] = "My vision fails me, and everything burns white as my exhausted body shakes in climax.";
+		one[5] = "My orgasm erupts violently, my clit painfully sensitive as my fingers continue their assault.";
+		two[5] = "My eyes roll back into my head, my toes curl and my free hand clenches painfully as I cum.";
+		one[6] = "The whole world goes silent, just before I hear my own cries rip out of my throat.";
+		two[6] = "({ACTIVE}) Shit {BITCH}, you sure are wet! I guess you want this!";
+		one[7] = "They eye my nude form hungrily. I'm shamefully wet by this point, and my knees are ready to buckle.";
+		two[7] = "They eye your nude form hungrily. You're shamefully wet by this point, and your knees are ready to buckle.";
+		for ( int i = 0; i < 8; i++ ) {
+			System.out.printf( "%d: %b\n", i, fuzzyMatches( one[i], two[i] ) );
+		}
 	}
 	
 	/**
