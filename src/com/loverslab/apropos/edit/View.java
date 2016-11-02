@@ -55,7 +55,7 @@ import javax.swing.SwingUtilities;
 @SuppressWarnings("serial") // No one Serialises Swing anymore
 public class View extends JFrame implements ActionListener {
 	
-	private final String version = "1.1";
+	private final String version = "1.2a";
 	protected Globals globals;
 	protected Model model;
 	protected Banner banner;
