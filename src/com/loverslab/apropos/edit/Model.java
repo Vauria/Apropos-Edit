@@ -43,7 +43,34 @@ public class Model {
 	AproposLabel root;
 	TreeMap<String, Boolean> uniques = null;
 	TreeMap<String, ArrayList<String>> synonyms;
-	
+	//@formatter:off
+	static HashMap<BytePair, String[][]> shiftTable = new HashMap<BytePair, String[][]>() { private static final long serialVersionUID = -7986832642422472332L; {
+		put( new BytePair( 1, 2 ), new String[][] { 
+			new String[] { "^ I((?:'[\\w]+)?)( |\\p{Punct})", " You$1$2" }, 
+			new String[] { "([\\.?!]) I((?:'[\\w]+)?)( |\\p{Punct})", "$1 You$2$3" }, 
+			new String[] { " I((?:'[\\w]+)?)( |\\p{Punct})", " you$1$2" }, 
+			new String[] { " my( |\\p{Punct})", " your$1" }, 
+			new String[] { " My( |\\p{Punct})", " Your$1" }, 
+			new String[] { " me( |\\p{Punct})", " you$1" },
+			new String[] { " Me( |\\p{Punct})", " You$1" },
+			new String[] { " mine( |\\p{Punct})", " yours$1" }, 
+			new String[] { " Mine( |\\p{Punct})", " Yours$1" },
+			new String[] { " myself( |\\p{Punct})", " yourself$1" },
+			new String[] { " Myself( |\\p{Punct})", " Yourself$1" },
+			new String[] { " am( |\\p{Punct})", " are$1" },
+			new String[] { " Am( |\\p{Punct})", " Are$1" },
+		});
+		put( new BytePair( 2, 1 ), new String[][] { 
+			new String[] { " (?:you|You)((?:'[\\w]+)?)( |\\p{Punct})", " I$1$2" }, 
+			new String[] { " your( |\\p{Punct})", " my$1" }, 
+			new String[] { " Your( |\\p{Punct})", " My$1" },
+			new String[] { " yours( |\\p{Punct})", " mine$1" }, 
+			new String[] { " Yours( |\\p{Punct})", " Mine$1" },
+			new String[] { " yourself( |\\p{Punct})", " myself$1" },
+			new String[] { " Yourself( |\\p{Punct})", " Myself$1" },
+		});
+	}};
+	//@formatter:on
 	public Model( View view ) {
 		super();
 		this.view = view;
@@ -413,13 +440,21 @@ public class Model {
 		return ret;
 	}
 	
-	public static boolean fuzzyMatches( String st1, String st2 ) {
+	/**
+	 * Compares the two strings on length, number of words and finally number of each word to determine if they are vaguely similar
+	 * 
+	 * @param strict 0: Literally Equal. 1: Equal ignoring case and punctuation. 2: Equal ignoring a few missmatched words
+	 * @return true if the two strings are approximately equal
+	 */
+	public static boolean fuzzyMatches( String st1, String st2, byte strict ) {
 		int l1 = st1.length(), l2 = st2.length();
 		if ( st1.equals( st2 ) ) return true; // Run the equal string comparison
+		if ( strict == 0 ) return false; // We don't care about any of the other checks
 		if ( perDiff( l1, l2 ) > 0.25f ) return false; // If the length of the two strings is different by over 25%, discard
 		st1 = stripPunctuation( st1 );
 		st2 = stripPunctuation( st2 );
 		if ( st1.equals( st2 ) ) return true; // Run the equal string comparison again
+		if ( strict == 1 ) return false; // We don't care about any of the other checks
 		HashMap<String, Integer> map1 = getBagOfWords( st1 ), map2 = getBagOfWords( st2 );
 		int c1 = map1.size(), c2 = map2.size();
 		int sum1 = sum( map1 ), sum2 = sum( map2 );
@@ -434,28 +469,71 @@ public class Model {
 		return true;
 	}
 	
-	public static void main( String[] args ) {
-		String[] one = new String[ 8 ];
-		String[] two = new String[ 8 ];
-		one[0] = "Oh, my Gods! Oh, he's {CUMMING} in my {ASS}! {SWEARING}, this is so intense...";
-		two[0] = "Oh, my Gods! Oh, he's squirting in my {ASS}! Oh shit, this is so intense...";
-		one[1] = "My toes curl painfully and my whole body convulses as I pleasure myself to orgasm.";
-		two[1] = "My toes curl painfully and my whole body convulses as I pleasure myself to orgasm.";
-		one[2] = "My fingers piston deeply into my {FAROUSAL} {PUSSY}, as I finger fuck myself to climax.";
-		two[2] = "I draw in a sharp breath and hold it. My pelvis spasms and thrusts against my fingers.";
-		one[3] = "To anyone paying attention, it's obvious that the naked girl writhing on the floor is cumming, hard.";
-		two[3] = "My body shakes violently, driven to one thunderous climax after another.";
-		one[4] = "I feel my breath catch in my chest, and my heart pounds so hard I think I'm going to die.";
-		two[4] = "My vision fails me, and everything burns white as my exhausted body shakes in climax.";
-		one[5] = "My orgasm erupts violently, my clit painfully sensitive as my fingers continue their assault.";
-		two[5] = "My eyes roll back into my head, my toes curl and my free hand clenches painfully as I cum.";
-		one[6] = "The whole world goes silent, just before I hear my own cries rip out of my throat.";
-		two[6] = "({ACTIVE}) Shit {BITCH}, you sure are wet! I guess you want this!";
-		one[7] = "They eye my nude form hungrily. I'm shamefully wet by this point, and my knees are ready to buckle.";
-		two[7] = "They eye your nude form hungrily. You're shamefully wet by this point, and your knees are ready to buckle.";
-		for ( int i = 0; i < 8; i++ ) {
-			System.out.printf( "%d: %b\n", i, fuzzyMatches( one[i], two[i] ) );
+	private static boolean contains( String string, String regex ) {
+		return string.matches( "^.*" + regex + ".*$" );
+	}
+	
+	private static boolean contains( String string, String[][] regexers ) {
+		if ( regexers == null ) return false;
+		for ( int i = 0; i < regexers.length; i++ )
+			if ( contains( string, regexers[i][0] ) ) return true;
+		return false;
+	}
+	
+	/**
+	 * Attempts to convert the perspective by replacing pronouns based on regex filters
+	 * 
+	 * @param list List to be shifted
+	 * @param current PerspectiveLabel that represents the current perspective
+	 * @param target PerspectiveLabel that represents the target perspective
+	 * @return new shifted LabelList
+	 */
+	public static LabelList perspectiveShift( LabelList list, AproposLabel current, AproposLabel target ) {
+		BytePair key = new BytePair( current.getText().charAt( 0 ), target.getText().charAt( 0 ) );
+		String[][] shifts = shiftTable.get( key );
+		if ( shifts == null ) return list; // This PerspectiveShift is not supported
+		String[][] shiftsInv = shiftTable.get( key.invert() );
+		LabelList shifted = new LabelList();
+		for ( AproposLabel label : list ) {
+			String text = " " + label.getText() + " ";
+			if ( contains( text, shiftsInv ) )
+				text = " ({PRIMARY})" + text; // TODO: Make this dynamic on perspectives
+			else
+				for ( int i = 0; i < shifts.length; i++ )
+					text = text.replaceAll( shifts[i][0], shifts[i][1] );
+			text = text.replaceAll( "^ (.*) $", "$1" );
+			shifted.add( new AproposLabel( text, label.getParentLabel() ) );
 		}
+		return shifted;
+	}
+	
+	public static void main( String[] args ) {
+		LabelList list = new LabelList();
+		//@formatter:off
+		list.add( new AproposLabel( "{ACTIVE} keeps a steady rhythm as it is obviously enjoying my {MOUTH}.",null));
+		list.add( new AproposLabel( "I concentrate on keeping my breathing steady and let {ACTIVE} have his fun with my {MOUTH}.",null));
+		list.add( new AproposLabel( "As its {BEAST} {COCK} pushes deeper into my {MOUTH}, I can't ignore the intense taste of it's precum.",null));
+		list.add( new AproposLabel( "{SALTY} precum coats my tongue and throat... I try not to focus on it and work my tongue to help get him off faster.",null));
+		list.add( new AproposLabel( "The Skeever's thrusts keep getting stronger and deeper, I can't imagine how good my {MOUTH} must feel to him.",null));
+		list.add( new AproposLabel( "It's {COCK} seems to swell further with every extra inch inserted, I think he has been keeping a large load in him.",null));
+		list.add( new AproposLabel( "With the way {ACTIVE} is {FUCKING} my mouth, I think it won't be letting me go for a while.",null));
+		list.add( new AproposLabel( "{ACTIVE} finally gives me more of its {BEAST} {COCK}, now I can properly suck it!",null));
+		list.add( new AproposLabel( "Is it already {CUMMING}? It's so {SALTY}... this can't just be precum...",null));
+		list.add( new AproposLabel( "I'd love to {FUCK} this Skeever, but if my mouth is what he want's, I'll be sure to give it to him!",null));
+		list.add( new AproposLabel( "I can't believe this is happening! I can't believe it. I'll fuck them all? I could... I will!",null));
+		list.add( new AproposLabel( "Before I knew it, {ACTIVE} was on top of me, prodding to find a way into my {MOUTH} with its {BEAST} {COCK}.",null));
+		list.add( new AproposLabel( "Come on you stinking rat, coat my throat in your {VILE} {CUM}!",null));
+		//@formatter:on
+		AproposLabel current = new AproposLabel( "1st Person", null );
+		AproposLabel target = new AproposLabel( "2st Person", null );
+		
+		System.out.println( " ---- BEFORE ---- " );
+		System.out.println( "\t\t\t\t\t" + list );
+		System.out.println( " ---- AFTER ---- " );
+		LabelList shift = perspectiveShift( list, current, target );
+		System.out.println( "\t\t\t\t\t" + shift );
+		System.out.println( " ---- AGAIN ---- " );
+		System.out.println( "\t\t\t\t\t" + perspectiveShift( shift, target, current ) );
 	}
 	
 	/**
@@ -758,7 +836,7 @@ public class Model {
 	
 	/**
 	 * SwingWorker that loads the <code>StageMap</code> denoted by the <code>folder</code> and <code>animString</code> constructor
-	 * parameters, changes the parent's text to match those of the passed <code>newFolder</code> and <code>newAnim</code>, merges the each
+	 * parameters, changes the parent's text to match those of the passed <code>newFolder</code> and <code>newAnim</code>, merges each
 	 * child <code>LabelList</code> then completes the write.
 	 * <br>
 	 * Does not Publish.
@@ -1020,6 +1098,12 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 		return map.query( key );
 	}
 	
+	/**
+	 * Returns the key in this map that has the same labeltext as the label passed
+	 * 
+	 * @param equivKey Key whom's text you want to match
+	 * @return The key in this Map that matches
+	 */
 	public T getEquivalent( AproposLabel equivKey ) {
 		for ( AproposLabel key : keySet() ) {
 			if ( key.getText().equals( equivKey.getText() ) ) return get( key );
@@ -1080,6 +1164,45 @@ class Result {
 interface AproposMap {
 	public int totalSize();
 	public Result query( AproposLabel key );
+}
+
+class BytePair extends Object {
+	public byte[] p;
+	
+	public BytePair( byte a, byte b ) {
+		p = new byte[] { a, b };
+	}
+	
+	public BytePair( int a, int b ) {
+		this( (byte) a, (byte) b );
+	}
+	
+	public BytePair invert() {
+		return new BytePair( p[1], p[0] );
+	}
+	
+	public BytePair( char a, char b ) {
+		// Subtract the value of the 0 character to get the integer of the digit
+		this( a - '0', b - '0' );
+	}
+	
+	public boolean equals( Object o ) {
+		if ( this == o ) return true;
+		if ( ( o == null ) || ( o.getClass() != this.getClass() ) ) return false;
+		byte[] q = ( (BytePair) o ).p;
+		return p[0] == q[0] & p[1] == q[1];
+	}
+	
+	public int hashCode() {
+		int hash = 7;
+		hash = 31 * hash + p[0];
+		hash = 31 * hash + p[1];
+		return hash;
+	}
+	
+	public String toString() {
+		return "[" + p[0] + "," + p[1] + "]";
+	}
 }
 
 /**

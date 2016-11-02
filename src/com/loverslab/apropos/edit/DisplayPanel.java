@@ -283,7 +283,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 				}
 				break;
 			case 4:
-				LabelList sectionList = stageMap.query( section ).labelList;
+				LabelList sectionList = Model.perspectiveShift( stageMap.query( section ).labelList, section, dest );
 				LabelList destList = stageMap.query( dest ).labelList;
 				if ( replace ) for ( int i = destList.size() - 2; i >= 0; i-- )
 					destList.remove( i );
