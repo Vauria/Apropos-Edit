@@ -288,7 +288,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 				if ( replace ) for ( int i = destList.size() - 2; i >= 0; i-- )
 					destList.remove( i );
 				for ( int i = 0; i < sectionList.size() - 1; i++ )
-					destList.add( Math.max( destList.size() - 2, 0 ), new AproposLabel( sectionList.get( i ).getText(), dest ) );
+					destList.add( Math.max( destList.size() - 1, 0 ), new AproposLabel( sectionList.get( i ).getText(), dest ) );
 				break;
 			default:
 				System.err.println( "Clear was called on a label that shouldn't have clear available" );
