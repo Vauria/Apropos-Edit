@@ -46,6 +46,9 @@ public class Model {
 	//@formatter:off
 	static HashMap<BytePair, String[][]> shiftTable = new HashMap<BytePair, String[][]>() { private static final long serialVersionUID = -7986832642422472332L; {
 		put( new BytePair( 1, 2 ), new String[][] { 
+			new String[] { "^ I'm( |\\p{Punct})", " You're$1" }, 
+			new String[] { "([\\.?!]) I'm( |\\p{Punct})", "$1 You're$2" }, 
+			new String[] { " I'm( |\\p{Punct})", " you're$1" }, 
 			new String[] { "^ I((?:'[\\w]+)?)( |\\p{Punct})", " You$1$2" }, 
 			new String[] { "([\\.?!]) I((?:'[\\w]+)?)( |\\p{Punct})", "$1 You$2$3" }, 
 			new String[] { " I((?:'[\\w]+)?)( |\\p{Punct})", " you$1$2" }, 
@@ -61,7 +64,8 @@ public class Model {
 			new String[] { " Am( |\\p{Punct})", " Are$1" },
 		});
 		put( new BytePair( 2, 1 ), new String[][] { 
-			new String[] { " (?:you|You)((?:'[\\w]+)?)( |\\p{Punct})", " I$1$2" }, 
+			new String[] { " (?:y|Y)ou're( |\\p{Punct})", " I'm$1" }, 
+			new String[] { " (?:y|Y)ou((?:'[\\w]+)?)( |\\p{Punct})", " I$1$2" }, 
 			new String[] { " your( |\\p{Punct})", " my$1" }, 
 			new String[] { " Your( |\\p{Punct})", " My$1" },
 			new String[] { " yours( |\\p{Punct})", " mine$1" }, 
@@ -523,6 +527,7 @@ public class Model {
 		list.add( new AproposLabel( "I can't believe this is happening! I can't believe it. I'll fuck them all? I could... I will!",null));
 		list.add( new AproposLabel( "Before I knew it, {ACTIVE} was on top of me, prodding to find a way into my {MOUTH} with its {BEAST} {COCK}.",null));
 		list.add( new AproposLabel( "Come on you stinking rat, coat my throat in your {VILE} {CUM}!",null));
+		list.add( new AproposLabel( "A rat is {FUCKING} my {MOUTH} as deep and fast as it can and I'm just waiting for my stomach to be filled with {VILE} {CUM}.!",null));
 		//@formatter:on
 		AproposLabel current = new AproposLabel( "1st Person", null );
 		AproposLabel target = new AproposLabel( "2st Person", null );
