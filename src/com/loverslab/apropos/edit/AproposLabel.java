@@ -3,8 +3,6 @@ package com.loverslab.apropos.edit;
 import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -31,8 +29,6 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	
 	String string, simulateString;
 	AproposLabel parent;
-	GridBagLayout layout;
-	GridBagConstraints cons;
 	JLabel label, simuLabel;
 	JTextField textField;
 	boolean displayed, hoverState, simulateState, highlighted;
@@ -55,10 +51,8 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	 * @param gbl The GridBagLayout used in the container this Label is initialised in.
 	 * @return This AproposLabel
 	 */
-	public AproposLabel display( GridBagLayout gbl, LineChangedListener lcL, PopupMenuListener pmL ) {
-		layout = gbl;
+	public AproposLabel display( LineChangedListener lcL, PopupMenuListener pmL ) {
 		if ( displayed ) {
-			cons = null;
 			return this;
 		}
 		
@@ -109,10 +103,8 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	 * @param editable Ignored
 	 * @return This AproposLabel
 	 */
-	public AproposLabel display( GridBagLayout gbl, LineChangedListener lcL, PopupMenuListener pmL, boolean editable ) {
-		layout = gbl;
+	public AproposLabel display( LineChangedListener lcL, PopupMenuListener pmL, boolean editable ) {
 		if ( displayed ) {
-			cons = null;
 			return this;
 		}
 		
@@ -192,46 +184,12 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		return label;
 	}
 	
-	/**
-	 * @return the GridBagConstraints that directly represent how this object is positioned.
-	 */
-	public GridBagConstraints getGridBagCons() {
-		if ( cons == null ) {
-			cons = layout.getConstraints( this );
-		}
-		return cons;
-	}
-	
 	public JTextField getTextField() {
 		return textField;
 	}
 	
 	public JLabel getLabel() {
 		return label;
-	}
-	
-	/**
-	 * Nudge this label up or down based on this passed value. Negative is Up, Positive is Down.
-	 * 
-	 * @param amount
-	 */
-	public void poke( int amount ) {
-		getGridBagCons().gridy += amount;
-		invalidate();
-	}
-	
-	/**
-	 * Nudge label down one grid spot in it's container
-	 */
-	public void bump() {
-		poke( 1 );
-	}
-	
-	/**
-	 * Nudge label up one grid spot in it's container
-	 */
-	public void boop() {
-		poke( -1 );
 	}
 	
 	/**

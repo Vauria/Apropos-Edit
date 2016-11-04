@@ -1,6 +1,5 @@
 package com.loverslab.apropos.edit;
 
-import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -23,7 +22,6 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 	private JScrollPane scroll;
 	private MenuManager menuManager;
 	StageMap stageMap;
-	private GridBagLayout layout;
 	private JSeparator sep;
 	
 	public DisplayPanel( View parent, JScrollPane scroll ) {
@@ -31,12 +29,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		this.parent = parent;
 		this.scroll = scroll;
 		
-		layout = new GridBagLayout() {
-			public GridBagConstraints getConstraints( Component comp ) {
-				return lookupConstraints( comp );
-			}
-		};
-		setLayout( layout );
+		setLayout( new GridBagLayout() );
 		
 	}
 	
@@ -71,18 +64,18 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 			c.gridx = 0;
 			c.gridwidth = 1;
 			c.gridheight = 1;
-			add( stage.display( layout, this, this, false ), c );
+			add( stage.display( this, this, false ), c );
 			PerspectiveMap persMap = stageMap.get( stage );
 			if ( persMap == null ) System.out.println( stageMap );
 			for ( AproposLabel perspec : persMap.keySet() ) {
 				c.insets = new Insets( 0, 40, 0, 5 );
 				c.gridy++ ;
-				add( perspec.display( layout, this, this, false ), c );
+				add( perspec.display( this, this, false ), c );
 				LabelList list = persMap.get( perspec );
 				c.insets = new Insets( 0, 70, 0, 5 );
 				for ( AproposLabel label : list ) {
 					c.gridy++ ;
-					add( label.display( layout, this, this ), c );
+					add( label.display( this, this ), c );
 				}
 			}
 		}
