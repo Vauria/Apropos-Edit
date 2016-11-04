@@ -22,7 +22,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 	private View parent;
 	private JScrollPane scroll;
 	private MenuManager menuManager;
-	protected StageMap stageMap;
+	StageMap stageMap;
 	private GridBagLayout layout;
 	private JSeparator sep;
 	
@@ -304,7 +304,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 	
 	public class MenuManager implements ActionListener {
 		// Gonna try this Composition over inheritance stuff all the kids are talking about
-		protected AproposLabel invoker;
+		AproposLabel invoker;
 		private JPopupMenu[] popups = new JPopupMenu[ 6 ];
 		private JMenuItem clearItem, removeStage, addStageBelow, addStageAbove, removeItem, duplicateItem;
 		private String copyTo = "Copy To", copyAppend = "Copy & Append", copyReplace = "Copy & Replace";
@@ -353,38 +353,38 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 			invoker = label;
 		}
 		
-		protected JMenuItem getClearItem() {
+		JMenuItem getClearItem() {
 			return clearItem = initMenuItem( clearItem, "Clear" );
 		}
 		
-		protected JMenuItem getRemoveItem() {
+		JMenuItem getRemoveItem() {
 			return removeItem = initMenuItem( removeItem, "Remove" );
 		}
 		
-		protected JMenuItem getDuplicateItem() {
+		JMenuItem getDuplicateItem() {
 			return duplicateItem = initMenuItem( duplicateItem, "Duplicate" );
 		}
 		
-		protected JMenuItem getRemoveStageItem() {
+		JMenuItem getRemoveStageItem() {
 			return removeStage = initMenuItem( removeStage, "Remove Stage" );
 		}
 		
-		protected JMenuItem getStageBelowItem() {
+		JMenuItem getStageBelowItem() {
 			return addStageBelow = initMenuItem( addStageBelow, "Add New Stage Below" );
 		}
 		
-		protected JMenuItem getStageAboveItem() {
+		JMenuItem getStageAboveItem() {
 			return addStageAbove = initMenuItem( addStageAbove, "Add New Stage Above" );
 		}
 		
-		protected JMenuItem initMenuItem( JMenuItem ref, String text ) {
+		JMenuItem initMenuItem( JMenuItem ref, String text ) {
 			if ( ref != null ) return ref;
 			ref = new JMenuItem( text );
 			ref.addActionListener( this );
 			return ref;
 		}
 		
-		protected JMenu getCopyMenu( int depth, String text ) {
+		JMenu getCopyMenu( int depth, String text ) {
 			LabelMenu menu = null;
 			switch ( depth ) {
 				case 3:
@@ -406,7 +406,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 			}
 		}
 		
-		protected JMenu getStageSubMenu( int i, LabelMenu parent ) {
+		JMenu getStageSubMenu( int i, LabelMenu parent ) {
 			// if ( stageSubMenus[i] != null ) return stageSubMenus[i];
 			AproposLabel label = ( stageMap.keySet().toArray( new AproposLabel[ 0 ] ) )[i];
 			LabelMenu menu = new LabelMenu( parent, label );
@@ -415,7 +415,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 			return menu;
 		}
 		
-		protected JMenuItem getStageItem( int i, LabelMenu parent ) {
+		JMenuItem getStageItem( int i, LabelMenu parent ) {
 			// if ( stageItems[i] != null ) return stageItems[i];
 			AproposLabel label = ( stageMap.keySet().toArray( new AproposLabel[ 0 ] ) )[i];
 			JMenuItem item = new LabelMenuItem( parent, label );
@@ -424,7 +424,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 			return item;
 		}
 		
-		protected JMenuItem getPerspectiveItem( int i, LabelMenu parent ) {
+		JMenuItem getPerspectiveItem( int i, LabelMenu parent ) {
 			// if ( perspectiveItems[i] != null ) return perspectiveItems[i];
 			AproposLabel label = ( stageMap.get( parent.label ).keySet().toArray( new AproposLabel[ 0 ] ) )[i];
 			JMenuItem item = new LabelMenuItem( parent, label );

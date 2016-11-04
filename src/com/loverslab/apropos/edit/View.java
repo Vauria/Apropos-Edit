@@ -56,19 +56,19 @@ import javax.swing.SwingUtilities;
 public class View extends JFrame implements ActionListener {
 	
 	private final String version = "1.2a";
-	protected Globals globals;
-	protected Model model;
-	protected Banner banner;
-	protected SidePanel side;
-	protected DisplayPanel display;
-	protected JScrollPane displayScroll;
-	protected JDialog dialog, dialogLock;
-	protected JPanel messagePanel;
-	protected JLabel progressLabel;
-	protected JProgressBar progressBar;
-	protected ArrayList<JFrame> displayFrames = new ArrayList<JFrame>();
-	protected volatile LinkedList<Exception> exceptionQueue = new LinkedList<Exception>();
-	protected volatile LinkedList<Exception> displayedExceptions = new LinkedList<Exception>();
+	Globals globals;
+	Model model;
+	Banner banner;
+	SidePanel side;
+	DisplayPanel display;
+	JScrollPane displayScroll;
+	JDialog dialog, dialogLock;
+	JPanel messagePanel;
+	JLabel progressLabel;
+	JProgressBar progressBar;
+	ArrayList<JFrame> displayFrames = new ArrayList<JFrame>();
+	volatile LinkedList<Exception> exceptionQueue = new LinkedList<Exception>();
+	volatile LinkedList<Exception> displayedExceptions = new LinkedList<Exception>();
 	
 	public static void main( String[] args ) {
 		// Create and initialise the UI on the EDT (Event Dispatch Thread)
@@ -333,7 +333,7 @@ public class View extends JFrame implements ActionListener {
 		deSimLabels( display );
 	}
 	
-	protected void deSimLabels( DisplayPanel display ) {
+	void deSimLabels( DisplayPanel display ) {
 		StageMap stageMap = display.stageMap;
 		for ( AproposLabel stage : stageMap.keySet() ) {
 			PerspectiveMap persMap = stageMap.get( stage );

@@ -29,13 +29,13 @@ import javax.swing.SwingUtilities;
 @SuppressWarnings("serial")
 public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	
-	private String string, simulateString;
-	private AproposLabel parent;
-	private GridBagLayout layout;
-	private GridBagConstraints cons;
-	private JLabel label, simuLabel;
-	private JTextField textField;
-	private boolean displayed, hoverState, simulateState, highlighted;
+	String string, simulateString;
+	AproposLabel parent;
+	GridBagLayout layout;
+	GridBagConstraints cons;
+	JLabel label, simuLabel;
+	JTextField textField;
+	boolean displayed, hoverState, simulateState, highlighted;
 	
 	/**
 	 * Creates a non-displayable AproposLabel with the given parent and given text
@@ -324,7 +324,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	/**
 	 * Notifies all listeners of the text this label holds being changed, passing the new text.
 	 */
-	protected void fireValueChanged( String value ) {
+	void fireValueChanged( String value ) {
 		// Guaranteed to return a non-null array
 		Object[] listeners = listenerList.getListenerList();
 		// Process the listeners last to first, notifying
@@ -350,13 +350,13 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	/**
 	 * Notifies all listeners that a new, blank label is to be displayed below this one
 	 */
-	protected void fireLineInserted( AproposLabel above ) {
+	void fireLineInserted( AproposLabel above ) {
 		fireLineInserted( above, new AproposLabel( "", above.getParentLabel() ) );
 	}
 	/**
 	 * Notifies all listeners that a new label is to be displayed below this one
 	 */
-	protected void fireLineInserted( AproposLabel above, AproposLabel toAdd ) {
+	void fireLineInserted( AproposLabel above, AproposLabel toAdd ) {
 		// Guaranteed to return a non-null array
 		Object[] listeners = listenerList.getListenerList();
 		// Process the listeners last to first, notifying
@@ -371,7 +371,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	/**
 	 * Notifies all listeners that this Label is to be removed.
 	 */
-	protected void fireLineRemoved( AproposLabel removed ) {
+	void fireLineRemoved( AproposLabel removed ) {
 		// Guaranteed to return a non-null array
 		Object[] listeners = listenerList.getListenerList();
 		// Process the listeners last to first, notifying
@@ -397,7 +397,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	/**
 	 * Notifies all listeners that this Label needs to display a PopupMenu
 	 */
-	protected void firepopupMenuTriggered( AproposLabel label, MouseEvent e ) {
+	void firepopupMenuTriggered( AproposLabel label, MouseEvent e ) {
 		if ( label.getText().equals( "" ) ) return;
 		// Guaranteed to return a non-null array
 		Object[] listeners = listenerList.getListenerList();

@@ -12,7 +12,7 @@ public class Globals extends Properties {
 	private static final long serialVersionUID = -7138614321046877052L;
 	private File file;
 	public String delimiter = "<";
-	protected Properties defaultss = new Properties() {
+	Properties defaultss = new Properties() {
 		private static final long serialVersionUID = -4651248334485299896L;
 		{
 			setProperty( "locations", "" );

@@ -610,7 +610,7 @@ public class Model {
 		
 	}
 	
-	protected class PositionFinder extends SimpleFileVisitor<Path> {
+	class PositionFinder extends SimpleFileVisitor<Path> {
 		private String folder;
 		private Set<Position> positions;
 		
@@ -896,7 +896,7 @@ public class Model {
 	 * <code>FileVisitor</code> that simply loads and rewrites every .txt file it visits.
 	 *
 	 */
-	protected class JSonRebuilder extends SimpleFileVisitor<Path> {
+	class JSonRebuilder extends SimpleFileVisitor<Path> {
 		private String[] skip = new String[] { "AnimationPatchups.txt", "Arousal_Descriptors.txt", "Themes.txt", "UniqueAnimations.txt",
 				"WearAndTear_Damage.txt", "WearAndTear_Descriptors.txt", "WearAndTear_Effects.txt" };
 		

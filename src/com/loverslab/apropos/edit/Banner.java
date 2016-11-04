@@ -83,7 +83,7 @@ public class Banner extends JPanel implements ItemListener, ActionListener {
 		listenerList.remove( ActionListener.class, listener );
 	}
 	
-	protected void fireActionPerformed( String command ) {
+	void fireActionPerformed( String command ) {
 		// Guaranteed to return a non-null array
 		Object[] listeners = listenerList.getListenerList();
 		ActionEvent e = null;
