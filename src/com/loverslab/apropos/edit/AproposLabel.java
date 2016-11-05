@@ -3,15 +3,28 @@ package com.loverslab.apropos.edit;
 import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.Collection;
+import java.util.Deque;
 import java.util.EventListener;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map;
 
+import javax.swing.BorderFactory;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -45,6 +58,10 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		this.parent = parent;
 	}
 	
+	AproposLabel( AproposLabel copy ) {
+		this( copy.getText(), copy.getParentLabel() );
+	}
+	
 	/**
 	 * Creates and arranged the components required for this Label to function.
 	 * 
@@ -52,9 +69,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	 * @return This AproposLabel
 	 */
 	public AproposLabel display( LineChangedListener lcL, PopupMenuListener pmL ) {
-		if ( displayed ) {
-			return this;
-		}
+		if ( displayed ) return this;
 		
 		// Create the listener and the layout
 		CardLayout layout = new CardLayout( 0, 0 );
@@ -104,9 +119,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	 * @return This AproposLabel
 	 */
 	public AproposLabel display( LineChangedListener lcL, PopupMenuListener pmL, boolean editable ) {
-		if ( displayed ) {
-			return this;
-		}
+		if ( displayed ) return this;
 		
 		setLayout( new GridLayout( 1, 1 ) );
 		AproposListener al = new AproposListener();
@@ -159,7 +172,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	public String toString() {
-		return (parent != null ? parent.toString() : "") + getText() + "\\";
+		return ( parent != null ? parent.toString() : "" ) + getText() + "\\";
 	}
 	
 	/**
@@ -447,6 +460,13 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	/**
+	 * 0: Database<br>
+	 * 1: Folder<br>
+	 * 2: Position<br>
+	 * 3: Stage<br>
+	 * 4: Perspective<br>
+	 * 5: Line<br>
+	 * 
 	 * @return The Number of Parents
 	 */
 	public int getDepth() {
@@ -454,7 +474,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	public int compareTo( AproposLabel o ) {
-		if(o == null) return 1;
+		if ( o == null ) return 1;
 		int ldepth = getDepth(), odepth = o.getDepth();
 		String lstr = getText(), ostr = o.getText();
 		if ( ldepth == odepth ) {
@@ -484,6 +504,142 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		}
 		else
 			return (int) Math.signum( odepth - ldepth );
+	}
+	
+}
+
+@SuppressWarnings("serial")
+class AproposConflictLabel extends AproposLabel {
+	
+	private Deque<AproposLabel> matches = new LinkedList<AproposLabel>();
+	private Map<AproposLabel, Boolean> keepMap = new HashMap<AproposLabel, Boolean>();
+	private boolean displayed = false;
+	
+	public AproposConflictLabel( String startText, AproposLabel parent ) {
+		super( startText, parent );
+		matches.add( new AproposLabel( startText, parent ) );
+		keepMap.put( matches.getLast(), true );
+	}
+	
+	public AproposConflictLabel( AproposLabel label ) {
+		super( label );
+		matches.add( label.clone() );
+		keepMap.put( matches.getLast(), true );
+	}
+	
+	public void add( AproposLabel match, boolean keep ) {
+		matches.add( match.clone() );
+		keepMap.put( matches.getLast(), keep );
+	}
+	
+	public void add( AproposLabel match, int weak ) {
+		if ( weak < 9 ) {
+			add( match, weak > 0 );
+		}
+	}
+	
+	public void add( AproposLabel match ) {
+		add( match, true );
+	}
+	
+	public void markAll( boolean keep ) {
+		for ( AproposLabel key : keepMap.keySet() )
+			keepMap.put( key, keep );
+	}
+	
+	public String[] getTexts() {
+		String[] ret = new String[ matches.size() ];
+		Iterator<AproposLabel> it = matches.iterator();
+		int i = 0;
+		while ( it.hasNext() ) {
+			ret[i] = it.next().getText();
+			i++ ;
+		}
+		return ret;
+	}
+	
+	public AproposLabel display( LineChangedListener lcL, PopupMenuListener pmL ) {
+		if ( displayed ) return this;
+		
+		if ( matches.size() == 1 ) {
+			setLayout( new GridLayout( 1, 1 ) );
+			add( matches.getFirst().display( lcL, pmL ) );
+		}
+		else {
+			setLayout( new GridBagLayout() );
+			setBorder( BorderFactory.createLoweredSoftBevelBorder() );
+			
+			GridBagConstraints c = new GridBagConstraints() {
+				{
+					anchor = LINE_START;
+					gridy = -1;
+					fill = HORIZONTAL;
+					insets = new Insets( 0, 5, 0, 5 );
+				}
+			};
+			
+			Iterator<AproposLabel> it = matches.iterator();
+			while ( it.hasNext() ) {
+				AproposLabel l = it.next();
+				JCheckBox keepBox = new JCheckBox();
+				keepBox.setSelected( keepMap.get( l ) );
+				keepBox.addItemListener( new ConflictListener( this, l ) );
+				
+				c.gridy++ ;
+				c.gridx = 0;
+				c.weightx = 0d;
+				add( keepBox, c );
+				c.gridx++ ;
+				c.weightx++ ;
+				add( l.display( lcL, pmL ), c );
+			}
+		}
+		
+		revalidate();
+		displayed = true;
+		return this;
+	}
+	
+	public AproposLabel display( LineChangedListener lcL, PopupMenuListener pmL, boolean editable ) {
+		return display( lcL, pmL );
+	}
+	
+	public void setSimulateState( boolean simulate ) {
+		return;
+	}
+	
+	public String toString() {
+		StringBuilder builder = new StringBuilder( getParentLabel().toString() + " [" );
+		Iterator<AproposLabel> it = matches.iterator();
+		while ( it.hasNext() ) {
+			AproposLabel l = it.next();
+			builder.append( "\n\t\t\t\t\t\t" + keepMap.get( l ).toString() + ": " + l.getText() );
+		}
+		builder.append( "\n\t\t\t\t\t]" );
+		return builder.toString();
+	}
+	
+	public Collection<AproposLabel> resolveConficts() {
+		LinkedList<AproposLabel> ret = new LinkedList<AproposLabel>();
+		Iterator<AproposLabel> it = matches.iterator();
+		while ( it.hasNext() ) {
+			AproposLabel l = it.next();
+			if ( keepMap.get( l ) ) ret.add( l.clone() );
+		}
+		return ret;
+	}
+	
+	class ConflictListener implements ItemListener {
+		private AproposConflictLabel parent;
+		private AproposLabel label;
+		
+		public ConflictListener( AproposConflictLabel parent, AproposLabel label ) {
+			this.parent = parent;
+			this.label = label;
+		}
+		public void itemStateChanged( ItemEvent e ) {
+			// TODO Auto-generated method stub
+		}
 	}
 	
 }

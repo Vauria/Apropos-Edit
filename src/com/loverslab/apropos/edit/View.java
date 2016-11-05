@@ -347,6 +347,18 @@ public class View extends JFrame implements ActionListener {
 		}
 	}
 	
+	public void checkDuplicates() {
+		StageMap stageMap = display.stageMap;
+		System.out.println(stageMap.checkDuplicates());
+		display.refresh();
+	}
+
+	public void resolveConflicts() {
+		StageMap stageMap = display.stageMap;
+		stageMap.resolveConflicts();
+		display.refresh();
+	}
+
 	public void displayPosition( String folder, String animString, boolean newWindow ) {
 		model.new PositionFetcher( folder, animString ) {
 			public void done() {
@@ -528,6 +540,7 @@ public class View extends JFrame implements ActionListener {
 								get();
 								side.publishingComplete( true );
 								side.setSelectedAnim( model.extractFolder( newAnim ) );
+								side.resetButtons();
 								revalidate();
 							}
 							catch ( InterruptedException | ExecutionException e ) {
@@ -564,6 +577,7 @@ public class View extends JFrame implements ActionListener {
 								get();
 								side.publishingComplete( true );
 								side.setSelectedAnim( model.extractFolder( newAnim ) );
+								side.resetButtons();
 								revalidate();
 							}
 							catch ( InterruptedException | ExecutionException e ) {

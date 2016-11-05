@@ -38,9 +38,9 @@ public class SidePanel extends JPanel {
 	private JComboBox<Position> positions;
 	private ComboBoxModel<Position> positionsModel;
 	private JCheckBox rapeCheck;
-	private JButton simulateButton;
-	private boolean simulating;
-	private AbstractAction listenVerify, listenLoad, listenNWLoad, listenSimulate, listenWrite, listenCopyNew, listenCopyAppend;
+	private JButton simulateButton, duplicatesButton;
+	private boolean simulating = false, conflicts = false;
+	private AbstractAction listenVerify, listenLoad, listenNWLoad, listenSimulate, listenWrite, listenDuplicates, listenCopyNew, listenCopyAppend;
 	private ItemListener listenFolder, listenPosition;
 	
 	public SidePanel( View parent ) {
@@ -87,6 +87,21 @@ public class SidePanel extends JPanel {
 		animations.setSelectedItem( str );
 	}
 	
+	public void resetButtons() {
+		simulating = false;
+		simulateButton.setText( "Simulate" );
+		conflicts = false;
+		duplicatesButton.setText( "Find Duplicates" );
+	}
+	
+	public boolean isConflicts() {
+		return conflicts;
+	}
+
+	public void setConflicts( boolean conflicts ) {
+		this.conflicts = conflicts;
+	}
+
 	/**
 	 * Create all the listeners for this panel
 	 */
@@ -98,8 +113,7 @@ public class SidePanel extends JPanel {
 		};
 		listenLoad = new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
-				simulating = false;
-				simulateButton.setText( "Simulate" );
+				resetButtons();
 				String folder = (String) animations.getSelectedItem();
 				String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), rapeCheck.isSelected() );
 				parent.displayPosition( folder, animString, false );
@@ -149,6 +163,25 @@ public class SidePanel extends JPanel {
 				}
 				else
 					parent.handleException( new Exception( "You must load a file before you can Simulate it" ) );
+			}
+		};
+		listenDuplicates = new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				if ( parent.displayHasLabels() ) {
+					boolean c = !conflicts;
+					resetButtons();
+					conflicts = c;
+					parent.deSimLabels();
+					if (conflicts) {
+						parent.checkDuplicates();
+						duplicatesButton.setText( "Resolve Conflicts" );
+					}
+					else {
+						parent.resolveConflicts();
+					}
+				}
+				else
+					parent.handleException( new Exception( "You must load a file before you can check it for duplicates" ) );
 			}
 		};
 		listenWrite = new AbstractAction() {
@@ -540,6 +573,23 @@ public class SidePanel extends JPanel {
 		c.weightx = 0;
 		c.gridx++ ;
 		add( writeInfo, c );
+		
+		duplicatesButton = new JButton( "Find Duplicates" );
+		duplicatesButton.addActionListener( listenDuplicates );
+		JLabel duplicatesInfo = new JLabel( "(?)" );
+		duplicatesInfo.setToolTipText(
+				"<html>Shows all lines that may be duplicates of another, letting you chose<br>" + "which ones you want to keep.</html>" );
+		c.anchor = GridBagConstraints.FIRST_LINE_START;
+		c.insets = insButton;
+		c.weightx = 1;
+		c.gridy++ ;
+		c.gridx = 0;
+		add( duplicatesButton, c );
+		c.anchor = GridBagConstraints.LINE_START;
+		c.insets = insHelp;
+		c.weightx = 0;
+		c.gridx++ ;
+		add( duplicatesInfo, c );
 	}
 	
 }

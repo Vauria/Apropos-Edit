@@ -447,30 +447,40 @@ public class Model {
 	/**
 	 * Compares the two strings on length, number of words and finally number of each word to determine if they are vaguely similar
 	 * 
-	 * @param strict 0: Literally Equal. 1: Equal ignoring case and punctuation. 2: Equal ignoring a few missmatched words
-	 * @return true if the two strings are approximately equal
+	 * @return 0: Literally Equal. 1: Equal ignoring case and punctuation. 2: Equal ignoring a few missmatched words. 9: No Match
 	 */
-	public static boolean fuzzyMatches( String st1, String st2, byte strict ) {
+	public static int fuzzyMatches( String st1, String st2 ) {
 		int l1 = st1.length(), l2 = st2.length();
-		if ( st1.equals( st2 ) ) return true; // Run the equal string comparison
-		if ( strict == 0 ) return false; // We don't care about any of the other checks
-		if ( perDiff( l1, l2 ) > 0.25f ) return false; // If the length of the two strings is different by over 25%, discard
+		if ( st1.equals( st2 ) ) return 0; // Run the equal string comparison
+		if ( perDiff( l1, l2 ) > 0.25f ) return 9; // If the length of the two strings is different by over 25%, discard
 		st1 = stripPunctuation( st1 );
 		st2 = stripPunctuation( st2 );
-		if ( st1.equals( st2 ) ) return true; // Run the equal string comparison again
-		if ( strict == 1 ) return false; // We don't care about any of the other checks
+		if ( st1.equals( st2 ) ) return 1; // Run the equal string comparison again
 		HashMap<String, Integer> map1 = getBagOfWords( st1 ), map2 = getBagOfWords( st2 );
 		int c1 = map1.size(), c2 = map2.size();
 		int sum1 = sum( map1 ), sum2 = sum( map2 );
 		int misses = (int) Math.ceil( (float) Math.max( sum1, sum2 ) / 4f );
-		System.out.printf( "c1: %d, c2: %d, s1: %d, s2: %d, misses: %d\n", c1, c2, sum1, sum2, misses );
-		if ( Math.abs( sum1 - sum2 ) > misses ) return false;
+		if ( Math.abs( sum1 - sum2 ) > misses ) return 9;
 		Set<String> left = new HashSet<String>( map1.keySet() ), right = new HashSet<String>( map2.keySet() );
 		left.removeAll( map2.keySet() );
 		right.removeAll( map1.keySet() );
 		left.addAll( right );
-		if ( left.size() > misses ) return false;
-		return true;
+		if ( left.size() > misses ) return 9;
+		return 2;
+	}
+	
+	public static int fuzzyMatches( AproposLabel lab1, AproposLabel lab2 ) {
+		return fuzzyMatches( lab1.getText(), lab2.getText() );
+	}
+	
+	public static int fuzzyMatches( AproposConflictLabel labCon, AproposLabel label ) {
+		String[] strings = labCon.getTexts();
+		int ret = 9;
+		for ( int i = 0; i < strings.length; i++ ) {
+			ret = Math.min( ret, fuzzyMatches( labCon.getText(), label.getText() ) );
+			if ( ret == 0 ) break;
+		}
+		return ret;
 	}
 	
 	private static boolean contains( String string, String regex ) {
@@ -511,7 +521,7 @@ public class Model {
 		return shifted;
 	}
 	
-	public static void main( String[] args ) {
+	public static void mane( String[] args ) {
 		LabelList list = new LabelList();
 		//@formatter:off
 		list.add( new AproposLabel( "{ACTIVE} keeps a steady rhythm as it is obviously enjoying my {MOUTH}.",null));
@@ -1024,11 +1034,54 @@ public class Model {
 
 class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 	private static final long serialVersionUID = -3091716550688577792L;
+	private boolean hasConflicts = false;
 	
 	public LabelList() {}
 	
+	public LabelList( int initialCapacity ) {
+		super( initialCapacity );
+	}
+	
 	public LabelList( Collection<? extends AproposLabel> list ) {
 		super( list );
+	}
+	
+	public boolean checkDuplicates() {
+		if ( hasConflicts ) return true;
+		int match = 0;
+		LabelList conflictList = new LabelList( size() ); // ConflictLabels will be stored in a temporary list to preserve the main list
+		ArrayList<Integer> skip = new ArrayList<Integer>( size() );
+		for ( int i = 0; i < size(); i++ ) {
+			if ( skip.contains( i ) ) continue;
+			AproposConflictLabel label = new AproposConflictLabel( get( i ) );
+			conflictList.add( label );
+			for ( int j = i + 1; j < size(); j++ ) { // Triangular Matrix iteration
+				if ( skip.contains( i ) ) continue;
+				AproposLabel checking = get( j );
+				match = Model.fuzzyMatches( label, checking );
+				if ( match < 9 ) {
+					label.add( checking, match );
+					skip.add( j );
+					hasConflicts = true;
+				}
+			}
+		}
+		if ( hasConflicts ) {
+			clear();
+			addAll( conflictList );
+		}
+		return hasConflicts;
+	}
+	
+	public void resolveConflicts() {
+		if ( !hasConflicts ) return;
+		LabelList newList = new LabelList( size() * 3 ); // Assume up to three duplicates per line, to avoid needing to expand the array
+		for ( int i = 0; i < size(); i++ ) {
+			AproposConflictLabel label = (AproposConflictLabel) get( i );
+			newList.addAll( label.resolveConficts() );
+		}
+		clear();
+		addAll( newList );
 	}
 	
 	public int totalSize() {
@@ -1116,6 +1169,20 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 		return null;
 	}
 	
+	public boolean checkDuplicates() {
+		boolean bool = false;
+		for ( AproposLabel key : keySet() ) {
+			bool = get( key ).checkDuplicates() | bool;
+		}
+		return bool;
+	}
+	
+	public void resolveConflicts() {
+		for ( AproposLabel key : keySet() ) {
+			get( key ).resolveConflicts();
+		}
+	}
+	
 	public int totalSize() {
 		int i = 0;
 		for ( AproposLabel label : keySet() ) {
@@ -1167,8 +1234,28 @@ class Result {
 }
 
 interface AproposMap {
+	/**
+	 * @return Total Number of lines in the Map.
+	 */
 	public int totalSize();
+	/**
+	 * Searches this map and all it's children by a given key
+	 * 
+	 * @param key
+	 * @return The Map/List associated with that key wrapped in a <code>Result</code> object
+	 */
 	public Result query( AproposLabel key );
+	/**
+	 * Checks the entire map for duplicate lines within the individual perspectives, and transforms Labels into ConflictLabels if conflicts
+	 * are found
+	 * 
+	 * @return true if the map has been modified
+	 */
+	public boolean checkDuplicates();
+	/**
+	 * Rebuilds the map by deleting any lines marked un-needed and re-merging suspected duplicates back in
+	 */
+	public void resolveConflicts();
 }
 
 class BytePair extends Object {
