@@ -40,7 +40,8 @@ public class SidePanel extends JPanel {
 	private JCheckBox rapeCheck;
 	private JButton simulateButton, duplicatesButton;
 	private boolean simulating = false, conflicts = false;
-	private AbstractAction listenVerify, listenLoad, listenNWLoad, listenSimulate, listenWrite, listenDuplicates, listenCopyNew, listenCopyAppend;
+	private AbstractAction listenVerify, listenLoad, listenNWLoad, listenSimulate, listenWrite, listenDuplicates, listenCopyNew,
+			listenCopyAppend;
 	private ItemListener listenFolder, listenPosition;
 	
 	public SidePanel( View parent ) {
@@ -97,11 +98,11 @@ public class SidePanel extends JPanel {
 	public boolean isConflicts() {
 		return conflicts;
 	}
-
+	
 	public void setConflicts( boolean conflicts ) {
 		this.conflicts = conflicts;
 	}
-
+	
 	/**
 	 * Create all the listeners for this panel
 	 */
@@ -172,9 +173,13 @@ public class SidePanel extends JPanel {
 					resetButtons();
 					conflicts = c;
 					parent.deSimLabels();
-					if (conflicts) {
-						parent.checkDuplicates();
-						duplicatesButton.setText( "Resolve Conflicts" );
+					if ( conflicts ) {
+						if ( parent.checkDuplicates() )
+							duplicatesButton.setText( "Resolve Conflicts" );
+						else {
+							conflicts = false;
+							parent.handleException( new Information( "No Duplicates Found" ) );
+						}
 					}
 					else {
 						parent.resolveConflicts();

@@ -457,7 +457,6 @@ public class Model {
 		st2 = stripPunctuation( st2 );
 		if ( st1.equals( st2 ) ) return 1; // Run the equal string comparison again
 		HashMap<String, Integer> map1 = getBagOfWords( st1 ), map2 = getBagOfWords( st2 );
-		int c1 = map1.size(), c2 = map2.size();
 		int sum1 = sum( map1 ), sum2 = sum( map2 );
 		int misses = (int) Math.ceil( (float) Math.max( sum1, sum2 ) / 4f );
 		if ( Math.abs( sum1 - sum2 ) > misses ) return 9;
@@ -1060,7 +1059,7 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 				AproposLabel checking = get( j );
 				match = Model.fuzzyMatches( label, checking );
 				if ( match < 9 ) {
-					label.add( checking, match );
+					label.addConflict( checking, match );
 					skip.add( j );
 					hasConflicts = true;
 				}
@@ -1082,6 +1081,7 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 		}
 		clear();
 		addAll( newList );
+		hasConflicts = false;
 	}
 	
 	public int totalSize() {

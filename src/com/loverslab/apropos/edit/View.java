@@ -347,10 +347,12 @@ public class View extends JFrame implements ActionListener {
 		}
 	}
 	
-	public void checkDuplicates() {
+	public boolean checkDuplicates() {
 		StageMap stageMap = display.stageMap;
-		System.out.println(stageMap.checkDuplicates());
+		boolean conflicts = stageMap.checkDuplicates();
+		System.out.println( conflicts );
 		display.refresh();
+		return conflicts;
 	}
 
 	public void resolveConflicts() {

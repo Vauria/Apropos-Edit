@@ -527,19 +527,19 @@ class AproposConflictLabel extends AproposLabel {
 		keepMap.put( matches.getLast(), true );
 	}
 	
-	public void add( AproposLabel match, boolean keep ) {
+	public void addConflict( AproposLabel match, boolean keep ) {
 		matches.add( match.clone() );
 		keepMap.put( matches.getLast(), keep );
 	}
 	
-	public void add( AproposLabel match, int weak ) {
+	public void addConflict( AproposLabel match, int weak ) {
 		if ( weak < 9 ) {
-			add( match, weak > 0 );
+			addConflict( match, weak > 0 );
 		}
 	}
 	
-	public void add( AproposLabel match ) {
-		add( match, true );
+	public void addConflict( AproposLabel match ) {
+		addConflict( match, true );
 	}
 	
 	public void markAll( boolean keep ) {
