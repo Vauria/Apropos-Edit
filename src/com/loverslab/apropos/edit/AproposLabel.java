@@ -253,6 +253,14 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		simuLabel.setForeground( b ? Color.RED : Color.BLACK );
 	}
 	
+	public void mark( boolean b ) {
+		label.setForeground( b ? Color.GREEN.darker().darker() : Color.RED.darker() );
+	}
+	
+	public void deMark() {
+		label.setForeground( Color.BLACK );
+	}
+	
 	public void setSimulateString( String string ) {
 		simulateString = string;
 	}
@@ -592,6 +600,7 @@ class AproposConflictLabel extends AproposLabel {
 				c.gridx++ ;
 				c.weightx++ ;
 				add( l.display( lcL, pmL ), c );
+				l.mark( keepMap.get( l ) );
 			}
 		}
 		
@@ -638,7 +647,9 @@ class AproposConflictLabel extends AproposLabel {
 			this.label = label;
 		}
 		public void itemStateChanged( ItemEvent e ) {
-			// TODO Auto-generated method stub
+			boolean selected = e.getStateChange() == ItemEvent.SELECTED;
+			keepMap.put( label, selected );
+			label.mark( selected );
 		}
 	}
 	
