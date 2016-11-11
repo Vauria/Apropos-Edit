@@ -926,7 +926,9 @@ public class Model {
 					view.handleException( new IllegalStateException( message, e ) );
 				}
 				catch ( IOException e ) {
-					view.handleException( e );
+					String message = e.getClass().getSimpleName() + " parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " ("
+							+ e.getMessage() + ")";
+					view.handleException( new RuntimeException( message, e ) );
 					e.printStackTrace();
 				}
 			}
@@ -1087,7 +1089,7 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 	public boolean isConflicted() {
 		return hasConflicts;
 	}
-
+	
 	public int totalSize() {
 		return size();
 	}
@@ -1191,11 +1193,11 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 		boolean bool = false;
 		for ( AproposLabel key : keySet() ) {
 			bool = bool | get( key ).isConflicted();
-			if( bool ) break;
+			if ( bool ) break;
 		}
 		return bool;
 	}
-
+	
 	public int totalSize() {
 		int i = 0;
 		for ( AproposLabel label : keySet() ) {
