@@ -95,12 +95,12 @@ public class SidePanel extends JPanel {
 		duplicatesButton.setText( "Find Duplicates" );
 	}
 	
-	public boolean isConflicts() {
-		return conflicts;
-	}
-	
-	public void setConflicts( boolean conflicts ) {
-		this.conflicts = conflicts;
+	public void setConflicted( boolean b ) {
+		resetButtons();
+		conflicts = b;
+		parent.deSimLabels();
+		if ( b )
+			duplicatesButton.setText( "Resolve Conflicts" );
 	}
 	
 	/**

@@ -335,6 +335,7 @@ public class View extends JFrame implements ActionListener {
 	
 	void deSimLabels( DisplayPanel display ) {
 		StageMap stageMap = display.stageMap;
+		if ( stageMap == null ) return;
 		for ( AproposLabel stage : stageMap.keySet() ) {
 			PerspectiveMap persMap = stageMap.get( stage );
 			for ( AproposLabel perspec : persMap.keySet() ) {
@@ -350,17 +351,20 @@ public class View extends JFrame implements ActionListener {
 	public boolean checkDuplicates() {
 		StageMap stageMap = display.stageMap;
 		boolean conflicts = stageMap.checkDuplicates();
-		System.out.println( conflicts );
 		display.refresh();
 		return conflicts;
 	}
-
+	
+	public void setConflicted( boolean b ) {
+		side.setConflicted( b );
+	}
+	
 	public void resolveConflicts() {
 		StageMap stageMap = display.stageMap;
 		stageMap.resolveConflicts();
 		display.refresh();
 	}
-
+	
 	public void displayPosition( String folder, String animString, boolean newWindow ) {
 		model.new PositionFetcher( folder, animString ) {
 			public void done() {
@@ -579,7 +583,6 @@ public class View extends JFrame implements ActionListener {
 								get();
 								side.publishingComplete( true );
 								side.setSelectedAnim( model.extractFolder( newAnim ) );
-								side.resetButtons();
 								revalidate();
 							}
 							catch ( InterruptedException | ExecutionException e ) {
@@ -594,6 +597,8 @@ public class View extends JFrame implements ActionListener {
 								side.publishAnimation( s );
 						}
 					}.execute();
+					StageMap map = get();
+					setConflicted( map.checkDuplicates() );
 					display.load( get(), true );
 				}
 				catch ( InterruptedException | ExecutionException e ) {

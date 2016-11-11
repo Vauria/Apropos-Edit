@@ -288,11 +288,12 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 				break;
 		}
 		
+		if ( !replace ) parent.setConflicted( stageMap.query( dest ).map.checkDuplicates() );
 		refresh();
 	}
 	
 	public void popupMenuTriggered( AproposLabel label, MouseEvent e ) {
-		menuManager.show( label, e );
+		if ( !stageMap.isConflicted() ) menuManager.show( label, e );
 	}
 	
 	public class MenuManager implements ActionListener {

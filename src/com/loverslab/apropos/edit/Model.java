@@ -1084,6 +1084,10 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 		hasConflicts = false;
 	}
 	
+	public boolean isConflicted() {
+		return hasConflicts;
+	}
+
 	public int totalSize() {
 		return size();
 	}
@@ -1183,6 +1187,15 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 		}
 	}
 	
+	public boolean isConflicted() {
+		boolean bool = false;
+		for ( AproposLabel key : keySet() ) {
+			bool = bool | get( key ).isConflicted();
+			if( bool ) break;
+		}
+		return bool;
+	}
+
 	public int totalSize() {
 		int i = 0;
 		for ( AproposLabel label : keySet() ) {
@@ -1211,12 +1224,14 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 
 class Result {
 	public boolean found = false;
+	public AproposMap map;
 	public LabelList labelList;
 	public PerspectiveMap perspecMap;
 	public StageMap stageMap;
 	public PositionMap posMap;
 	
 	public <T extends AproposMap> Result( T map ) {
+		this.map = map;
 		if ( map instanceof LabelList )
 			labelList = (LabelList) map;
 		else if ( map instanceof PerspectiveMap )
@@ -1256,6 +1271,10 @@ interface AproposMap {
 	 * Rebuilds the map by deleting any lines marked un-needed and re-merging suspected duplicates back in
 	 */
 	public void resolveConflicts();
+	/**
+	 * @return true if any of the submaps have conflicts
+	 */
+	public boolean isConflicted();
 }
 
 class BytePair extends Object {

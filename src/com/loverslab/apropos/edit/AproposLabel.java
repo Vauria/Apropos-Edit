@@ -228,6 +228,8 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	 * @param simulate Shows simulated text on true, normal Label on false
 	 */
 	public void setSimulateState( boolean simulate ) {
+		if ( !displayed ) return;
+		
 		CardLayout cl = (CardLayout) ( this.getLayout() );
 		
 		simulateState = simulate;
@@ -591,7 +593,7 @@ class AproposConflictLabel extends AproposLabel {
 				AproposLabel l = it.next();
 				JCheckBox keepBox = new JCheckBox();
 				keepBox.setSelected( keepMap.get( l ) );
-				keepBox.addItemListener( new ConflictListener( this, l ) );
+				keepBox.addItemListener( new ConflictListener( l ) );
 				
 				c.gridy++ ;
 				c.gridx = 0;
@@ -639,11 +641,9 @@ class AproposConflictLabel extends AproposLabel {
 	}
 	
 	class ConflictListener implements ItemListener {
-		private AproposConflictLabel parent;
 		private AproposLabel label;
 		
-		public ConflictListener( AproposConflictLabel parent, AproposLabel label ) {
-			this.parent = parent;
+		public ConflictListener( AproposLabel label ) {
 			this.label = label;
 		}
 		public void itemStateChanged( ItemEvent e ) {
