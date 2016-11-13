@@ -55,7 +55,7 @@ import javax.swing.SwingUtilities;
 @SuppressWarnings("serial") // No one Serialises Swing anymore
 public class View extends JFrame implements ActionListener {
 	
-	private final String version = "1.2a";
+	private final String version = "1.2a2";
 	Globals globals;
 	Model model;
 	Banner banner;
@@ -366,6 +366,7 @@ public class View extends JFrame implements ActionListener {
 	}
 	
 	public void displayPosition( String folder, String animString, boolean newWindow ) {
+		View v = this;
 		model.new PositionFetcher( folder, animString ) {
 			public void done() {
 				try {
@@ -389,7 +390,7 @@ public class View extends JFrame implements ActionListener {
 							JPanel displayPanel = new JPanel( new BorderLayout() );
 							JScrollPane displayNWScroll = new JScrollPane( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
 									JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED );
-							DisplayPanel displayNW = new DisplayPanel( null, displayNWScroll );
+							DisplayPanel displayNW = new DisplayPanel( v, displayNWScroll );
 							displayNW.load( stageMap, true );
 							displayNWScroll.setViewportView( displayNW );
 							displayNWScroll.getVerticalScrollBar().setUnitIncrement( 16 );

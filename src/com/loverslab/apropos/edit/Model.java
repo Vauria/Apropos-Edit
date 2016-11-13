@@ -1,5 +1,6 @@
 package com.loverslab.apropos.edit;
 
+import java.awt.FontMetrics;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -26,6 +27,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
+import javax.swing.JLabel;
 import javax.swing.SwingWorker;
 
 import com.google.gson.stream.JsonReader;
@@ -43,6 +45,7 @@ public class Model {
 	AproposLabel root;
 	TreeMap<String, Boolean> uniques = null;
 	TreeMap<String, ArrayList<String>> synonyms;
+	SynonymsLengthMap synonymsLengths;
 	//@formatter:off
 	static HashMap<BytePair, String[][]> shiftTable = new HashMap<BytePair, String[][]>() { private static final long serialVersionUID = -7986832642422472332L; {
 		put( new BytePair( 1, 2 ), new String[][] { 
@@ -740,6 +743,8 @@ public class Model {
 			}
 			else
 				view.handleException( new FileNotFoundException( "No WearAndTear_Descriptors.txt file found" ) );
+			
+			synonymsLengths = new SynonymsLengthMap( synonyms );
 			return null;
 		}
 		
@@ -1279,7 +1284,7 @@ interface AproposMap {
 	public boolean isConflicted();
 }
 
-class BytePair extends Object {
+class BytePair {
 	public byte[] p;
 	
 	public BytePair( byte a, byte b ) {
@@ -1316,6 +1321,80 @@ class BytePair extends Object {
 	public String toString() {
 		return "[" + p[0] + "," + p[1] + "]";
 	}
+}
+
+class SynonymsLengthMap {
+	// I apologise for every part of this class's naming scheme.
+	
+	private final HashMap<String, MinMax> map = new HashMap<String, MinMax>();
+	public final int max;
+	
+	public SynonymsLengthMap( TreeMap<String, ArrayList<String>> synonyms ) {
+		JLabel swingFont = new JLabel();
+		FontMetrics metrics = swingFont.getFontMetrics( swingFont.getFont() );
+		max = metrics.stringWidth( "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM" ); // The Holy String of
+																														 // 78 M's
+		for ( String key : synonyms.keySet() ) {
+			ArrayList<String> list = synonyms.get( key );
+			MinMax minmax = new MinMax();
+			for ( String word : list ) {
+				int length = metrics.stringWidth( word );
+				minmax.add( length );
+			}
+			if ( minmax.isValid() ) map.put( key, minmax );
+		}
+		MinMax names = new MinMax( metrics.stringWidth( "Zaz" ), metrics.stringWidth( "Balgruuf the Greater" ) ); // He's a pretty good worst case
+		map.put( "{ACTIVE}", names );
+		map.put( "{PRIMARY}", names );
+	}
+	
+	public MinMax get( String key ) {
+		return map.get( key );
+	}
+	
+	public class MinMax {
+		public int min, max;
+		
+		MinMax( int min, int max ) {
+			this.min = min;
+			this.max = max;
+		}
+		MinMax() {
+			min = Integer.MAX_VALUE;
+			max = Integer.MIN_VALUE;
+		}
+		void min( int i ) {
+			if ( i < min ) min = i;
+		}
+		void max( int i ) {
+			if ( i > max ) max = i;
+		}
+		void add( int i ) {
+			min( i );
+			max( i );
+		}
+		boolean isValid() {
+			return min != Integer.MAX_VALUE & max != Integer.MIN_VALUE;
+		}
+		public String toString() {
+			return min + "<-->" + max;
+		}
+	}
+	
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		String[] keys = map.keySet().toArray( new String[ 0 ] );
+		for ( int i = 0; i < keys.length; i++ ) {
+			if ( i > 0 ) builder.append( "\n" );
+			builder.append( keys[i] + ": " + map.get( keys[i] ) );
+		}
+		return builder.toString();
+	}
+
+	public Set<String> keySet() {
+		return map.keySet();
+	}
+	
 }
 
 /**

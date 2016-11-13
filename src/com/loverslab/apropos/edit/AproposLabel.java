@@ -30,6 +30,10 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
+import com.loverslab.apropos.edit.SynonymsLengthMap.MinMax;
 
 /**
  * A JLabel disguised as JPanel designed to be initialised without fully creating all the sub-components and then allow editing.
@@ -44,6 +48,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	AproposLabel parent;
 	JLabel label, simuLabel;
 	JTextField textField;
+	SynonymsLengthMap synonymsLength;
 	boolean displayed, hoverState, simulateState, highlighted;
 	
 	/**
@@ -65,11 +70,12 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	/**
 	 * Creates and arranged the components required for this Label to function.
 	 * 
-	 * @param gbl The GridBagLayout used in the container this Label is initialised in.
 	 * @return This AproposLabel
 	 */
-	public AproposLabel display( LineChangedListener lcL, PopupMenuListener pmL ) {
+	public AproposLabel display( LineChangedListener lcL, PopupMenuListener pmL, SynonymsLengthMap synonymsLength ) {
 		if ( displayed ) return this;
+		
+		this.synonymsLength = synonymsLength;
 		
 		// Create the listener and the layout
 		CardLayout layout = new CardLayout( 0, 0 );
@@ -81,12 +87,15 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		label = new JLabel( string.equals( "" ) ? "<add new>" : string );
 		labelPanel.add( label );
 		
+		updateBorder();
+		
 		// Create the JPanel for the "hover state"
 		JPanel inputPanel = new JPanel( new GridLayout( 1, 1 ) );
 		textField = new JTextField( string );
 		textField.addMouseListener( hl );
 		textField.addKeyListener( hl );
 		textField.addFocusListener( hl );
+		textField.getDocument().addDocumentListener( hl );
 		inputPanel.add( textField );
 		
 		JPanel simulatePanel = new JPanel( new GridLayout( 1, 1 ) );
@@ -400,6 +409,41 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		return Math.min( (int) pos, s.length() );
 	}
 	
+	public Color getWarningColor( String text ) {
+		int min = 0, max = 0, ub = synonymsLength.max;
+		for ( String key : synonymsLength.keySet() ) {
+			int l = text.length();
+			text = text.replace( key, "" );
+			int diff = ( l - text.length() ) / key.length();
+			if ( diff > 0 ) {
+				MinMax mm = synonymsLength.get( key );
+				min += mm.min * diff;
+				max += mm.max * diff;
+			}
+		}
+		int remaining = label.getFontMetrics( label.getFont() ).stringWidth( text );
+		min += remaining;
+		max += remaining;
+		if ( max < ub ) return null;
+		if ( min > ub ) return Color.RED;
+		float per = ( 1f + (float) ( ( max - ub ) - ( ub - min ) ) / (float) ( max - min ) ) / 2f;
+		Color c = new Color( 1f, 1 - per, 0f );
+		return c;
+	}
+	
+	public void updateBorder( String str ) {
+		Color c = getWarningColor( str );
+		if ( c == null )
+			setBorder( BorderFactory.createEmptyBorder() );
+		else
+			setBorder( BorderFactory.createMatteBorder( 0, 1, 1, 5, c ) );
+		repaint();
+	}
+	
+	public void updateBorder() {
+		updateBorder( getText() );
+	}
+	
 	/**
 	 * A listener for non-editable AproposLabels, only provides PopupMenu actions
 	 */
@@ -424,7 +468,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	/**
 	 * Listener for full editing support
 	 */
-	public class EditingListener extends AproposListener implements KeyListener, FocusListener {
+	public class EditingListener extends AproposListener implements KeyListener, FocusListener, DocumentListener {
 		boolean locked = false;
 		String oldValue;
 		
@@ -465,6 +509,17 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 			}
 		}
 		
+		public void changed( DocumentEvent e ) {
+			updateBorder( textField.getText() );
+		}
+		
+		public void insertUpdate( DocumentEvent e ) {
+			changed( e );
+		}
+		public void removeUpdate( DocumentEvent e ) {
+			changed( e );
+		}
+		public void changedUpdate( DocumentEvent e ) {}
 		public void keyPressed( KeyEvent e ) {}
 		public void keyReleased( KeyEvent e ) {}
 	}
@@ -568,12 +623,12 @@ class AproposConflictLabel extends AproposLabel {
 		return ret;
 	}
 	
-	public AproposLabel display( LineChangedListener lcL, PopupMenuListener pmL ) {
+	public AproposLabel display( LineChangedListener lcL, PopupMenuListener pmL, SynonymsLengthMap synonymsLength ) {
 		if ( displayed ) return this;
 		
 		if ( matches.size() == 1 ) {
 			setLayout( new GridLayout( 1, 1 ) );
-			add( matches.getFirst().display( lcL, pmL ) );
+			add( matches.getFirst().display( lcL, pmL, synonymsLength ) );
 		}
 		else {
 			setLayout( new GridBagLayout() );
@@ -601,7 +656,7 @@ class AproposConflictLabel extends AproposLabel {
 				add( keepBox, c );
 				c.gridx++ ;
 				c.weightx++ ;
-				add( l.display( lcL, pmL ), c );
+				add( l.display( lcL, pmL, synonymsLength ), c );
 				l.mark( keepMap.get( l ) );
 			}
 		}
@@ -612,7 +667,7 @@ class AproposConflictLabel extends AproposLabel {
 	}
 	
 	public AproposLabel display( LineChangedListener lcL, PopupMenuListener pmL, boolean editable ) {
-		return display( lcL, pmL );
+		return display( lcL, pmL, editable );
 	}
 	
 	public void setSimulateState( boolean simulate ) {

@@ -75,7 +75,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 				c.insets = new Insets( 0, 70, 0, 5 );
 				for ( AproposLabel label : list ) {
 					c.gridy++ ;
-					add( label.display( this, this ), c );
+					add( label.display( this, this, parent.model.synonymsLengths ), c );
 				}
 			}
 		}
