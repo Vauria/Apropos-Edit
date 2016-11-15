@@ -122,6 +122,11 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		}
 	}
 	
+	public void lineUpdated( AproposLabel label ) {
+		label.setSimulateString( parent.model.insert( label.getText() ) );
+		label.simulate();
+	}
+
 	public void sectionRemoved( AproposLabel section ) {
 		switch ( section.getDepth() ) {
 			case 3:

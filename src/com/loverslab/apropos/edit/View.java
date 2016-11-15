@@ -366,7 +366,6 @@ public class View extends JFrame implements ActionListener {
 	}
 	
 	public void displayPosition( String folder, String animString, boolean newWindow ) {
-		View v = this;
 		model.new PositionFetcher( folder, animString ) {
 			public void done() {
 				try {
@@ -390,7 +389,7 @@ public class View extends JFrame implements ActionListener {
 							JPanel displayPanel = new JPanel( new BorderLayout() );
 							JScrollPane displayNWScroll = new JScrollPane( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
 									JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED );
-							DisplayPanel displayNW = new DisplayPanel( v, displayNWScroll );
+							DisplayPanel displayNW = new DisplayPanel( View.this, displayNWScroll );
 							displayNW.load( stageMap, true );
 							displayNWScroll.setViewportView( displayNW );
 							displayNWScroll.getVerticalScrollBar().setUnitIncrement( 16 );

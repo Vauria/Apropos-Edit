@@ -374,6 +374,21 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	/**
+	 * Notifies all listeners that this Label needs to have it's simulate string redone.
+	 */
+	void fireLineUpdated( AproposLabel label ) {
+		// Guaranteed to return a non-null array
+		Object[] listeners = listenerList.getListenerList();
+		// Process the listeners last to first, notifying
+		// those that are interested in this event
+		for ( int i = listeners.length - 2; i >= 0; i -= 2 ) {
+			if ( listeners[i] == LineChangedListener.class ) {
+				( (LineChangedListener) listeners[i + 1] ).lineUpdated( label );
+			}
+		}
+	}
+	
+	/**
 	 * Register a listener to be notified whenever this label needs to display a PopupMenu
 	 */
 	public void addPopupMenuListener( PopupMenuListener listener ) {
@@ -499,6 +514,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 			if ( e.getKeyChar() == KeyEvent.VK_ENTER ) {
 				setText( textField.getText() );
 				fireValueChanged( textField.getText() );
+				if(getSimulateState()) fireLineUpdated( AproposLabel.this );
 				setHoverState( false );
 				locked = true;
 			}
@@ -723,6 +739,7 @@ interface ValueChangedListener extends EventListener {
 interface LineChangedListener extends EventListener {
 	public void lineInserted( AproposLabel above, AproposLabel toAdd );
 	public void lineRemoved( AproposLabel removed );
+	public void lineUpdated( AproposLabel label );
 }
 
 /**
