@@ -251,12 +251,14 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 	
 	public void copyTo( AproposLabel line, AproposLabel to ) {
 		LabelList target = stageMap.query( to ).labelList;
+		AproposLabel newLine = Model.perspectiveShift( new AproposLabel( line.getText(), to ), line.getParentLabel(), to );
 		if ( target.size() > 1 ) {
-			target.add( target.size() - 2, new AproposLabel( line.getText(), to ) );
+			target.add( target.size() - 1, newLine );
 		}
 		else {
-			target.add( 0, new AproposLabel( line.getText(), to ) );
+			target.add( 0, newLine );
 		}
+		System.out.println( target );
 		refresh();
 	}
 	

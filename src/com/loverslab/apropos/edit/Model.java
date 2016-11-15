@@ -511,46 +511,36 @@ public class Model {
 		String[][] shiftsInv = shiftTable.get( key.invert() );
 		LabelList shifted = new LabelList();
 		for ( AproposLabel label : list ) {
-			String text = " " + label.getText() + " ";
-			if ( contains( text, shiftsInv ) )
-				text = " ({PRIMARY})" + text; // TODO: Make this dynamic on perspectives
-			else
-				for ( int i = 0; i < shifts.length; i++ )
-					text = text.replaceAll( shifts[i][0], shifts[i][1] );
-			text = text.replaceAll( "^ (.*) $", "$1" );
-			shifted.add( new AproposLabel( text, label.getParentLabel() ) );
+			shifted.add( new AproposLabel( perspectiveShift( label.getText(), shifts, shiftsInv ), label.getParentLabel() ) );
 		}
 		return shifted;
 	}
 	
-	public static void mane( String[] args ) {
-		LabelList list = new LabelList();
-		//@formatter:off
-		list.add( new AproposLabel( "{ACTIVE} keeps a steady rhythm as it is obviously enjoying my {MOUTH}.",null));
-		list.add( new AproposLabel( "I concentrate on keeping my breathing steady and let {ACTIVE} have his fun with my {MOUTH}.",null));
-		list.add( new AproposLabel( "As its {BEAST} {COCK} pushes deeper into my {MOUTH}, I can't ignore the intense taste of it's precum.",null));
-		list.add( new AproposLabel( "{SALTY} precum coats my tongue and throat... I try not to focus on it and work my tongue to help get him off faster.",null));
-		list.add( new AproposLabel( "The Skeever's thrusts keep getting stronger and deeper, I can't imagine how good my {MOUTH} must feel to him.",null));
-		list.add( new AproposLabel( "It's {COCK} seems to swell further with every extra inch inserted, I think he has been keeping a large load in him.",null));
-		list.add( new AproposLabel( "With the way {ACTIVE} is {FUCKING} my mouth, I think it won't be letting me go for a while.",null));
-		list.add( new AproposLabel( "{ACTIVE} finally gives me more of its {BEAST} {COCK}, now I can properly suck it!",null));
-		list.add( new AproposLabel( "Is it already {CUMMING}? It's so {SALTY}... this can't just be precum...",null));
-		list.add( new AproposLabel( "I'd love to {FUCK} this Skeever, but if my mouth is what he want's, I'll be sure to give it to him!",null));
-		list.add( new AproposLabel( "I can't believe this is happening! I can't believe it. I'll fuck them all? I could... I will!",null));
-		list.add( new AproposLabel( "Before I knew it, {ACTIVE} was on top of me, prodding to find a way into my {MOUTH} with its {BEAST} {COCK}.",null));
-		list.add( new AproposLabel( "Come on you stinking rat, coat my throat in your {VILE} {CUM}!",null));
-		list.add( new AproposLabel( "A rat is {FUCKING} my {MOUTH} as deep and fast as it can and I'm just waiting for my stomach to be filled with {VILE} {CUM}.!",null));
-		//@formatter:on
-		AproposLabel current = new AproposLabel( "1st Person", null );
-		AproposLabel target = new AproposLabel( "2st Person", null );
-		
-		System.out.println( " ---- BEFORE ---- " );
-		System.out.println( "\t\t\t\t\t" + list );
-		System.out.println( " ---- AFTER ---- " );
-		LabelList shift = perspectiveShift( list, current, target );
-		System.out.println( "\t\t\t\t\t" + shift );
-		System.out.println( " ---- AGAIN ---- " );
-		System.out.println( "\t\t\t\t\t" + perspectiveShift( shift, target, current ) );
+	/**
+	 * Attempts to convert the perspective by replacing pronouns based on regex filters
+	 * 
+	 * @param label LineLabel to shift perspective on
+	 * @param current PerspectiveLabel that represents the current perspective
+	 * @param target PerspectiveLabel that represents the target perspective
+	 * @return new shifted LineLable
+	 */
+	public static AproposLabel perspectiveShift( AproposLabel label, AproposLabel current, AproposLabel target ) {
+		BytePair key = new BytePair( current.getText().charAt( 0 ), target.getText().charAt( 0 ) );
+		String[][] shifts = shiftTable.get( key );
+		if ( shifts == null ) return label; // This PerspectiveShift is not supported
+		String[][] shiftsInv = shiftTable.get( key.invert() );
+		return new AproposLabel( perspectiveShift( label.getText(), shifts, shiftsInv ), label.getParentLabel() );
+	}
+	
+	private static String perspectiveShift(String text, String[][] shifts, String[][] shiftsInv) {
+		text = " " + text + " ";
+		if ( contains( text, shiftsInv ) )
+			text = " ({PRIMARY})" + text; // TODO: Make this dynamic on perspectives
+		else
+			for ( int i = 0; i < shifts.length; i++ )
+				text = text.replaceAll( shifts[i][0], shifts[i][1] );
+		text = text.replaceAll( "^ (.*) $", "$1" );
+		return text;
 	}
 	
 	/**
@@ -1343,7 +1333,8 @@ class SynonymsLengthMap {
 			}
 			if ( minmax.isValid() ) map.put( key, minmax );
 		}
-		MinMax names = new MinMax( metrics.stringWidth( "Zaz" ), metrics.stringWidth( "Balgruuf the Greater" ) ); // He's a pretty good worst case
+		MinMax names = new MinMax( metrics.stringWidth( "Zaz" ), metrics.stringWidth( "Balgruuf the Greater" ) ); // He's a pretty good
+																													 // worst case
 		map.put( "{ACTIVE}", names );
 		map.put( "{PRIMARY}", names );
 	}
@@ -1390,7 +1381,7 @@ class SynonymsLengthMap {
 		}
 		return builder.toString();
 	}
-
+	
 	public Set<String> keySet() {
 		return map.keySet();
 	}
