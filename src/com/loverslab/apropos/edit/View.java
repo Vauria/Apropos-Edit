@@ -67,12 +67,15 @@ public class View extends JFrame implements ActionListener {
 	JLabel progressLabel;
 	JProgressBar progressBar;
 	ArrayList<JFrame> displayFrames = new ArrayList<JFrame>();
-	volatile LinkedList<Exception> exceptionQueue = new LinkedList<Exception>();
-	volatile LinkedList<Exception> displayedExceptions = new LinkedList<Exception>();
+	volatile LinkedList<Throwable> exceptionQueue = new LinkedList<Throwable>();
+	volatile LinkedList<Throwable> displayedExceptions = new LinkedList<Throwable>();
 	
 	public static void main( String[] args ) {
 		// Create and initialise the UI on the EDT (Event Dispatch Thread)
 		final View view = new View();
+		
+		Thread.setDefaultUncaughtExceptionHandler( view.new EDTExceptionCatcher() );
+		System.setProperty( "sun.awt.exception.handler", EDTExceptionCatcher.class.getName() );
 		
 		try {
 			SwingUtilities.invokeAndWait( new Runnable() {
@@ -575,6 +578,7 @@ public class View extends JFrame implements ActionListener {
 		model.new PositionAppender( folder, animString, newFolder, newAnim ) {
 			public void done() {
 				try {
+					StageMap map = get();
 					side.publishingComplete( false );
 					model.new FolderListFetcher() {
 						
@@ -597,7 +601,6 @@ public class View extends JFrame implements ActionListener {
 								side.publishAnimation( s );
 						}
 					}.execute();
-					StageMap map = get();
 					setConflicted( map.checkDuplicates() );
 					display.load( get(), true );
 				}
@@ -609,7 +612,7 @@ public class View extends JFrame implements ActionListener {
 		}.execute();
 	}
 	
-	public void handleException( Exception e ) {
+	public void handleException( Throwable e ) {
 		Throwable error = e;
 		do
 			if ( error instanceof NullPointerException | error instanceof Error ) {
@@ -648,7 +651,7 @@ public class View extends JFrame implements ActionListener {
 				messagePanel = new JPanel();
 				messagePanel.setLayout( new BoxLayout( messagePanel, BoxLayout.PAGE_AXIS ) );
 				while ( !exceptionQueue.isEmpty() ) {
-					Exception e = null;
+					Throwable e = null;
 					try {
 						e = exceptionQueue.pop();// Should be thread safe.
 					}
@@ -686,7 +689,7 @@ public class View extends JFrame implements ActionListener {
 			}
 			else {
 				while ( !exceptionQueue.isEmpty() ) {
-					Exception e = exceptionQueue.pop();// Should be thread safe.
+					Throwable e = exceptionQueue.pop();// Should be thread safe.
 					displayedExceptions.add( e );
 					JLabel label = new JLabel( e.getClass().getSimpleName() + ": " + e.getMessage() );
 					messagePanel.add( label, BorderLayout.LINE_START );
@@ -694,6 +697,18 @@ public class View extends JFrame implements ActionListener {
 				dialog.pack();
 			}
 		}
+	}
+	
+	private class EDTExceptionCatcher implements Thread.UncaughtExceptionHandler {
+		
+		public void uncaughtException( Thread t, Throwable e ) {
+			handleException( e );
+			e.printStackTrace();
+		}
+		public void handle( Throwable e ) {
+			uncaughtException( Thread.currentThread(), e );
+		}
+		
 	}
 	
 }
