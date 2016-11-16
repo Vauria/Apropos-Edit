@@ -52,6 +52,9 @@ public class Model {
 			new String[] { "^ I'm( |\\p{Punct})", " You're$1" }, 
 			new String[] { "([\\.?!]) I'm( |\\p{Punct})", "$1 You're$2" }, 
 			new String[] { " I'm( |\\p{Punct})", " you're$1" }, 
+			new String[] { "^ I was", " You were" }, 
+			new String[] { "([\\.?!]) I was", "$1 You were" }, 
+			new String[] { " I was", " you were" }, 
 			new String[] { "^ I((?:'[\\w]+)?)( |\\p{Punct})", " You$1$2" }, 
 			new String[] { "([\\.?!]) I((?:'[\\w]+)?)( |\\p{Punct})", "$1 You$2$3" }, 
 			new String[] { " I((?:'[\\w]+)?)( |\\p{Punct})", " you$1$2" }, 
@@ -68,6 +71,7 @@ public class Model {
 		});
 		put( new BytePair( 2, 1 ), new String[][] { 
 			new String[] { " (?:y|Y)ou're( |\\p{Punct})", " I'm$1" }, 
+			new String[] { " (?:y|Y)ou were", " I was" }, 
 			new String[] { " (?:y|Y)ou((?:'[\\w]+)?)( |\\p{Punct})", " I$1$2" }, 
 			new String[] { " your( |\\p{Punct})", " my$1" }, 
 			new String[] { " Your( |\\p{Punct})", " My$1" },
@@ -532,7 +536,7 @@ public class Model {
 		return new AproposLabel( perspectiveShift( label.getText(), shifts, shiftsInv ), label.getParentLabel() );
 	}
 	
-	private static String perspectiveShift(String text, String[][] shifts, String[][] shiftsInv) {
+	private static String perspectiveShift( String text, String[][] shifts, String[][] shiftsInv ) {
 		text = " " + text + " ";
 		if ( contains( text, shiftsInv ) )
 			text = " ({PRIMARY})" + text; // TODO: Make this dynamic on perspectives
