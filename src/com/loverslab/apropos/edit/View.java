@@ -155,7 +155,7 @@ public class View extends JFrame implements ActionListener {
 		c.gridwidth = 1;
 		c.weightx = 1;
 		infoPanel.add( progressLabel, c );
-		main.add( infoPanel, BorderLayout.PAGE_END );
+		// main.add( infoPanel, BorderLayout.PAGE_END ); Disabled until it actually does something
 	}
 	
 	/**
