@@ -561,7 +561,9 @@ public class Model {
 	
 	private static String perspectiveShift( String text, String[][] shifts, String[][] shiftsInv ) {
 		text = " " + text + " ";
-		if ( contains( text, shiftsInv ) )
+		if ( contains( text, Pattern.quote( "({ACTIVE})" ) ) | contains( text, Pattern.quote( "({PRIMARY})" ) ) )
+			;
+		else if ( contains( text, shiftsInv ) )
 			text = " ({PRIMARY})" + text; // TODO: Make this dynamic on perspectives
 		else
 			for ( int i = 0; i < shifts.length; i++ )
