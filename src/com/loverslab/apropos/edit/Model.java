@@ -834,7 +834,7 @@ public class Model {
 			
 			if ( getPosition( newAnim ) == Position.Unique ) {
 				System.out.println( newAnim + " is unique!" );
-				uniques.put( newAnim.substring( newAnim.indexOf( '_' ) + 1 ), true );
+				uniques.put( newAnim.substring( newAnim.indexOf( '_' ) + 1 ).replace( "_Rape", "" ), true );
 				writeUniques();
 			}
 			
