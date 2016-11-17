@@ -1,6 +1,7 @@
 package com.loverslab.apropos.edit;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.DisplayMode;
 import java.awt.Frame;
@@ -24,6 +25,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -67,6 +69,7 @@ public class View extends JFrame implements ActionListener {
 	JLabel progressLabel;
 	JProgressBar progressBar;
 	ArrayList<JFrame> displayFrames = new ArrayList<JFrame>();
+	HashMap<DisplayPanel, AbstractAction> conflictedActions = new HashMap<DisplayPanel, AbstractAction>();
 	volatile LinkedList<Throwable> exceptionQueue = new LinkedList<Throwable>();
 	volatile LinkedList<Throwable> displayedExceptions = new LinkedList<Throwable>();
 	
@@ -351,18 +354,21 @@ public class View extends JFrame implements ActionListener {
 		}
 	}
 	
-	public boolean checkDuplicates() {
+	public boolean checkDuplicates( DisplayPanel display ) {
 		StageMap stageMap = display.stageMap;
 		boolean conflicts = stageMap.checkDuplicates();
-		display.refresh();
+		if ( conflicts ) display.refresh();
 		return conflicts;
 	}
 	
-	public void setConflicted( boolean b ) {
-		side.setConflicted( b );
+	public void setConflicted( boolean b, DisplayPanel display ) {
+		if ( display == this.display )
+			side.setConflicted( b );
+		else
+			conflictedActions.get( display ).actionPerformed( new ActionEvent( this.model, ActionEvent.ACTION_PERFORMED, "Reset" ) );
 	}
 	
-	public void resolveConflicts() {
+	public void resolveConflicts( DisplayPanel display ) {
 		StageMap stageMap = display.stageMap;
 		stageMap.resolveConflicts();
 		display.refresh();
@@ -399,6 +405,7 @@ public class View extends JFrame implements ActionListener {
 							displayPanel.add( displayNWScroll, BorderLayout.CENTER );
 							
 							JPanel buttonPanel = new JPanel();
+							
 							JButton writeButton = new JButton( "Save" );
 							writeButton.setToolTipText( "CTRL + S" );
 							AbstractAction listenWrite = new AbstractAction() {
@@ -407,18 +414,18 @@ public class View extends JFrame implements ActionListener {
 								}
 							};
 							writeButton.addActionListener( listenWrite );
+							
 							final JButton simulateButton = new JButton( "Simulate" );
 							simulateButton.setToolTipText( "CTRL + R (CTRL + SHIFT + R to skip dialog)" );
 							AbstractAction listenSimulate = new AbstractAction() {
 								public void actionPerformed( ActionEvent e ) {
-									View parent = View.this;
 									boolean simulating = simulateButton.getText() == "Reset";
-									if ( parent.displayHasLabels( displayNW ) ) {
+									if ( displayHasLabels( displayNW ) ) {
 										simulating = !simulating;
 										if ( simulating ) {
 											JPanel panel = new JPanel( new GridLayout( 2, 2 ) );
-											JTextField activeField = new JTextField( parent.globals.getProperty( "active" ) );
-											JTextField primaryField = new JTextField( parent.globals.getProperty( "primary" ) );
+											JTextField activeField = new JTextField( globals.getProperty( "active" ) );
+											JTextField primaryField = new JTextField( globals.getProperty( "primary" ) );
 											
 											panel.add( new JLabel( "Name for Active (Your Partner's Name)" ) );
 											panel.add( activeField );
@@ -434,9 +441,9 @@ public class View extends JFrame implements ActionListener {
 													simulateButton.setText( "Reset" );
 													String active = activeField.getText();
 													String primary = primaryField.getText();
-													parent.globals.setProperty( "active", active );
-													parent.globals.setProperty( "primary", primary );
-													parent.simulateLabels( displayNW, active, primary );
+													globals.setProperty( "active", active );
+													globals.setProperty( "primary", primary );
+													simulateLabels( displayNW, active, primary );
 													break;
 												default:
 													break;
@@ -444,16 +451,59 @@ public class View extends JFrame implements ActionListener {
 										}
 										else {
 											simulateButton.setText( "Simulate" );
-											parent.deSimLabels( displayNW );
+											deSimLabels( displayNW );
 										}
 									}
 									else
-										parent.handleException( new Exception( "You must load a file before you can Simulate it" ) );
+										handleException( new Exception( "You must load a file before you can Simulate it" ), displayFrame );
 								}
 							};
 							simulateButton.addActionListener( listenSimulate );
+							
+							final JButton duplicatesButton = new JButton( "Find Duplicates" );
+							duplicatesButton
+									.setToolTipText( "<html>Shows all lines that may be duplicates of another, letting you chose<br>"
+											+ "which ones you want to keep.</html>" );
+							AbstractAction listenDuplicates = new AbstractAction() {
+								boolean conflicts = false;
+								
+								public void actionPerformed( ActionEvent e ) {
+									System.out.println( e );
+									if ( e.getActionCommand().equals( "Reset" ) ) {
+										conflicts = true;
+										duplicatesButton.setText( "Resolve Conflicts" );
+									}
+									else if ( displayHasLabels( displayNW ) ) {
+										conflicts = !conflicts;
+										boolean simulating = simulateButton.getText() == "Reset";
+										if ( simulating ) {
+											simulateButton.setText( "Simulate" );
+											deSimLabels( displayNW );
+										}
+										if ( conflicts ) {
+											if ( checkDuplicates( displayNW ) )
+												duplicatesButton.setText( "Resolve Conflicts" );
+											else {
+												conflicts = false;
+												handleException( new Information( "No Duplicates Found" ), displayFrame );
+											}
+										}
+										else {
+											resolveConflicts( displayNW );
+											duplicatesButton.setText( "Find Duplicates" );
+										}
+									}
+									else
+										handleException( new Exception( "You must load a file before you can check it for duplicates" ),
+												displayFrame );
+								}
+							};
+							duplicatesButton.addActionListener( listenDuplicates );
+							conflictedActions.put( displayNW, listenDuplicates );
+							
 							buttonPanel.add( writeButton );
 							buttonPanel.add( simulateButton );
+							buttonPanel.add( duplicatesButton );
 							displayPanel.add( buttonPanel, BorderLayout.PAGE_END );
 							
 							// Add key listener to allow closing the application with CTRL + W;
@@ -487,7 +537,7 @@ public class View extends JFrame implements ActionListener {
 										}
 									}
 									else
-										handleException( new Exception( "You must load a file before you can Simulate it" ) );
+										handleException( new Exception( "You must load a file before you can Simulate it" ), displayFrame );
 								}
 							} );
 							
@@ -527,7 +577,7 @@ public class View extends JFrame implements ActionListener {
 			public void done() {
 				try {
 					get();
-					handleException( new Information( "Write Complete!" ) );
+					handleException( new Information( "Write Complete!" ), SwingUtilities.getWindowAncestor( display ) );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
 					handleException( e );
@@ -548,7 +598,7 @@ public class View extends JFrame implements ActionListener {
 							try {
 								get();
 								side.publishingComplete( true );
-								side.setSelectedAnim( model.extractFolder( newAnim ) );
+								side.setSelectedAnim( Model.extractFolder( newAnim ) );
 								side.resetButtons();
 								revalidate();
 							}
@@ -586,7 +636,7 @@ public class View extends JFrame implements ActionListener {
 							try {
 								get();
 								side.publishingComplete( true );
-								side.setSelectedAnim( model.extractFolder( newAnim ) );
+								side.setSelectedAnim( Model.extractFolder( newAnim ) );
 								revalidate();
 							}
 							catch ( InterruptedException | ExecutionException e ) {
@@ -601,7 +651,7 @@ public class View extends JFrame implements ActionListener {
 								side.publishAnimation( s );
 						}
 					}.execute();
-					setConflicted( map.checkDuplicates() );
+					setConflicted( map.checkDuplicates(), display );
 					display.load( get(), true );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
@@ -613,6 +663,10 @@ public class View extends JFrame implements ActionListener {
 	}
 	
 	public void handleException( Throwable e ) {
+		handleException( e, this );
+	}
+	
+	public void handleException( Throwable e, Component relative ) {
 		Throwable error = e;
 		do
 			if ( error instanceof NullPointerException | error instanceof Error ) {
@@ -639,10 +693,16 @@ public class View extends JFrame implements ActionListener {
 		while ( ( error = error.getCause() ) != null ); // In case e was a InterruptedException or ExecutionException caused by one of the
 														 // above
 		exceptionQueue.add( e );
-		SwingUtilities.invokeLater( new ExceptionDisplayer() );
+		SwingUtilities.invokeLater( new ExceptionDisplayer( relative ) );
 	}
 	
 	private class ExceptionDisplayer implements Runnable {
+		Component relative;
+		
+		public ExceptionDisplayer( Component relative ) {
+			this.relative = relative;
+		}
+		
 		public void run() {
 			if ( dialog == null ) {
 				dialog = dialogLock; // Immediately make dialog non-null so as to claim the creation process
@@ -667,8 +727,8 @@ public class View extends JFrame implements ActionListener {
 				}
 				// Create the optionPane with this messagePanel
 				JOptionPane optionPane = new JOptionPane( messagePanel, JOptionPane.WARNING_MESSAGE, JOptionPane.OK_CANCEL_OPTION );
-				dialog = optionPane.createDialog( View.this, "Messages" );
-				dialog.setLocationRelativeTo( View.this );
+				dialog = optionPane.createDialog( relative, "Messages" );
+				dialog.setLocationRelativeTo( relative );
 				dialog.pack();
 				dialog.setVisible( true ); // Blocks until the user selects an input, and during this time new exceptions can be added to
 											 // it's panel
@@ -705,6 +765,7 @@ public class View extends JFrame implements ActionListener {
 			handleException( e );
 			e.printStackTrace();
 		}
+		@SuppressWarnings("unused") // EDT Exception catching is weird m'kay?
 		public void handle( Throwable e ) {
 			uncaughtException( Thread.currentThread(), e );
 		}

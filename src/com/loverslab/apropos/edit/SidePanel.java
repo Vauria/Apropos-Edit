@@ -99,8 +99,7 @@ public class SidePanel extends JPanel {
 		resetButtons();
 		conflicts = b;
 		parent.deSimLabels();
-		if ( b )
-			duplicatesButton.setText( "Resolve Conflicts" );
+		if ( b ) duplicatesButton.setText( "Resolve Conflicts" );
 	}
 	
 	/**
@@ -174,7 +173,7 @@ public class SidePanel extends JPanel {
 					conflicts = c;
 					parent.deSimLabels();
 					if ( conflicts ) {
-						if ( parent.checkDuplicates() )
+						if ( parent.checkDuplicates( parent.display ) )
 							duplicatesButton.setText( "Resolve Conflicts" );
 						else {
 							conflicts = false;
@@ -182,7 +181,7 @@ public class SidePanel extends JPanel {
 						}
 					}
 					else {
-						parent.resolveConflicts();
+						parent.resolveConflicts( parent.display );
 					}
 				}
 				else

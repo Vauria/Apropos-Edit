@@ -126,7 +126,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		label.setSimulateString( parent.model.insert( label.getText() ) );
 		label.simulate();
 	}
-
+	
 	public void sectionRemoved( AproposLabel section ) {
 		switch ( section.getDepth() ) {
 			case 3:
@@ -295,7 +295,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 				break;
 		}
 		
-		if ( !replace ) parent.setConflicted( stageMap.query( dest ).map.checkDuplicates() );
+		if ( !replace ) parent.setConflicted( stageMap.query( dest ).map.checkDuplicates(), this );
 		refresh();
 	}
 	
