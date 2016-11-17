@@ -15,6 +15,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.EventListener;
@@ -61,6 +62,41 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		super();
 		string = startText;
 		this.parent = parent;
+	}
+	
+	/**
+	 * Creates an AproposLabel using a given virtual path, such that <code>Label.equals(new AproposLabel(Label.toString()))</code>
+	 * <br>
+	 * (or at least it would if <code>equals(Object o)</code> was implemented)
+	 * 
+	 * @param path
+	 */
+	public AproposLabel( String path ) {
+		super();
+		String s = File.separator;
+		path = path.replaceAll( s + s + "$", "" );
+		// Check if valid database to terminate recursion
+		File f = new File( path + s + "Themes.txt" );
+		if ( f.exists() ) {
+			string = path;
+			this.parent = null;
+			return;
+		}
+		int ind = 0, i = -1;
+		while ( ( i = path.indexOf( s, ind + 1 ) ) != -1 )
+			ind = i;
+		string = path.substring( ind + 1 );
+		String rest = path.substring( 0, ind );
+		this.parent = new AproposLabel( rest );
+		
+	}
+	
+	public static void main( String[] args ) {
+		String s = "E:\\User Files\\Dumps\\Workspace\\Apropos Diffing\\dbOfficial\\FemaleActor_aMSleeping\\FemaleActor_aMSleeping_Rape\\Stage 1\\2nd Person";
+		System.out.println( s );
+		AproposLabel test = new AproposLabel( s );
+		System.out.println( test );
+		System.out.println( test.getDepth() );
 	}
 	
 	AproposLabel( AproposLabel copy ) {
@@ -181,7 +217,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	public String toString() {
-		return ( parent != null ? parent.toString() : "" ) + getText() + "\\";
+		return ( parent != null ? parent.toString() + ( parent.toString().endsWith( "\\" ) ? "" : "\\" ) : "" ) + getText();
 	}
 	
 	/**
@@ -514,7 +550,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 			if ( e.getKeyChar() == KeyEvent.VK_ENTER ) {
 				setText( textField.getText() );
 				fireValueChanged( textField.getText() );
-				if(getSimulateState()) fireLineUpdated( AproposLabel.this );
+				if ( getSimulateState() ) fireLineUpdated( AproposLabel.this );
 				setHoverState( false );
 				locked = true;
 			}

@@ -209,7 +209,7 @@ public class Model {
 	public void writeStages( StageMap stageMap ) {
 		File file;
 		AproposLabel first = stageMap.firstKey();
-		String folder = db + first.getParentLabel().getParentLabel().getText();
+		String folder = db + first.getParentLabel().getParentLabel().getText(); // TODO: Get path from parent chain
 		new File( folder ).mkdirs();
 		String path = folder + "\\" + first.getParentLabel().getText();
 		for ( AproposLabel stage : stageMap.keySet() ) {
@@ -328,11 +328,34 @@ public class Model {
 	 * @param animString
 	 * @return
 	 */
-	public String extractFolder( String animString ) {
+	public static String extractFolder( String animString ) {
 		animString = animString.replace( ".txt", "" ).replace( "_Rape", "" ).replace( "_Orgasm", "" ).replaceAll( "_Stage[1-9]+", "" );
 		for ( Position p : Position.values() )
 			animString = animString.replaceAll( "_" + p.name() + "$", "" );
 		return animString;
+	}
+	
+	public static String extractStage( String animString ) {
+		animString = animString.replace( ".txt", "" ).replace( "_Rape", "" ).replace( extractFolder( animString ), "" ).replace( "_", "" );
+		for ( Position p : Position.values() )
+			animString = animString.replaceAll( p.name(), "" );
+		return animString;
+	}
+	
+	public static String befriendStage( String stage ) {
+		if ( stage == null ) return null;
+		if ( stage.equals( "" ) ) return "Intro";
+		if ( stage.equalsIgnoreCase( "Orgasm" ) )
+			return "Orgasm";
+		else
+			return "Stage " + stage.charAt( stage.length() - 1 );
+	}
+	
+	public static AproposLabel stageLabelFromFile( File f ) {
+		String s = f.getName();
+		String stage = extractStage( s );
+		return new AproposLabel( f.getParentFile().getAbsolutePath() + File.separator
+				+ s.replace( ( stage.equals( "" ) ? "" : ( "_" + stage ) ) + ".txt", "" ) + File.separator + befriendStage( stage ) );
 	}
 	
 	public Position getPosition( String animString ) {
@@ -891,7 +914,7 @@ public class Model {
 			}
 			
 			writeStages( dest );
-			return dest;
+			return getStages( parentDest );
 		}
 		
 		public void done() {};
@@ -906,7 +929,7 @@ public class Model {
 	 */
 	class JSonRebuilder extends SimpleFileVisitor<Path> {
 		private String[] skip = new String[] { "AnimationPatchups.txt", "Arousal_Descriptors.txt", "Themes.txt", "UniqueAnimations.txt",
-				"WearAndTear_Damage.txt", "WearAndTear_Descriptors.txt", "WearAndTear_Effects.txt" };
+				"WearAndTear_Damage.txt", "WearAndTear_Descriptors.txt", "WearAndTear_Effects.txt", "WearAndTear_Map.txt" };
 		
 		public FileVisitResult visitFile( Path path, BasicFileAttributes attr ) {
 			File file = path.toFile();
