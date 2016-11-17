@@ -60,7 +60,8 @@ import com.google.gson.stream.JsonWriter;
 public class Prototype {
 	
 	// Variables
-	//String db = "C:\\Program Files (x86)\\Steam\\SteamApps\\common\\Skyrim\\Mod Organizer\\mods\\Apropos Beta 2015 04 24 01\\Apropos\\dbOfficial\\";
+	// String db = "C:\\Program Files (x86)\\Steam\\SteamApps\\common\\Skyrim\\Mod Organizer\\mods\\Apropos Beta 2015 04 24
+	// 01\\Apropos\\dbOfficial\\";
 	String db = "E:\\User Files\\Dumps\\Workspace\\Apropos Diffing\\dbOfficial\\";
 	String outputDir = db + "Combined\\";
 	String folder = "FemaleActor_SexLabAggrMissionary";
@@ -77,18 +78,21 @@ public class Prototype {
 	
 	public static void main( String[] args ) throws Exception {
 		Prototype ae = new Prototype();
-		ae.init();
-		ae.findPositions();
+		// ae.init();
+		// ae.findPositions();
 		// ae.synonyms();
 		// ae.findBrokenReferences();
+		ae.lookForLinesInStage0files();
 		
-		if ( ae.files.size() > 0 )
-			// ae.combine();
-			// ae.simulate();
-			//ae.display();
-			;
-		else
-			System.out.println( "No files found" );
+		/*
+		 * if ( ae.files.size() > 0 )
+		 * // ae.combine();
+		 * // ae.simulate();
+		 * // ae.display();
+		 * ;
+		 * else
+		 * System.out.println( "No files found" );
+		 */
 		
 	}
 	
@@ -232,6 +236,16 @@ public class Prototype {
 		checker.results();
 	}
 	
+	public void lookForLinesInStage0files() {
+		WTFAreStage0Files aaaa = new WTFAreStage0Files( "dbOfficial", "db2016" );
+		try {
+			Files.walkFileTree( Paths.get( db ), aaaa );
+		}
+		catch ( IOException e ) {
+			e.printStackTrace();
+		}
+	}
+	
 	public void findPositions() {
 		PositionFinder finder = new PositionFinder();
 		try {
@@ -340,7 +354,7 @@ public class Prototype {
 		}
 		
 		public void check( String str, Path file ) {
-			Pattern p = Pattern.compile( "\\{[A-Z]*\\}" );
+			Pattern p = Pattern.compile( "\\{[A-Z]+\\}" );
 			Matcher m = p.matcher( str );
 			while ( m.find() ) {
 				String match = m.group();
@@ -356,6 +370,82 @@ public class Prototype {
 		public void results() {
 			System.out.println( "Tags undefined in Synonym files: " + missing.toString() );
 			System.out.println( errors + " errors found. " + checked + " files total" );
+		}
+		
+	}
+	
+	class WTFAreStage0Files extends SimpleFileVisitor<Path> {
+		
+		String main, sub;
+		Model mainModel, mirrorModel;
+		
+		public WTFAreStage0Files( String main, String sub ) {
+			super();
+			this.main = main;
+			this.sub = sub;
+			mainModel = new Model( null );
+			mainModel.setDataBase( db );
+			mirrorModel = new Model( null );
+			mirrorModel.setDataBase( db.replace( main, sub ) );
+			try {
+				Thread.sleep( 400l );
+			}
+			catch ( InterruptedException e ) {
+				e.printStackTrace();
+			}
+		}
+		
+		public FileVisitResult preVisitDirectory( Path d, BasicFileAttributes attrs ) throws IOException {
+			File dir = d.toFile();
+			File mirror = new File( dir.getAbsolutePath().replace( main, sub ) );
+			if ( !mirror.exists() ) return FileVisitResult.SKIP_SUBTREE;
+			for ( Position pos : Position.values() ) {
+				String fileName = dir.getName() + "_" + pos;
+				String mainName = dir.getAbsolutePath() + File.separator + fileName;
+				String mirrorName = mirror.getAbsolutePath() + File.separator + fileName;
+				File main0 = new File( mainName + ".txt" ), main1 = new File( mainName + "_Stage1.txt" );
+				File main0r = new File( mainName + "_Rape.txt" ), main1r = new File( mainName + "_Stage1_Rape.txt" );
+				File mir0 = new File( mirrorName + ".txt" ), mir1 = new File( mirrorName + "_Stage1.txt" );
+				File mir0r = new File( mirrorName + "_Rape.txt" ), mir1r = new File( mirrorName + "_Stage1_Rape.txt" );
+				if ( ( main0.exists() | main1.exists() ) & ( mir0.exists() | mir1.exists() ) ) {
+					StageMap mainMap = combine( main0, main1, mainModel );
+					StageMap mirrorMap = combine( mir0, mir1, mirrorModel );
+				}
+				if ( ( main0r.exists() | main1r.exists() ) & ( mir0r.exists() | mir1r.exists() ) ) {}
+			}
+			return FileVisitResult.CONTINUE;
+		}
+		
+		public StageMap combine( File a, File b, Model m ) {
+			StageMap map = new StageMap();
+			if ( a.exists() ) {
+				AproposLabel parent = Model.stageLabelFromFile( a );
+				PerspectiveMap per = m.getPerspectives( parent, a );
+				map.put( parent, per );
+			}
+			if ( b.exists() ) {
+				AproposLabel parent = Model.stageLabelFromFile( b );
+				PerspectiveMap per = m.getPerspectives( parent, b );
+				map.put( parent, per );
+			}
+			return map;
+		}
+		
+		public PerspectiveMap merge( StageMap map ) {
+			AproposLabel[] targetArray = map.get( map.firstKey() ).keySet().toArray( new AproposLabel[ 3 ] );
+			for ( AproposLabel key : map.keySet() ) {
+				AproposLabel[] sourceArray = map.get( key ).keySet().toArray( new AproposLabel[ 3 ] );
+				for ( int i = 0; i < 3; i++ ) {
+					AproposLabel targetPers = targetArray[i];
+					AproposLabel sourcePers = sourceArray[i];
+					LabelList targetList = map.query( targetPers ).labelList;
+					LabelList sourceList = map.query( sourcePers ).labelList;
+					for ( int j = 0; j < sourceList.size() - 1; j++ )
+						targetList.add( Math.max( targetList.size() - 2, 0 ),
+								new AproposLabel( sourceList.get( j ).getText(), targetPers ) );
+				}
+			}
+			return map.get( map.firstKey() );
 		}
 		
 	}
