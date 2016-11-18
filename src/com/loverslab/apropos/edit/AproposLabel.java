@@ -91,14 +91,6 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		
 	}
 	
-	public static void main( String[] args ) {
-		String s = "E:\\User Files\\Dumps\\Workspace\\Apropos Diffing\\dbOfficial\\FemaleActor_aMSleeping\\FemaleActor_aMSleeping_Rape\\Stage 1\\2nd Person";
-		System.out.println( s );
-		AproposLabel test = new AproposLabel( s );
-		System.out.println( test );
-		System.out.println( test.getDepth() );
-	}
-	
 	AproposLabel( AproposLabel copy ) {
 		this( copy.getText(), copy.getParentLabel() );
 	}
