@@ -477,7 +477,12 @@ public class Model {
 	/**
 	 * Compares the two strings on length, number of words and finally number of each word to determine if they are vaguely similar
 	 * 
-	 * @return 0: Literally Equal. 1: Equal ignoring case and punctuation. 2: Equal ignoring a few missmatched words. 9: No Match
+	 * @return 0: Literally Equal.<br>
+	 *         1: Equal ignoring case and punctuation.<br>
+	 *         2: Equal ignoring a few missmatched words.<br>
+	 *         7: Not enough Words in Common.<br>
+	 *         8: #Words too different.<br>
+	 *         9: Length Difference too great
 	 */
 	public static int fuzzyMatches( String st1, String st2 ) {
 		int l1 = st1.length(), l2 = st2.length();
@@ -489,12 +494,14 @@ public class Model {
 		HashMap<String, Integer> map1 = getBagOfWords( st1 ), map2 = getBagOfWords( st2 );
 		int sum1 = sum( map1 ), sum2 = sum( map2 );
 		int misses = (int) Math.ceil( (float) Math.max( sum1, sum2 ) / 4f );
-		if ( Math.abs( sum1 - sum2 ) > misses ) return 9;
-		Set<String> left = new HashSet<String>( map1.keySet() ), right = new HashSet<String>( map2.keySet() );
+		if ( Math.abs( sum1 - sum2 ) > misses ) return 8;
+		Set<String> left = new HashSet<String>( map1.keySet() ), right = new HashSet<String>( map2.keySet() ),
+				both = new HashSet<String>( map1.keySet() );
+		both.retainAll( map2.keySet() );
 		left.removeAll( map2.keySet() );
 		right.removeAll( map1.keySet() );
 		left.addAll( right );
-		if ( left.size() > misses ) return 9;
+		if ( left.size() > both.size() ) return 7;
 		return 2;
 	}
 	
@@ -1084,7 +1091,7 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 				if ( skip.contains( i ) ) continue;
 				AproposLabel checking = get( j );
 				match = Model.fuzzyMatches( label, checking );
-				if ( match < 9 ) {
+				if ( match < 5 ) {
 					label.addConflict( checking, match );
 					skip.add( j );
 					hasConflicts = true;

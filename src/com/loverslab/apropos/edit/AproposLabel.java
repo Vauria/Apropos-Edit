@@ -642,7 +642,7 @@ class AproposConflictLabel extends AproposLabel {
 	}
 	
 	public void addConflict( AproposLabel match, int weak ) {
-		if ( weak < 9 ) {
+		if ( weak < 5 ) {
 			addConflict( match, weak > 0 );
 		}
 	}
