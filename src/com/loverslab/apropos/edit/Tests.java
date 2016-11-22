@@ -3,7 +3,7 @@ package com.loverslab.apropos.edit;
 public class Tests {
 	
 	public static void main( String[] args ) {
-		matching();
+		versionComp();
 	}
 	
 	public static void shifting() {
@@ -75,6 +75,10 @@ public class Tests {
 		AproposLabel test = new AproposLabel( s );
 		System.out.println( test );
 		System.out.println( test.getDepth() );
+	}
+	
+	public static void versionComp() {
+		System.out.println( "1.2a2".compareTo( "1.2b" ) );
 	}
 	
 }

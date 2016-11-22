@@ -21,10 +21,16 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -49,6 +55,10 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
+
+import com.google.gson.stream.JsonReader;
+import com.loverslab.apropos.edit.View.UpdateChecker.Release;
 
 /**
  * Main class for the application. Handles most of the communication between user and model.
@@ -57,7 +67,7 @@ import javax.swing.SwingUtilities;
 @SuppressWarnings("serial") // No one Serialises Swing anymore
 public class View extends JFrame implements ActionListener {
 	
-	private final String version = "1.2a2";
+	public final String version = "1.2a3";
 	Globals globals;
 	Model model;
 	Banner banner;
@@ -101,6 +111,8 @@ public class View extends JFrame implements ActionListener {
 		globals = new Globals( new File( "apropos-edit.config" ) );
 		globals.read();
 		model = new Model( this );
+		
+		new UpdateChecker().execute();
 	}
 	
 	public void initUI() {
@@ -660,6 +672,112 @@ public class View extends JFrame implements ActionListener {
 				}
 			}
 		}.execute();
+	}
+	
+	class UpdateChecker extends SwingWorker<ArrayList<Release>, Object> {
+		
+		SimpleDateFormat sdf = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ss'Z'" );
+		
+		protected ArrayList<Release> doInBackground() throws Exception {
+			
+			URL url = new URL( "https://api.github.com/repos/Vauria/Apropos-Edit/releases" );
+			
+			HttpURLConnection con = (HttpURLConnection) url.openConnection();
+			
+			con.setRequestMethod( "GET" );
+			String agent = "Mozilla/5.0";
+			con.setRequestProperty( "User-Agent", agent );
+			
+			int respCode = con.getResponseCode();
+			if ( respCode != 200 ) return null;
+			
+			ArrayList<Release> releases = new ArrayList<Release>();
+			
+			try ( JsonReader reader = new JsonReader( new InputStreamReader( con.getInputStream() ) ) ) {
+				reader.beginArray(); // Array of Release Objects
+				while ( reader.hasNext() ) {
+					reader.beginObject(); // A Release
+					Release release = new Release();
+					while ( reader.hasNext() ) {
+						switch ( reader.nextName() ) {
+							case "url":
+								release.url = new URL( reader.nextString() );
+								break;
+							case "tag_name":
+								release.tagName = reader.nextString();
+								break;
+							case "name":
+								release.name = reader.nextString();
+								break;
+							case "prerelease":
+								release.pre = reader.nextBoolean();
+								break;
+							case "published_at":
+								release.date = sdf.parse( reader.nextString() );
+								break;
+							case "assets":
+								reader.beginArray();
+								reader.beginObject(); // Parse Assets object
+								while ( reader.hasNext() ) {
+									switch ( reader.nextName() ) {
+										case "browser_download_url":
+											release.download = new URL( reader.nextString() );
+											break;
+										default:
+											reader.skipValue();
+											break;
+									}
+								}
+								reader.endObject();
+								reader.endArray();
+								break;
+							case "body":
+								release.body = reader.nextString();
+								break;
+							default:
+								reader.skipValue();
+								break;
+						}
+					}
+					reader.endObject();
+					releases.add( release );
+				}
+				reader.endArray();
+			}
+			catch ( IOException e ) {
+				handleException( e );
+				e.printStackTrace();
+			}
+			
+			return releases;
+		}
+		
+		protected void done() {
+			try {
+				ArrayList<Release> releases = get();
+				Release r = releases.get( 0 );
+				if ( r.tagName.compareTo( version ) > 0 ) {
+					setTitle( getTitle() + " UPDATE AVAILABLE, " + r.tagName );
+				}
+			}
+			catch ( InterruptedException | ExecutionException e ) {
+				handleException( e );
+				e.printStackTrace();
+			}
+		}
+		
+		class Release {
+			public Date date;
+			public URL url, download;
+			public String tagName, name, body;
+			boolean pre;
+			
+			public String toString() {
+				return "Release [date=" + date + ", url=" + url + ", download=" + download + ", tagName=" + tagName + ", name=" + name
+						+ ", pre=" + pre + "]";
+			}
+		}
+		
 	}
 	
 	public void handleException( Throwable e ) {
