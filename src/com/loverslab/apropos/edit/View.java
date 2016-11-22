@@ -14,6 +14,9 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
@@ -24,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.HttpURLConnection;
@@ -672,6 +676,63 @@ public class View extends JFrame implements ActionListener {
 				}
 			}
 		}.execute();
+	}
+	
+	class ClipboardWriter extends SwingWorker<Object, Object> {
+		AproposMap map;
+		
+		public ClipboardWriter( AproposMap map ) {
+			super();
+			this.map = map;
+		}
+		protected Object doInBackground() throws Exception {
+			String json = map.toJSON();
+			StringSelection string = new StringSelection( json );
+			Toolkit.getDefaultToolkit().getSystemClipboard().setContents( string, null );
+			return null;
+		}
+		protected void done() {
+			try {
+				get();
+			}
+			catch ( InterruptedException | ExecutionException e ) {
+				handleException( e );
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	abstract class ClipboardReader extends SwingWorker<PerspectiveMap, Object> {
+		PerspectiveMap merge;
+		
+		public ClipboardReader( PerspectiveMap merge ) {
+			super();
+			this.merge = merge;
+		}
+		protected PerspectiveMap doInBackground() throws Exception {
+			String json = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getContents( null )
+					.getTransferData( DataFlavor.stringFlavor );
+			JsonReader reader = new JsonReader( new StringReader( json ) );
+			
+			reader.beginObject();
+			while ( reader.hasNext() ) {
+				String name = reader.nextName();
+				LabelList list = merge.getEquivalent( new AproposLabel( name, null ) );
+				AproposLabel key = list.get( 0 ).getParentLabel();
+				reader.beginArray();
+				while ( reader.hasNext() ) {
+					list.add( list.size() - 1, new AproposLabel( reader.nextString(), key ) );
+				}
+				reader.endArray();
+			}
+			reader.endObject();
+			
+			reader.close();
+			
+			return merge;
+		}
+		
+		public abstract void done();
 	}
 	
 	class UpdateChecker extends SwingWorker<ArrayList<Release>, Object> {

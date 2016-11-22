@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -1132,6 +1133,31 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 		}
 		return builder.toString();
 	}
+	
+	public String toJSON() throws IOException {
+		StringWriter string = new StringWriter();
+		JsonWriter writer = new JsonWriter( string );
+		writer.setIndent( "    " );
+		writer.beginObject();
+		toJSON( writer );
+		writer.endObject();
+		writer.close();
+		return string.toString();
+	}
+	
+	public JsonWriter toJSON( JsonWriter writer ) throws IOException {
+		writer.name( get( 0 ).getParentLabel().getText() );
+		writer.beginArray();
+		for ( AproposLabel label : this ) {
+			String text = label.getText();
+			if ( !text.equals( "" ) )
+				writer.value( text );
+			else if ( size() == 1 ) writer.value( text );
+		}
+		writer.endArray();
+		return writer;
+	}
+	
 	public Result query( AproposLabel key ) {
 		return null;
 	}
@@ -1142,6 +1168,14 @@ class PerspectiveMap extends LabelMap<LabelList> {
 	{
 		indent = "\n\t\t\t\t";
 		keyDepth = 4;
+	}
+	
+	public JsonWriter toJSON( JsonWriter writer ) throws IOException {
+		writer.beginObject();
+		for ( AproposLabel per : keySet() )
+			get( per ).toJSON( writer );
+		writer.endObject();
+		return writer;
 	}
 }
 
@@ -1244,6 +1278,25 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 		put( key, map );
 	}
 	
+	public String toJSON() throws IOException {
+		StringWriter string = new StringWriter();
+		JsonWriter writer = new JsonWriter( string );
+		writer.setIndent( "    " );
+		toJSON( writer );
+		writer.close();
+		return string.toString();
+	}
+	
+	public JsonWriter toJSON( JsonWriter writer ) throws IOException {
+		writer.beginObject();
+		for ( AproposLabel key : keySet() ) {
+			writer.name( key.getText() );
+			get( key ).toJSON( writer );
+		}
+		writer.endObject();
+		return writer;
+	}
+	
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
 		AproposLabel[] keys = keySet().toArray( new AproposLabel[ 0 ] );
@@ -1308,6 +1361,19 @@ interface AproposMap {
 	 * @return true if any of the submaps have conflicts
 	 */
 	public boolean isConflicted();
+	/**
+	 * @return This map represented in JSON
+	 * @throws IOException
+	 */
+	public String toJSON() throws IOException;
+	/**
+	 * Appends this AproposMap to an existing JsonWriter
+	 * 
+	 * @param writer
+	 * @return writer
+	 * @throws IOException
+	 */
+	public JsonWriter toJSON( JsonWriter writer ) throws IOException;
 }
 
 class BytePair {

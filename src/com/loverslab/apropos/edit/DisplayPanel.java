@@ -7,6 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -149,6 +150,26 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		refresh();
 	}
 	
+	public void toClipboard( AproposLabel invoker ) {
+		parent.new ClipboardWriter( stageMap.query( invoker ).map ).execute();
+		
+	}
+	
+	public void fromClipboard( AproposLabel invoker ) {
+		parent.new ClipboardReader( stageMap.query( invoker.getDepth() != 3 ? invoker.getParentLabel( 3 ) : invoker ).perspecMap ) {
+			public void done() {
+				try {
+					get();
+					refresh();
+				}
+				catch ( InterruptedException | ExecutionException e ) {
+					parent.handleException( e );
+					e.printStackTrace();
+				}
+			}
+		}.execute();
+	}
+	
 	public void stageRemoved( AproposLabel stage ) {
 		if ( stage.getDepth() != 3 ) {
 			System.err.println( "Stage Remove Called on not a stage: " + stage );
@@ -279,7 +300,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 					if ( replace ) for ( int j = destList.size() - 2; j >= 0; j-- )
 						destList.remove( j );
 					for ( int j = 0; j < sectionList.size() - 1; j++ )
-						destList.add( Math.max( destList.size() - 2, 0 ), new AproposLabel( sectionList.get( j ).getText(), destPers ) );
+						destList.add( Math.max( destList.size() - 1, 0 ), new AproposLabel( sectionList.get( j ).getText(), destPers ) );
 				}
 				break;
 			case 4:
@@ -307,7 +328,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		// Gonna try this Composition over inheritance stuff all the kids are talking about
 		AproposLabel invoker;
 		private JPopupMenu[] popups = new JPopupMenu[ 6 ];
-		private JMenuItem clearItem, removeStage, addStageBelow, addStageAbove, removeItem, duplicateItem;
+		private JMenuItem clearItem, removeStage, addStageBelow, addStageAbove, removeItem, duplicateItem, copyItem, pasteItem;
 		private String copyTo = "Copy To", copyAppend = "Copy & Append", copyReplace = "Copy & Replace";
 		// private JMenu copyToMenu;
 		// private JMenu[] copyReplaceMenu = new JMenu[ 6 ], copyAppendMenu = new JMenu[ 6 ], stageSubMenus = new JMenu[ stageMap.size() ];
@@ -322,7 +343,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 			
 			if ( popup == null ) {
 				popup = new JPopupMenu();
-				popups[depth] = popup;
+				// popups[depth] = popup; TODO: Determine if this GC avoidance is even needed
 				switch ( depth ) {
 					case 0: // Database level
 						break;
@@ -337,6 +358,8 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 						// Fall through
 					case 4: // Perspective Level
 						popup.add( getClearItem() );
+						popup.add( getCopyItem() );
+						popup.add( getPasteItem() );
 						popup.add( getCopyMenu( depth, copyAppend ) );
 						popup.add( getCopyMenu( depth, copyReplace ) );
 						break;
@@ -364,6 +387,14 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		
 		JMenuItem getDuplicateItem() {
 			return duplicateItem = initMenuItem( duplicateItem, "Duplicate" );
+		}
+		
+		JMenuItem getCopyItem() {
+			return copyItem = initMenuItem( copyItem, "Copy" );
+		}
+		
+		JMenuItem getPasteItem() {
+			return pasteItem = initMenuItem( pasteItem, "Paste" );
 		}
 		
 		JMenuItem getRemoveStageItem() {
@@ -442,6 +473,10 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 				lineRemoved( invoker );
 			else if ( item == duplicateItem )
 				lineInserted( invoker, invoker.clone() );
+			else if ( item == copyItem )
+				toClipboard( invoker );
+			else if ( item == pasteItem )
+				fromClipboard( invoker );
 			else if ( item == removeStage )
 				stageRemoved( invoker );
 			else if ( item == addStageBelow )
