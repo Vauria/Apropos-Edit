@@ -603,7 +603,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 					if ( ostr.equals( "Intro" ) ) return 1;
 					if ( lstr.equals( "Orgasm" ) ) return 1;
 					if ( ostr.equals( "Orgasm" ) ) return -1;
-					return lstr.compareTo( ostr );
+					return Integer.valueOf( lstr.replace( "Stage ", "" ) ).compareTo( Integer.valueOf( ostr.replace( "Stage ", "" ) ) );
 				case 4: // The Animation Perspective
 					if ( lstr.equals( ostr ) ) return (int) Math.signum( hashCode() - o.hashCode() );
 					return lstr.compareTo( ostr );

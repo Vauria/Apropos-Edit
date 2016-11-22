@@ -168,8 +168,8 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 				String text = stageLabel.getText();
 				if ( text.indexOf( "Stage" ) > -1 ) {
 					if ( stageLabel.compareTo( lastStage ) > -1 ) lastStage = stageLabel.clone();
-					int n = Character.getNumericValue( text.trim().charAt( text.length() - 1 ) );
-					stageMap.modifyKey( stageLabel, text.substring( 0, text.length() - 1 ) + ( n - 1 ) );
+					int n = Integer.valueOf( text.replace( "Stage ", "" ) );
+					stageMap.modifyKey( stageLabel, text.replaceAll( " [1-9][0-9]*", " " + ( n - 1 ) ) );
 				}
 			}
 			else if ( stageLabel == stage ) {
@@ -206,8 +206,8 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 			if ( found ) {
 				String text = stageLabel.getText();
 				if ( text.indexOf( "Stage" ) > -1 ) {
-					int n = Character.getNumericValue( text.trim().charAt( text.length() - 1 ) );
-					stageMap.modifyKey( stageLabel, text.substring( 0, text.length() - 1 ) + ( n + 1 ) );
+					int n = Integer.valueOf( text.replace( "Stage ", "" ) );
+					stageMap.modifyKey( stageLabel, text.replaceAll( " [1-9][0-9]*", " " + ( n + 1 ) ) );
 				}
 			}
 			else if ( stageLabel == stage ) {
@@ -215,15 +215,15 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 				if ( above ) {
 					String text = stageLabel.getText();
 					if ( text.indexOf( "Stage" ) > -1 ) {
-						int n = Character.getNumericValue( text.trim().charAt( text.length() - 1 ) );
-						stageMap.modifyKey( stageLabel, text.substring( 0, text.length() - 1 ) + ( n + 1 ) );
+						int n = Integer.valueOf( text.replace( "Stage ", "" ) );
+						stageMap.modifyKey( stageLabel, text.replaceAll( " [1-9][0-9]*", " " + ( n + 1 ) ) );
 						s = n;
 					}
 				}
 				else {
 					String text = stageLabel.getText();
 					if ( text.indexOf( "Stage" ) > -1 ) {
-						int n = Character.getNumericValue( text.trim().charAt( text.length() - 1 ) );
+						int n = Integer.valueOf( text.replace( "Stage ", "" ) );
 						s = n + 1;
 					}
 				}

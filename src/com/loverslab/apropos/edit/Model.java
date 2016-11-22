@@ -329,7 +329,7 @@ public class Model {
 	 * @return
 	 */
 	public static String extractFolder( String animString ) {
-		animString = animString.replace( ".txt", "" ).replace( "_Rape", "" ).replace( "_Orgasm", "" ).replaceAll( "_Stage[1-9]+", "" );
+		animString = animString.replace( ".txt", "" ).replace( "_Rape", "" ).replace( "_Orgasm", "" ).replaceAll( "_Stage[1-9][0-9]*", "" );
 		for ( Position p : Position.values() )
 			animString = animString.replaceAll( "_" + p.name() + "$", "" );
 		return animString;
@@ -363,8 +363,8 @@ public class Model {
 	}
 	
 	public Position getPosition( String folder, String animString ) {
-		String position = animString.replace( ".txt", "" ).replace( "_Rape", "" ).replace( "_Orgasm", "" ).replaceAll( "_Stage[1-9]+", "" )
-				.replaceAll( "(?i)" + Pattern.quote( folder ), "" ).replaceAll( "^_", "" );
+		String position = animString.replace( ".txt", "" ).replace( "_Rape", "" ).replace( "_Orgasm", "" )
+				.replaceAll( "_Stage[1-9][0-9]*", "" ).replaceAll( "(?i)" + Pattern.quote( folder ), "" ).replaceAll( "^_", "" );
 		Position p = Position.lookup( position );
 		if ( p == null ) {
 			if ( position.equals( "" ) )
