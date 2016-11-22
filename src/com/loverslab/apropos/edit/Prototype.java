@@ -62,7 +62,7 @@ public class Prototype {
 	// Variables
 	// String db = "C:\\Program Files (x86)\\Steam\\SteamApps\\common\\Skyrim\\Mod Organizer\\mods\\Apropos Beta 2015 04 24
 	// 01\\Apropos\\dbOfficial\\";
-	String db = "E:\\User Files\\Dumps\\Workspace\\Apropos Diffing\\dbOfficial\\";
+	String db = "E:\\User Files\\Dumps\\Workspace\\Apropos Diffing\\db2016\\";
 	String outputDir = db + "Combined\\";
 	String folder = "FemaleActor_SexLabAggrMissionary";
 	String active = "Vilkas";
@@ -79,10 +79,10 @@ public class Prototype {
 	public static void main( String[] args ) throws Exception {
 		Prototype ae = new Prototype();
 		// ae.init();
-		// ae.findPositions();
+		ae.findPositions();
 		// ae.synonyms();
 		// ae.findBrokenReferences();
-		ae.lookForLinesInStage0files();
+		// ae.lookForLinesInStage0files();
 		
 		/*
 		 * if ( ae.files.size() > 0 )
@@ -456,8 +456,9 @@ public class Prototype {
 		
 		public FileVisitResult visitFile( Path path, BasicFileAttributes attr ) {
 			File file = path.toFile();
-			if ( file.getName().endsWith( ".txt" ) && !file.getParentFile().getName().equals( "dbOfficial" ) ) {
-				String name = file.getName().replace( ".txt", "" ).replace( file.getParentFile().getName(), "" );
+			if ( file.getName().endsWith( ".txt" ) && !file.getParentFile().getName().equals( "db2016" ) ) {
+				String name = file.getName().replace( ".txt", "" ).replaceAll( "(?i)" + Pattern.quote( file.getParentFile().getName() ),
+						"" );
 				positions.addAll( Arrays.asList( name.split( "_" ) ) );
 			}
 			return FileVisitResult.CONTINUE;
