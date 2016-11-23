@@ -17,6 +17,8 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
+import com.google.gson.stream.MalformedJsonException;
+
 @SuppressWarnings("serial")
 public class DisplayPanel extends JPanel implements LineChangedListener, PopupMenuListener {
 	private View parent;
@@ -164,8 +166,19 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 					refresh();
 				}
 				catch ( InterruptedException | ExecutionException e ) {
-					parent.handleException( e );
-					e.printStackTrace();
+					try {
+						throw e.getCause();
+					}
+					catch ( MalformedJsonException e1 ) {
+						parent.handleException( new MalformedJsonException( "Invalid JSON" ) );
+					}
+					catch ( StringIndexOutOfBoundsException e1 ) {
+						parent.handleException( new IllegalArgumentException( "Clipboard is Empty" ) );
+					}
+					catch ( Throwable t ) {
+						parent.handleException( t );
+						t.printStackTrace();
+					}
 				}
 			}
 		}.execute();
