@@ -88,6 +88,15 @@ public class SidePanel extends JPanel {
 		animations.setSelectedItem( str );
 	}
 	
+	public void setSelectedAnim( AproposLabel label ) {
+		label = label.getDepth() > 2 ? label.getParentLabel( 2 ) : label;
+		String folder = label.getParentLabel().getText();
+		String anim = label.getText();
+		animations.setSelectedItem( folder );
+		positions.setSelectedItem( parent.model.getPosition( folder, anim ) );
+		rapeCheck.setSelected( anim.contains( "_Rape" ) );
+	}
+	
 	public void resetButtons() {
 		simulating = false;
 		simulateButton.setText( "Simulate" );
@@ -322,6 +331,13 @@ public class SidePanel extends JPanel {
 		action.put( "GRABRAPE", new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
 				rapeCheck.grabFocus();
+			}
+		} );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_F5, 0, true ), "REFRESH" );
+		action.put( "REFRESH", new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				StageMap map = parent.display.stageMap;
+				setSelectedAnim( map.firstKey() );
 			}
 		} );
 	}
