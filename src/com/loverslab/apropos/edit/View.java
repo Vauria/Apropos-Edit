@@ -702,22 +702,30 @@ public class View extends JFrame implements ActionListener {
 		}
 	}
 	
-	abstract class ClipboardReader extends SwingWorker<PerspectiveMap, Object> {
-		PerspectiveMap merge;
+	abstract class ClipboardReader extends SwingWorker<AproposMap, Object> {
+		AproposMap merge;
 		
-		public ClipboardReader( PerspectiveMap merge ) {
+		public ClipboardReader( AproposMap merge ) {
 			super();
 			this.merge = merge;
 		}
-		protected PerspectiveMap doInBackground() throws Exception {
+		
+		protected AproposMap doInBackground() throws Exception {
 			String json = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getContents( null )
 					.getTransferData( DataFlavor.stringFlavor );
+			json = json.trim(); // Remove trailing space
+			if ( json.charAt( json.length() - 1 ) == ',' ) json = json.substring( 0, json.length() - 1 ); // Remove trailing comma
+			if ( !json.matches( "^\\{[\\s\\S]*\\}$" ) ) json = "{\n" + json + "\n}"; // Wrap in object if not already
 			JsonReader reader = new JsonReader( new StringReader( json ) );
-			
 			reader.beginObject();
 			while ( reader.hasNext() ) {
 				String name = reader.nextName();
-				LabelList list = merge.getEquivalent( new AproposLabel( name, null ) );
+				// Change merging strat based on target's class
+				LabelList list;
+				if ( merge instanceof LabelList )
+					list = (LabelList) merge;
+				else
+					list = ( (PerspectiveMap) merge ).getEquivalent( new AproposLabel( name, null ) );
 				AproposLabel key = list.get( 0 ).getParentLabel();
 				reader.beginArray();
 				while ( reader.hasNext() ) {

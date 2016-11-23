@@ -1,9 +1,12 @@
 package com.loverslab.apropos.edit;
 
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
+
 public class Tests {
 	
-	public static void main( String[] args ) {
-		versionComp();
+	public static void main( String[] args ) throws Exception {
+		isJson();
 	}
 	
 	public static void shifting() {
@@ -79,6 +82,13 @@ public class Tests {
 	
 	public static void versionComp() {
 		System.out.println( "1.2a2".compareTo( "1.2b" ) );
+	}
+	
+	public static void isJson() throws Exception {
+		String json = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getContents( null )
+				.getTransferData( DataFlavor.stringFlavor );
+		System.out.println( json );
+		System.out.println( json.trim().matches( "^\\{[\\s\\S]*\\}$" ) );
 	}
 	
 }

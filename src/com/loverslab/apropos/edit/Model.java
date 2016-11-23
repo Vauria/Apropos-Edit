@@ -1135,14 +1135,16 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 	}
 	
 	public String toJSON() throws IOException {
-		StringWriter string = new StringWriter();
-		JsonWriter writer = new JsonWriter( string );
+		StringWriter json = new StringWriter();
+		JsonWriter writer = new JsonWriter( json );
 		writer.setIndent( "    " );
 		writer.beginObject();
 		toJSON( writer );
 		writer.endObject();
 		writer.close();
-		return string.toString();
+		String string = json.toString();
+		string = "    " + string.replaceAll( "[\\{\\}]", "" ).trim();
+		return string;
 	}
 	
 	public JsonWriter toJSON( JsonWriter writer ) throws IOException {

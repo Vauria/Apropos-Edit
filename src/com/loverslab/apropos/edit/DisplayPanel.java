@@ -156,7 +156,8 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 	}
 	
 	public void fromClipboard( AproposLabel invoker ) {
-		parent.new ClipboardReader( stageMap.query( invoker.getDepth() != 3 ? invoker.getParentLabel( 3 ) : invoker ).perspecMap ) {
+		AproposMap map = stageMap.query( invoker ).map;
+		parent.new ClipboardReader( map ) {
 			public void done() {
 				try {
 					get();
