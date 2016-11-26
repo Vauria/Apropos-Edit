@@ -1143,7 +1143,7 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 		writer.endObject();
 		writer.close();
 		String string = json.toString();
-		string = "    " + string.replaceAll( "[\\{\\}]", "" ).trim();
+		string = "    " + string.replaceFirst( "^\\{([\\s\\S]*)\\}$", "$1" ).trim();
 		return string;
 	}
 	

@@ -87,6 +87,7 @@ public class Tests {
 	public static void isJson() throws Exception {
 		String json = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getContents( null )
 				.getTransferData( DataFlavor.stringFlavor );
+		json = json.replaceFirst( "^\\{([\\s\\S]*)\\}$", "$1" ).trim();
 		System.out.println( json );
 		System.out.println( json.trim().matches( "^\\{[\\s\\S]*\\}$" ) );
 	}
