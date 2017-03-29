@@ -15,7 +15,6 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,7 +44,7 @@ public class Model {
 	View view;
 	AproposLabel root;
 	TreeMap<String, Boolean> uniques = null;
-	TreeMap<String, ArrayList<String>> synonyms;
+	SynonymsMap synonyms;
 	SynonymsLengthMap synonymsLengths;
 	//@formatter:off
 	static HashMap<BytePair, String[][]> shiftTable = new HashMap<BytePair, String[][]>() { private static final long serialVersionUID = -7986832642422472332L; {
@@ -436,15 +435,7 @@ public class Model {
 	 * @return String containing porn words
 	 */
 	public String insert( String str ) {
-		if ( synonyms.size() == 0 ) return str;
-		Random r = new Random();
-		for ( String key : synonyms.keySet() ) {
-			List<String> list = synonyms.get( key );
-			if ( list.size() == 0 ) continue;
-			String synonym = list.get( list.size() == 1 ? 0 : r.nextInt( list.size() ) );
-			str = str.replace( key, synonym );
-		}
-		return str;
+		return synonyms.insert( str );
 	}
 	
 	private static float perDiff( int n, int m ) {
@@ -681,7 +672,7 @@ public class Model {
 	public class SynonymsFetcher extends SwingWorker<Object, Object> {
 		
 		public Object doInBackground() {
-			synonyms = new TreeMap<String, ArrayList<String>>();
+			synonyms = new SynonymsMap();
 			File file = new File( db + "Synonyms.txt" );
 			if ( file.exists() ) {
 				try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
@@ -693,7 +684,6 @@ public class Model {
 						while ( reader.hasNext() )
 							list.add( reader.nextString() );
 						reader.endArray();
-						// System.out.println( key + ":" + Prototype.concatenate( list.toArray( new String[ list.size() ] ), ", " ) );
 						synonyms.put( key, list );
 					}
 				}
@@ -714,18 +704,17 @@ public class Model {
 					reader.beginObject();
 					while ( reader.hasNext() ) {
 						String key = reader.nextName();
-						ArrayList<String> list = new ArrayList<String>();
 						reader.beginObject();
 						while ( reader.hasNext() ) {
-							reader.nextName();
+							String level = reader.nextName();
+							ArrayList<String> list = new ArrayList<String>();
 							reader.beginArray();
 							while ( reader.hasNext() )
 								list.add( reader.nextString() );
 							reader.endArray();
+							synonyms.putArousalLevel( key, level, list );
 						}
 						reader.endObject();
-						// System.out.println( key + ":" + Prototype.concatenate( list.toArray( new String[ list.size() ] ), ", " ) );
-						synonyms.put( key, list );
 					}
 				}
 				catch ( IllegalStateException | MalformedJsonException e ) {
@@ -744,20 +733,17 @@ public class Model {
 				try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
 					reader.beginObject();
 					reader.nextName();
-					ArrayList<String> list = new ArrayList<String>();
 					reader.beginObject();
 					while ( reader.hasNext() ) {
-						reader.nextName();
+						String level = reader.nextName();
+						ArrayList<String> list = new ArrayList<String>();
 						reader.beginArray();
 						while ( reader.hasNext() )
 							list.add( reader.nextString() );
 						reader.endArray();
+						synonyms.putWNTLevel( level, list );
 					}
 					reader.endObject();
-					// System.out.println( "{WT}" + ":" + Prototype.concatenate( list.toArray( new String[ list.size() ] ), ", " ) );
-					synonyms.put( "{WTVAGINAL}", list );
-					synonyms.put( "{WTORAL}", list );
-					synonyms.put( "{WTANAL}", list );
 				}
 				catch ( IllegalStateException | MalformedJsonException e ) {
 					String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
@@ -1012,8 +998,8 @@ public class Model {
 		
 		public Object doInBackground() {
 			// Put the Active and Primary names into the Synonyms Map
-			synonyms.put( "{ACTIVE}", new ArrayList<String>( Arrays.asList( new String[] { active } ) ) );
-			synonyms.put( "{PRIMARY}", new ArrayList<String>( Arrays.asList( new String[] { primary } ) ) );
+			synonyms.setActors( primary, active );
+			synonyms.setLevels( -1, -1 );
 			
 			// Create a new StageMap with only one label randomly selected from the original map
 			StageMap selectedMap = new StageMap();
@@ -1033,6 +1019,12 @@ public class Model {
 			
 			// Iterate through every label and insert words
 			for ( AproposLabel stage : stageMap.keySet() ) {
+				if ( r.nextFloat() > 0.2f & synonyms.levelArousal != -1 ) {
+					synonyms.levelArousal++ ;
+				}
+				if ( r.nextFloat() > 0.5f & synonyms.levelWearNTear != -1 ) {
+					synonyms.levelWearNTear++ ;
+				}
 				PerspectiveMap persMap = stageMap.get( stage );
 				for ( AproposLabel perspec : persMap.keySet() ) {
 					LabelList list = persMap.get( perspec );
@@ -1417,13 +1409,139 @@ class BytePair {
 	}
 }
 
+class SynonymsMap {
+	
+	// If static typing has a downside, this is it.
+	private TreeMap<String, ArrayList<String>> mapSynonyms = new TreeMap<String, ArrayList<String>>();
+	private TreeMap<String, TreeMap<String, ArrayList<String>>> mapArousal = new TreeMap<String, TreeMap<String, ArrayList<String>>>();
+	private TreeMap<String, TreeMap<String, ArrayList<String>>> mapWearNTear = new TreeMap<String, TreeMap<String, ArrayList<String>>>();
+	private Set<String> keySet;
+	String primary, active;
+	int levelArousal = -1, levelWearNTear = -1;
+	private Random r = new Random();
+	
+	public SynonymsMap() {
+		super();
+		TreeMap<String, ArrayList<String>> map = new TreeMap<String, ArrayList<String>>();
+		mapWearNTear.put( "{WTVAGINAL}", map );
+		mapWearNTear.put( "{WTORAL}", map );
+		mapWearNTear.put( "{WTANAL}", map );
+	}
+	
+	public String insert( String str ) {
+		if ( isEmpty() ) return str;
+		for ( String key : mapSynonyms.keySet() ) {
+			List<String> list = get( key );
+			if ( list.size() == 0 ) continue;
+			String synonym = list.get( list.size() == 1 ? 0 : r.nextInt( list.size() ) );
+			str = str.replace( key, synonym );
+		}
+		if ( levelArousal == -1 ) levelArousal = r.nextInt( mapArousal.firstEntry().getValue().size() );
+		for ( String key : mapArousal.keySet() ) {
+			List<String> list = get( key, levelArousal );
+			if ( list.size() == 0 ) continue;
+			String synonym = list.get( list.size() == 1 ? 0 : r.nextInt( list.size() ) );
+			str = str.replace( key, synonym );
+		}
+		if ( levelWearNTear == -1 ) levelWearNTear = r.nextInt( mapArousal.firstEntry().getValue().size() );
+		for ( String key : mapWearNTear.keySet() ) {
+			List<String> list = get( key, levelWearNTear );
+			if ( list.size() == 0 ) continue;
+			String synonym = list.get( list.size() == 1 ? 0 : r.nextInt( list.size() ) );
+			str = str.replace( key, synonym );
+		}
+		str = str.replace( "{ACTIVE}", active );
+		str = str.replace( "{PRIMARY}", primary );
+		return str;
+	}
+	
+	public void put( String key, ArrayList<String> list ) {
+		mapSynonyms.put( key, list );
+	}
+	
+	public void putArousalLevel( String key, String level, ArrayList<String> list ) {
+		TreeMap<String, ArrayList<String>> arousalmap = mapArousal.get( key );
+		if ( arousalmap == null ) {
+			arousalmap = new TreeMap<String, ArrayList<String>>();
+			mapArousal.put( key, arousalmap );
+		}
+		arousalmap.put( level, list );
+	}
+	
+	public void putWNTLevel( String level, ArrayList<String> list ) {
+		TreeMap<String, ArrayList<String>> wntmap = mapWearNTear.get( mapWearNTear.firstKey() );
+		wntmap.put( level, list );
+	}
+	
+	public void setActors( String primary, String active ) {
+		this.primary = primary;
+		this.active = active;
+	}
+	
+	public void setLevels( int levelArousal, int levelWearNTear ) {
+		this.levelArousal = levelArousal;
+		this.levelWearNTear = levelWearNTear;
+	}
+	
+	public ArrayList<String> get( String key ) {
+		if ( mapSynonyms.containsKey( key ) ) return mapSynonyms.get( key );
+		if ( mapArousal.containsKey( key ) ) {
+			ArrayList<String> ret = new ArrayList<String>();
+			TreeMap<String, ArrayList<String>> map = mapArousal.get( key );
+			for ( String level : map.keySet() )
+				ret.addAll( map.get( level ) );
+			return ret;
+		}
+		if ( mapWearNTear.containsKey( key ) ) {
+			ArrayList<String> ret = new ArrayList<String>();
+			TreeMap<String, ArrayList<String>> map = mapWearNTear.get( key );
+			for ( String level : map.keySet() )
+				ret.addAll( map.get( level ) );
+			return ret;
+		}
+		return null;
+	}
+	
+	public ArrayList<String> get( String key, int level ) {
+		if ( mapSynonyms.containsKey( key ) ) return mapSynonyms.get( key );
+		if ( mapArousal.containsKey( key ) ) {
+			TreeMap<String, ArrayList<String>> map = mapArousal.get( key );
+			level = Math.min( Math.max( 0, level ), map.size() - 1 );
+			String keyLevel = "level" + level;
+			return map.get( keyLevel );
+		}
+		if ( mapWearNTear.containsKey( key ) ) {
+			TreeMap<String, ArrayList<String>> map = mapWearNTear.get( key );
+			level = Math.min( Math.max( 0, level ), map.size() - 1 );
+			String keyLevel = "level" + level;
+			return map.get( keyLevel );
+		}
+		return null;
+	}
+	
+	public Set<String> keySet() {
+		if ( keySet == null ) {
+			keySet = new HashSet<String>();
+			keySet.addAll( mapSynonyms.keySet() );
+			keySet.addAll( mapArousal.keySet() );
+			keySet.addAll( mapWearNTear.keySet() );
+		}
+		return keySet;
+	}
+	
+	public boolean isEmpty() {
+		return mapSynonyms.isEmpty();
+	}
+	
+}
+
 class SynonymsLengthMap {
 	// I apologise for every part of this class's naming scheme.
 	
 	private final HashMap<String, MinMax> map = new HashMap<String, MinMax>();
 	public final int max;
 	
-	public SynonymsLengthMap( TreeMap<String, ArrayList<String>> synonyms ) {
+	public SynonymsLengthMap( SynonymsMap synonyms ) {
 		JLabel swingFont = new JLabel();
 		FontMetrics metrics = swingFont.getFontMetrics( swingFont.getFont() );
 		max = metrics.stringWidth( "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM" ); // The Holy String of

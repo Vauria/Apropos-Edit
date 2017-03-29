@@ -2,11 +2,12 @@ package com.loverslab.apropos.edit;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
+import java.io.File;
 
 public class Tests {
 	
 	public static void main( String[] args ) throws Exception {
-		isJson();
+		synonymsMap();
 	}
 	
 	public static void shifting() {
@@ -92,4 +93,22 @@ public class Tests {
 		System.out.println( json.trim().matches( "^\\{[\\s\\S]*\\}$" ) );
 	}
 	
+	public static void synonymsMap() throws Exception {
+		Model m = new Model( new ViewStub() );
+		Globals globals = new Globals( new File( "apropos-edit.config" ) );
+		globals.read();
+		String db = globals.getProperty( "locations" ).split( globals.delimiter )[0];
+		m.setDataBase( db );
+		Thread.sleep( 1000 );
+		System.out.println( m.synonyms.get( "{WTVAGINAL}", 8 ) );
+	}
+	
+}
+
+class ViewStub extends View {
+	public ViewStub() {}
+	
+	public void handleException( Throwable e ) {
+		e.printStackTrace();
+	}
 }
