@@ -9,7 +9,6 @@ import java.awt.event.MouseEvent;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
-import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
@@ -39,11 +38,6 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 	public DisplayPanel( View parent, JScrollPane scroll, StageMap stageMap ) {
 		this( parent, scroll );
 		load( stageMap, true );
-	}
-	
-	public void help() {
-		System.out.println( "HALP" );
-		add( new JLabel( "HALP" ) );
 	}
 	
 	public void load( StageMap stageMap, boolean resetScroll ) {
