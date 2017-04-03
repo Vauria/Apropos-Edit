@@ -60,6 +60,7 @@ import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
+import javax.swing.ToolTipManager;
 
 import com.google.gson.stream.JsonReader;
 import com.loverslab.apropos.edit.View.UpdateChecker.Release;
@@ -93,6 +94,9 @@ public class View extends JFrame implements ActionListener {
 		
 		Thread.setDefaultUncaughtExceptionHandler( view.new EDTExceptionCatcher() );
 		System.setProperty( "sun.awt.exception.handler", EDTExceptionCatcher.class.getName() );
+		
+		int dismissDelay = Integer.MAX_VALUE;
+		ToolTipManager.sharedInstance().setDismissDelay( dismissDelay );
 		
 		try {
 			SwingUtilities.invokeAndWait( new Runnable() {
@@ -333,6 +337,29 @@ public class View extends JFrame implements ActionListener {
 				}
 			}
 		}.execute();
+	}
+	
+	public void openSynonymsEditor() {
+		final JFrame synonymsFrame = new JFrame( "Synonyms Editor" );
+		ensureOnScreen( synonymsFrame, new Point( getLocation().x + getWidth(), getLocation().y ), new Dimension( 400, getHeight() ) );
+		synonymsFrame.setDefaultCloseOperation( DISPOSE_ON_CLOSE );
+		
+		synonymsFrame.addWindowListener( new WindowAdapter() {
+			public void windowDeiconified( WindowEvent e ) {
+				View.this.setState( NORMAL );
+				for ( JFrame frame : displayFrames ) {
+					frame.setState( NORMAL );
+				}
+			}
+		} );
+		
+		SynonymsDisplayPanel displayPanel = new SynonymsDisplayPanel( this, synonymsFrame );
+		
+		synonymsFrame.setContentPane( displayPanel );
+		
+		displayFrames.add( synonymsFrame );
+		synonymsFrame.setVisible( true );
+		
 	}
 	
 	public void simulateLabels( String active, String primary ) {

@@ -1057,6 +1057,9 @@ public class Model {
 	
 }
 
+/**
+ * Wrapper for an Arraylist of the AproposLabels representing individual lines
+ */
 class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 	private static final long serialVersionUID = -3091716550688577792L;
 	private boolean hasConflicts = false;
@@ -1415,6 +1418,7 @@ class SynonymsMap {
 	private TreeMap<String, ArrayList<String>> mapSynonyms = new TreeMap<String, ArrayList<String>>();
 	private TreeMap<String, TreeMap<String, ArrayList<String>>> mapArousal = new TreeMap<String, TreeMap<String, ArrayList<String>>>();
 	private TreeMap<String, TreeMap<String, ArrayList<String>>> mapWearNTear = new TreeMap<String, TreeMap<String, ArrayList<String>>>();
+	private StageMap stagesSynonyms, stagesArousal, stagesWearNTear;
 	private Set<String> keySet;
 	String primary, active;
 	int levelArousal = -1, levelWearNTear = -1;
@@ -1527,6 +1531,65 @@ class SynonymsMap {
 			keySet.addAll( mapWearNTear.keySet() );
 		}
 		return keySet;
+	}
+	
+	public StageMap getSynonymsMap() {
+		if ( stagesSynonyms == null ) {
+			stagesSynonyms = new StageMap();
+			AproposLabel parent = new AproposLabel( "Synonyms", new AproposLabel( "", new AproposLabel( "", null ) ) );
+			for ( String key : mapSynonyms.keySet() ) {
+				PerspectiveMap map = new PerspectiveMap();
+				AproposLabel keyword = new AproposLabel( key, parent );
+				ArrayList<String> source = mapSynonyms.get( key );
+				LabelList list = new LabelList( source.size() );
+				AproposLabel mandatorylabel = new AproposLabel( " ", keyword );
+				for ( String word : mapSynonyms.get( key ) )
+					list.add( new AproposLabel( word, mandatorylabel ) );
+				map.put( mandatorylabel, list );
+				stagesSynonyms.put( keyword, map );
+			}
+		}
+		return stagesSynonyms;
+	}
+	
+	public StageMap getArousalMap() {
+		if ( stagesArousal == null ) {
+			stagesArousal = new StageMap();
+			AproposLabel parent = new AproposLabel( "Arousal_Descriptors", new AproposLabel( "", new AproposLabel( "", null ) ) );
+			for ( String key : mapArousal.keySet() ) {
+				PerspectiveMap map = new PerspectiveMap();
+				AproposLabel keyword = new AproposLabel( key, parent );
+				for ( String level : mapArousal.get( key ).keySet() ) {
+					ArrayList<String> source = mapArousal.get( key ).get( level );
+					LabelList list = new LabelList( source.size() );
+					AproposLabel levellabel = new AproposLabel( level, keyword );
+					for ( String word : source )
+						list.add( new AproposLabel( word, levellabel ) );
+					map.put( levellabel, list );
+				}
+				stagesArousal.put( keyword, map );
+			}
+		}
+		return stagesArousal;
+	}
+	
+	public StageMap getWearNTear() {
+		if ( stagesWearNTear == null ) {
+			stagesWearNTear = new StageMap();
+			AproposLabel parent = new AproposLabel( "WearAndTear_Descriptors", new AproposLabel( "", new AproposLabel( "", null ) ) );
+			PerspectiveMap map = new PerspectiveMap();
+			AproposLabel keyword = new AproposLabel( "descriptors", parent );
+			for ( String level : mapWearNTear.get( "{WTANAL}" ).keySet() ) {
+				ArrayList<String> source = mapWearNTear.get( "{WTANAL}" ).get( level );
+				LabelList list = new LabelList( source.size() );
+				AproposLabel levellabel = new AproposLabel( level, keyword );
+				for ( String word : source )
+					list.add( new AproposLabel( word, levellabel ) );
+				map.put( levellabel, list );
+				stagesWearNTear.put( keyword, map );
+			}
+		}
+		return stagesWearNTear;
 	}
 	
 	public boolean isEmpty() {
