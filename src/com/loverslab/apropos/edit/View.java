@@ -72,7 +72,7 @@ import com.loverslab.apropos.edit.View.UpdateChecker.Release;
 @SuppressWarnings("serial") // No one Serialises Swing anymore
 public class View extends JFrame implements ActionListener {
 	
-	public final String version = "1.2a3";
+	public final String version = "1.2a4";
 	Globals globals;
 	Model model;
 	Banner banner;
@@ -581,6 +581,13 @@ public class View extends JFrame implements ActionListener {
 									}
 									else
 										handleException( new Exception( "You must load a file before you can Simulate it" ), displayFrame );
+								}
+							} );
+							input.put( KeyStroke.getKeyStroke( KeyEvent.VK_F5, 0, true ), "REFRESH" );
+							action.put( "REFRESH", new AbstractAction() {
+								public void actionPerformed( ActionEvent e ) {
+									StageMap map = displayNW.stageMap;
+									side.setSelectedAnim( map.firstKey() );
 								}
 							} );
 							
