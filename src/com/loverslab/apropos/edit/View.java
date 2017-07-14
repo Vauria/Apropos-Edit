@@ -903,7 +903,7 @@ public class View extends JFrame implements ActionListener {
 				stackTrace.setEditable( false );
 				JScrollPane stackScroll = new JScrollPane( stackTrace, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
 						JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
-				stackScroll.setPreferredSize( new Dimension( 600, 200 ) );
+				stackScroll.setPreferredSize( new Dimension( 800, 200 ) );
 				errorPanel.add( new JLabel( e.getMessage() ), BorderLayout.PAGE_START );
 				errorPanel.add( stackScroll, BorderLayout.CENTER );
 				
