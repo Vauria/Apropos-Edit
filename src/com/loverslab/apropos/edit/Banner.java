@@ -44,7 +44,7 @@ public class Banner extends JPanel implements ItemListener, ActionListener {
 		setLayout( new GridBagLayout() );
 		GridBagConstraints c = new GridBagConstraints();
 		
-		label = new JLabel( "Apropos \\db\\ Location" );
+		label = new JLabel( "Apropos " + Model.fs + "db" + Model.fs + " Location" );
 		c.anchor = GridBagConstraints.LINE_START;
 		c.insets = new Insets( 5, 10, 5, 5 );
 		c.gridx = 0;
@@ -106,10 +106,10 @@ public class Banner extends JPanel implements ItemListener, ActionListener {
 	public void actionPerformed( ActionEvent e ) {
 		String selected = (String) model.getSelectedItem();
 		if ( selected.equals( "<other>" ) ) {
-			itemStateChanged(new ItemEvent( locations, ItemEvent.ITEM_STATE_CHANGED, selected, ItemEvent.SELECTED ));
+			itemStateChanged( new ItemEvent( locations, ItemEvent.ITEM_STATE_CHANGED, selected, ItemEvent.SELECTED ) );
 		}
 	}
-
+	
 	public void itemStateChanged( ItemEvent e ) {
 		if ( e.getStateChange() == ItemEvent.SELECTED ) {
 			String selected = (String) model.getSelectedItem();
@@ -118,7 +118,7 @@ public class Banner extends JPanel implements ItemListener, ActionListener {
 				fileChooser.setAcceptAllFileFilterUsed( false );
 				fileChooser.setFileSelectionMode( JFileChooser.DIRECTORIES_ONLY );
 				try { // Set the default directory to the one the code was launched from
-					fileChooser.setCurrentDirectory( new File( ClassLoader.getSystemClassLoader().getResource(".").toURI().getPath() ) );
+					fileChooser.setCurrentDirectory( new File( ClassLoader.getSystemClassLoader().getResource( "." ).toURI().getPath() ) );
 				}
 				catch ( URISyntaxException ex ) {
 					parent.handleException( ex );

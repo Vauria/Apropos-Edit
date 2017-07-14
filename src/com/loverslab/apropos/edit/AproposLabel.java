@@ -209,7 +209,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	public String toString() {
-		return ( parent != null ? parent.toString() + ( parent.toString().endsWith( "\\" ) ? "" : "\\" ) : "" ) + getText();
+		return ( parent != null ? parent.toString() + ( parent.toString().endsWith( Model.fs ) ? "" : Model.fs ) : "" ) + getText();
 	}
 	
 	/**

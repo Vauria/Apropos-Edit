@@ -46,6 +46,7 @@ public class Model {
 	TreeMap<String, Boolean> uniques = null;
 	SynonymsMap synonyms;
 	SynonymsLengthMap synonymsLengths;
+	public static String fs = File.separator;
 	//@formatter:off
 	static HashMap<BytePair, String[][]> shiftTable = new HashMap<BytePair, String[][]>() { private static final long serialVersionUID = -7986832642422472332L; {
 		put( new BytePair( 1, 2 ), new String[][] { 
@@ -93,7 +94,7 @@ public class Model {
 	 * @param path Filepath. Should not end in \
 	 */
 	public void setDataBase( String path ) {
-		db = path + "\\";
+		db = path + fs;
 		root = new AproposLabel( db, null );
 		uniques = null;
 		new UniquesFetcher().execute();
@@ -119,7 +120,7 @@ public class Model {
 	 */
 	public StageMap getStages( AproposLabel parent ) {
 		StageMap data = new StageMap();
-		String path = db + parent.getParentLabel().getText() + "\\" + parent.getText();
+		String path = db + parent.getParentLabel().getText() + fs + parent.getText();
 		System.out.println( path );
 		File file = new File( path + ".txt" );
 		if ( file.exists() ) {
@@ -161,7 +162,7 @@ public class Model {
 			data = getPerspectives( parent, reader );
 		}
 		catch ( IllegalStateException | MalformedJsonException e ) {
-			String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
+			String message = "Error parsing " + file.getAbsolutePath().replace( db, fs + "db" + fs ) + " (" + e.getMessage() + ")";
 			view.handleException( new IllegalStateException( message, e ) );
 		}
 		catch ( IOException e ) {
@@ -211,7 +212,7 @@ public class Model {
 		AproposLabel first = stageMap.firstKey();
 		String folder = db + first.getParentLabel().getParentLabel().getText(); // TODO: Get path from parent chain
 		new File( folder ).mkdirs();
-		String path = folder + "\\" + first.getParentLabel().getText();
+		String path = folder + fs + first.getParentLabel().getText();
 		for ( AproposLabel stage : stageMap.keySet() ) {
 			PerspectiveMap persMap = stageMap.get( stage );
 			String[] split = stage.getText().split( " " );
@@ -266,7 +267,7 @@ public class Model {
 	}
 	
 	public void deleteStage( AproposLabel stageLabel ) {
-		String path = db + stageLabel.getParentLabel().getParentLabel().getText() + "\\" + stageLabel.getParentLabel().getText();
+		String path = db + stageLabel.getParentLabel().getParentLabel().getText() + fs + stageLabel.getParentLabel().getText();
 		String[] split = stageLabel.getText().split( " " );
 		String key = split[0];
 		File file;
@@ -313,7 +314,7 @@ public class Model {
 			writer.endObject();
 		}
 		catch ( IllegalStateException | MalformedJsonException e ) {
-			String message = "Error writing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
+			String message = "Error writing " + file.getAbsolutePath().replace( db, fs + "db" + fs ) + " (" + e.getMessage() + ")";
 			view.handleException( new IllegalStateException( message, e ) );
 		}
 		catch ( IOException e ) {
@@ -370,7 +371,7 @@ public class Model {
 			if ( position.equals( "" ) )
 				return Position.Unique;
 			else
-				System.err.println( "Unknown Position: \"" + position + "\" (" + folder + "\\" + animString + ")" );
+				System.err.println( "Unknown Position: \"" + position + "\" (" + folder + fs + animString + ")" );
 			return null;
 		}
 		return p;
@@ -614,7 +615,7 @@ public class Model {
 						uniques.put( reader.nextName(), reader.nextBoolean() );
 				}
 				catch ( IllegalStateException | MalformedJsonException e ) {
-					String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
+					String message = "Error parsing " + file.getAbsolutePath().replace( db, fs + "db" + fs ) + " (" + e.getMessage() + ")";
 					view.handleException( new IllegalStateException( message, e ) );
 				}
 				catch ( IOException e ) {
@@ -688,7 +689,7 @@ public class Model {
 					}
 				}
 				catch ( IllegalStateException | MalformedJsonException e ) {
-					String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
+					String message = "Error parsing " + file.getAbsolutePath().replace( db, fs + "db" + fs ) + " (" + e.getMessage() + ")";
 					view.handleException( new IllegalStateException( message, e ) );
 				}
 				catch ( IOException e ) {
@@ -718,7 +719,7 @@ public class Model {
 					}
 				}
 				catch ( IllegalStateException | MalformedJsonException e ) {
-					String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
+					String message = "Error parsing " + file.getAbsolutePath().replace( db, fs + "db" + fs ) + " (" + e.getMessage() + ")";
 					view.handleException( new IllegalStateException( message, e ) );
 				}
 				catch ( IOException e ) {
@@ -746,7 +747,7 @@ public class Model {
 					reader.endObject();
 				}
 				catch ( IllegalStateException | MalformedJsonException e ) {
-					String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
+					String message = "Error parsing " + file.getAbsolutePath().replace( db, fs + "db" + fs ) + " (" + e.getMessage() + ")";
 					view.handleException( new IllegalStateException( message, e ) );
 				}
 				catch ( IOException e ) {
@@ -936,15 +937,16 @@ public class Model {
 					writePerspectives( getPerspectives( null, reader ), file );
 				}
 				catch ( MalformedJsonException e ) {
-					String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
+					String message = "Error parsing " + file.getAbsolutePath().replace( db, fs + "db" + fs ) + " (" + e.getMessage() + ")";
 					view.handleException( new MalformedJsonException( message, e ) );
 				}
 				catch ( IllegalStateException e ) {
-					String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
+					String message = "Error parsing " + file.getAbsolutePath().replace( db, fs + "db" + fs ) + " (" + e.getMessage() + ")";
 					view.handleException( new IllegalStateException( message, e ) );
 				}
 				catch ( IOException e ) {
-					String message = e.getClass().getSimpleName() + " parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " ("
+					String message = e.getClass().getSimpleName() + " parsing " + file.getAbsolutePath().replace( db, fs + "db" + fs )
+							+ " ("
 							+ e.getMessage() + ")";
 					view.handleException( new RuntimeException( message, e ) );
 					e.printStackTrace();
