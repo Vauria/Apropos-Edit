@@ -29,6 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
 import com.google.gson.stream.JsonReader;
@@ -48,6 +49,9 @@ public class Model {
 	SynonymsMap synonyms;
 	SynonymsLengthMap synonymsLengths;
 	public static String fs = File.separator;
+	private String[] skip = new String[] { "AnimationPatchups.txt", "Arousal_Descriptors.txt", "Themes.txt", "UniqueAnimations.txt",
+			"WearAndTear_Damage.txt", "WearAndTear_Descriptors.txt", "WearAndTear_Effects.txt", "WearAndTear_Map.txt",
+			"file_layout_scheme.txt" };
 	//@formatter:off
 	static HashMap<BytePair, String[][]> shiftTable = new HashMap<BytePair, String[][]>() { private static final long serialVersionUID = -7986832642422472332L; {
 		put( new BytePair( 1, 2 ), new String[][] { 
@@ -987,13 +991,50 @@ public class Model {
 		
 	}
 	
+	class FileCounter extends SimpleFileVisitor<Path> {
+		public int count = 0;
+		public int est = 3200; // Number of files in the official DB + 200 or so
+		
+		private Runnable postProgress = new Runnable() {
+			public void run() {
+				int p = ( count * 100 ) / est;
+				view.updateProgress( p );
+			}
+		};
+		
+		public FileVisitResult visitFile( Path path, BasicFileAttributes attrs ) throws IOException {
+			File file = path.toFile();
+			if ( file.getName().endsWith( ".txt" ) ) {
+				for ( String str : skip )
+					if ( str.equals( file.getName() ) ) return FileVisitResult.CONTINUE;
+				count++ ;
+			}
+			if ( count % 100 == 0 ) {
+				SwingUtilities.invokeLater( postProgress );
+			}
+			return FileVisitResult.CONTINUE;
+		}
+	}
+	
 	/**
 	 * <code>FileVisitor</code> that simply loads and rewrites every .txt file it visits.
 	 *
 	 */
 	class JSonRebuilder extends SimpleFileVisitor<Path> {
-		private String[] skip = new String[] { "AnimationPatchups.txt", "Arousal_Descriptors.txt", "Themes.txt", "UniqueAnimations.txt",
-				"WearAndTear_Damage.txt", "WearAndTear_Descriptors.txt", "WearAndTear_Effects.txt", "WearAndTear_Map.txt" };
+		private int max;
+		private int count;
+		
+		private Runnable postProgress = new Runnable() {
+			public void run() {
+				int p = ( count * 100 ) / max;
+				view.updateProgress( p );
+			}
+		};
+		
+		public JSonRebuilder( int count ) {
+			super();
+			max = count;
+		}
 		
 		public FileVisitResult visitFile( Path path, BasicFileAttributes attr ) {
 			File file = path.toFile();
@@ -1002,6 +1043,10 @@ public class Model {
 					if ( str.equals( file.getName() ) ) return FileVisitResult.CONTINUE;
 				try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
 					writePerspectives( getPerspectives( null, reader ), file );
+					count++ ;
+					if ( count % 10 == 0 ) {
+						SwingUtilities.invokeLater( postProgress );
+					}
 				}
 				catch ( MalformedJsonException e ) {
 					String message = "Error parsing " + file.getAbsolutePath().replace( db, fs + "db" + fs ) + " (" + e.getMessage() + ")";
@@ -1029,7 +1074,20 @@ public class Model {
 	public abstract class DatabaseRebuilder extends SwingWorker<Object, Object> {
 		
 		public Object doInBackground() {
-			JSonRebuilder rebuilder = new JSonRebuilder();
+			FileCounter counter = new FileCounter();
+			
+			// Count files first, updating progress semi-nondeterministically
+			view.setProgress( "Counting files...", "File Count Complete", 0 );
+			try {
+				Files.walkFileTree( Paths.get( db ), counter );
+			}
+			catch ( IOException e ) {
+				view.handleException( e );
+				e.printStackTrace();
+			}
+			
+			view.setProgress( "Rebuilding Database...", "Database Rebuilt", 0 );
+			JSonRebuilder rebuilder = new JSonRebuilder( counter.count );
 			try {
 				Files.walkFileTree( Paths.get( db ), rebuilder );
 			}
@@ -1040,6 +1098,7 @@ public class Model {
 			
 			if ( uniques == null ) new UniquesFetcher().doInBackground();
 			writeUniques();
+			view.updateProgress( 100 );
 			return null;
 		}
 		
@@ -1066,6 +1125,7 @@ public class Model {
 		}
 		
 		public Object doInBackground() {
+			view.setProgress( "Simulating...", "Simulation Complete", 0 );
 			// Put the Active and Primary names into the Synonyms Map
 			synonyms.setActors( primary, active );
 			synonyms.setLevels( -1, -1 );
@@ -1119,6 +1179,7 @@ public class Model {
 				view.handleException( e );
 				e.printStackTrace();
 			}
+			view.updateProgress( 100 );
 		};
 		
 		public abstract void process( List<AproposLabel> labels );

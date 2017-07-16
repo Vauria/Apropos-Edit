@@ -39,6 +39,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
@@ -83,7 +85,9 @@ public class View extends JFrame implements ActionListener {
 	JDialog dialog, dialogLock;
 	JPanel messagePanel;
 	JLabel progressLabel;
+	String progressCompleteMessage;
 	JProgressBar progressBar;
+	Timer progressTimeout = new Timer();
 	ArrayList<JFrame> displayFrames = new ArrayList<JFrame>();
 	HashMap<DisplayPanel, AbstractAction> conflictedActions = new HashMap<DisplayPanel, AbstractAction>();
 	volatile LinkedList<Throwable> exceptionQueue = new LinkedList<Throwable>();
@@ -163,9 +167,9 @@ public class View extends JFrame implements ActionListener {
 		main.add( displayScroll, BorderLayout.CENTER );
 		
 		JPanel infoPanel = new JPanel( new GridBagLayout() );
-		progressLabel = new JLabel( "Counting Files: 700..." );
+		progressLabel = new JLabel( "Idle" );
 		progressBar = new JProgressBar();
-		progressBar.setValue( 35 );
+		progressBar.setValue( 0 );
 		GridBagConstraints c = new GridBagConstraints();
 		c.insets = new Insets( 2, 10, 2, 10 );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
@@ -176,7 +180,7 @@ public class View extends JFrame implements ActionListener {
 		c.gridwidth = 1;
 		c.weightx = 1;
 		infoPanel.add( progressLabel, c );
-		// main.add( infoPanel, BorderLayout.PAGE_END ); Disabled until it actually does something
+		main.add( infoPanel, BorderLayout.PAGE_END );
 	}
 	
 	/**
@@ -303,6 +307,7 @@ public class View extends JFrame implements ActionListener {
 	public void actionPerformed( ActionEvent e ) {
 		model.setDataBase( e.getActionCommand() );
 		side.publishingComplete( false );
+		setProgress( "Fetching Folders", "Folders Fetched", 0 );
 		model.new FolderListFetcher() {
 			
 			protected void done() {
@@ -315,12 +320,13 @@ public class View extends JFrame implements ActionListener {
 					handleException( e );
 					e.printStackTrace();
 				}
-				
+				updateProgress( 100 );
 			}
 			
 			public void process( List<String> strings ) {
 				for ( String s : strings )
 					side.publishAnimation( s );
+				updateProgress( strings.size() * 2 + progressBar.getValue() );
 			}
 		}.execute();
 	}
@@ -419,6 +425,7 @@ public class View extends JFrame implements ActionListener {
 	}
 	
 	public void displayPosition( String folder, String animString, boolean newWindow ) {
+		setProgress( "Opening File", "File Opened", 0 );
 		model.new PositionFetcher( folder, animString ) {
 			public void done() {
 				try {
@@ -604,41 +611,45 @@ public class View extends JFrame implements ActionListener {
 					handleException( e );
 					e.printStackTrace();
 				}
+				updateProgress( 100 );
 			}
 		}.execute();
 	}
 	
 	public void writeDisplay() {
+		setProgress( "Writing Lines...", "Lines Saved", 0 );
 		model.new PositionWriter( display.stageMap ) {
 			public void done() {
 				try {
 					get();
-					handleException( new Information( "Write Complete!" ) );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
 					handleException( e );
 					e.printStackTrace();
 				}
+				updateProgress( 100 );
 			}
 		}.execute();
 	}
 	
 	public void writeNWDisplay( DisplayPanel display ) {
+		setProgress( "Writing lines...", "Lines Saved", 0 );
 		model.new PositionWriter( display.stageMap ) {
 			public void done() {
 				try {
 					get();
-					handleException( new Information( "Write Complete!" ), SwingUtilities.getWindowAncestor( display ) );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
 					handleException( e );
 					e.printStackTrace();
 				}
+				updateProgress( 100 );
 			}
 		}.execute();
 	}
 	
 	public void copyToNew( String folder, String animString, String newAnim ) {
+		setProgress( "Copying Files", "Files Copied", 0 );
 		model.new PositionCopier( folder, animString, newAnim ) {
 			public void done() {
 				try {
@@ -671,11 +682,13 @@ public class View extends JFrame implements ActionListener {
 					handleException( e );
 					e.printStackTrace();
 				}
+				updateProgress( 100 );
 			}
 		}.execute();
 	}
 	
 	public void copyAppend( String folder, String animString, String newFolder, String newAnim ) {
+		setProgress( "Appending Files", "Files Appended", 0 );
 		model.new PositionAppender( folder, animString, newFolder, newAnim ) {
 			public void done() {
 				try {
@@ -709,6 +722,7 @@ public class View extends JFrame implements ActionListener {
 					handleException( e );
 					e.printStackTrace();
 				}
+				updateProgress( 100 );
 			}
 		}.execute();
 	}
@@ -898,6 +912,37 @@ public class View extends JFrame implements ActionListener {
 			}
 		}
 		
+	}
+	
+	/**
+	 * Starts a new progressable task, with the given description and complete message, and initial percentage
+	 * 
+	 * @param working String to display while task is running
+	 * @param complete String to display when task is complete, until timeout till idle
+	 * @param p Current progress value
+	 */
+	public void setProgress( String working, String complete, int percent ) {
+		progressCompleteMessage = complete;
+		progressLabel.setText( working );
+		progressBar.setValue( percent );
+		
+		progressTimeout.cancel();
+	}
+	
+	public void updateProgress( int percent ) {
+		progressBar.setValue( percent );
+		if ( percent == 100 ) {
+			progressLabel.setText( progressCompleteMessage );
+			
+			progressTimeout = new Timer();
+			TimerTask task = new TimerTask() {
+				public void run() {
+					progressLabel.setText( "Idle" );
+					progressBar.setValue( 0 );
+				}
+			};
+			progressTimeout.schedule( task, 5000 );
+		}
 	}
 	
 	public void handleException( Throwable e ) {
