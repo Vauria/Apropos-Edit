@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.JLabel;
@@ -498,10 +499,32 @@ public class Model {
 		return 2;
 	}
 	
+	/**
+	 * Compares the strings of two AproposLabels on length, number of words and finally number of each word to determine if they are vaguely
+	 * similar
+	 * 
+	 * @return 0: Literally Equal.<br>
+	 *         1: Equal ignoring case and punctuation.<br>
+	 *         2: Equal ignoring a few missmatched words.<br>
+	 *         7: Not enough Words in Common.<br>
+	 *         8: #Words too different.<br>
+	 *         9: Length Difference too great
+	 */
 	public static int fuzzyMatches( AproposLabel lab1, AproposLabel lab2 ) {
 		return fuzzyMatches( lab1.getText(), lab2.getText() );
 	}
 	
+	/**
+	 * Compares the string of one AproposLabel with every string in a Conflict Label on length, number of words and finally number of each
+	 * word to determine if they are vaguely similar
+	 * 
+	 * @return 0: Literally Equal.<br>
+	 *         1: Equal ignoring case and punctuation.<br>
+	 *         2: Equal ignoring a few missmatched words.<br>
+	 *         7: Not enough Words in Common.<br>
+	 *         8: #Words too different.<br>
+	 *         9: Length Difference too great
+	 */
 	public static int fuzzyMatches( AproposConflictLabel labCon, AproposLabel label ) {
 		String[] strings = labCon.getTexts();
 		int ret = 9;
@@ -512,15 +535,59 @@ public class Model {
 		return ret;
 	}
 	
-	private static boolean contains( String string, String regex ) {
+	/**
+	 * Checks if a substring defined by regex can be found within the passed string
+	 * 
+	 * @return true if a match is found
+	 */
+	public static boolean contains( String string, String regex ) {
 		return string.matches( "^.*" + regex + ".*$" );
 	}
 	
+	/**
+	 * Utility method for the <code>shiftTable</code>, checks if the string contains any of the regexs in one of the tables
+	 * 
+	 * @param string Search String
+	 * @param regexers Array of Regex
+	 * @return true if any of the regexes matched
+	 */
 	private static boolean contains( String string, String[][] regexers ) {
 		if ( regexers == null ) return false;
 		for ( int i = 0; i < regexers.length; i++ )
 			if ( contains( string, regexers[i][0] ) ) return true;
 		return false;
+	}
+	
+	/**
+	 * Isolates groups from within a string
+	 * 
+	 * @param str String to Search
+	 * @param regex Regex with at least one capturing group
+	 * @return Array of the captured strings from the first match, or null if no match found
+	 */
+	public static String[] matchFirstGroups( String str, String regex ) {
+		Pattern p = Pattern.compile( regex );
+		return matchFirstGroups( str, p );
+	}
+	
+	/**
+	 * Isolates groups from within a string
+	 * 
+	 * @param str String to Search
+	 * @param p Pattern with at least one capturing group
+	 * @return Array of the captured strings from the first match, or null if no match found
+	 */
+	public static String matchFirstGroups( String str, Pattern p )[] { // Why can I do this
+		Matcher m = p.matcher( str );
+		if ( m.find() ) {
+			int c = m.groupCount();
+			String ret[] = new String[ c ]; // this looks so dumb
+			for ( int i = 0; i < c; i++ ) {
+				ret[i] = m.group( i + 1 );
+			}
+			return ret;
+		}
+		return null;
 	}
 	
 	/**

@@ -3,11 +3,13 @@ package com.loverslab.apropos.edit;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.io.File;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Tests {
 	
 	public static void main( String[] args ) throws Exception {
-		synonymsMap();
+		versionComp();
 	}
 	
 	public static void shifting() {
@@ -82,7 +84,37 @@ public class Tests {
 	}
 	
 	public static void versionComp() {
-		System.out.println( "1.2a2".compareTo( "1.2b" ) );
+		String current = "1.2.5", release = "1.3.5a4";
+		Pattern p = Pattern.compile( "([0-9.]+)([ab][0-9]*)?" );
+		String[] cparts = matchFirstGroups( current, p ), rparts = matchFirstGroups( release, p );
+		int ret;
+		int c1 = cparts[0].compareTo( rparts[0] );
+		if ( c1 == 0 ) {
+			if ( cparts[1] == null & rparts[1] == null )
+				ret = 0;
+			else if ( rparts[1] == null )
+				ret = -1;
+			else if ( cparts[1] == null )
+				ret = 1;
+			else
+				ret = cparts[1].compareTo( rparts[1] );
+		}
+		else
+			ret = c1;
+		System.out.println( ret );
+	}
+	
+	public static String matchFirstGroups( String str, Pattern p )[] { // Why can I do this
+		Matcher m = p.matcher( str );
+		if ( m.find() ) {
+			int c = m.groupCount();
+			String ret[] = new String[ c ]; // this looks so dumb
+			for ( int i = 0; i < c; i++ ) {
+				ret[i] = m.group( i + 1 );
+			}
+			return ret;
+		}
+		return null;
 	}
 	
 	public static void isJson() throws Exception {

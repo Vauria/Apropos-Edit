@@ -40,6 +40,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Pattern;
 
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
@@ -859,7 +860,23 @@ public class View extends JFrame implements ActionListener {
 			try {
 				ArrayList<Release> releases = get();
 				Release r = releases.get( 0 );
-				if ( r.tagName.compareTo( version ) > 0 ) {
+				Pattern p = Pattern.compile( "([0-9.]+)([ab][0-9]*)?" );
+				String[] cparts = Model.matchFirstGroups( version, p ), rparts = Model.matchFirstGroups( r.tagName, p );
+				int compare;
+				int c1 = cparts[0].compareTo( rparts[0] );
+				if ( c1 == 0 ) {
+					if ( cparts[1] == null & rparts[1] == null )
+						compare = 0;
+					else if ( rparts[1] == null )
+						compare = -1;
+					else if ( cparts[1] == null )
+						compare = 1;
+					else
+						compare = cparts[1].compareTo( rparts[1] );
+				}
+				else
+					compare = c1;
+				if ( compare < 0 ) {
 					setTitle( getTitle() + " UPDATE AVAILABLE, " + r.tagName );
 				}
 			}
