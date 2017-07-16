@@ -54,37 +54,55 @@ public class Model {
 			"file_layout_scheme.txt" };
 	//@formatter:off
 	static HashMap<BytePair, String[][]> shiftTable = new HashMap<BytePair, String[][]>() { private static final long serialVersionUID = -7986832642422472332L; {
-		put( new BytePair( 1, 2 ), new String[][] { 
-			new String[] { "^ I'm( |\\p{Punct})", " You're$1" }, 
-			new String[] { "([\\.?!]) I'm( |\\p{Punct})", "$1 You're$2" }, 
-			new String[] { " I'm( |\\p{Punct})", " you're$1" }, 
-			new String[] { "^ I was", " You were" }, 
-			new String[] { "([\\.?!]) I was", "$1 You were" }, 
-			new String[] { " I was", " you were" }, 
-			new String[] { "^ I((?:'[\\w]+)?)( |\\p{Punct})", " You$1$2" }, 
-			new String[] { "([\\.?!]) I((?:'[\\w]+)?)( |\\p{Punct})", "$1 You$2$3" }, 
-			new String[] { " I((?:'[\\w]+)?)( |\\p{Punct})", " you$1$2" }, 
-			new String[] { " my( |\\p{Punct})", " your$1" }, 
-			new String[] { " My( |\\p{Punct})", " Your$1" }, 
+		put( new BytePair( 1, 2 ), new String[][] {
+			new String[] { "^ I'm( |\\p{Punct})", " You're$1" },
+			new String[] { "([\\.?!]) I'm( |\\p{Punct})", "$1 You're$2" },
+			new String[] { " I'm( |\\p{Punct})", " you're$1" },
+			new String[] { "^ I was", " You were" },
+			new String[] { "([\\.?!]) I was", "$1 You were" },
+			new String[] { " I was", " you were" },
+			new String[] { "^ I((?:'[\\w]+)?)( |\\p{Punct})", " You$1$2" },
+			new String[] { "([\\.?!]) I((?:'[\\w]+)?)( |\\p{Punct})", "$1 You$2$3" },
+			new String[] { " I((?:'[\\w]+)?)( |\\p{Punct})", " you$1$2" },
+			new String[] { " we( |\\p{Punct})", " you$1" },
+			new String[] { " We( |\\p{Punct})", " You$1" },
+			new String[] { " my( |\\p{Punct})", " your$1" },
+			new String[] { " My( |\\p{Punct})", " Your$1" },
 			new String[] { " me( |\\p{Punct})", " you$1" },
 			new String[] { " Me( |\\p{Punct})", " You$1" },
-			new String[] { " mine( |\\p{Punct})", " yours$1" }, 
+			new String[] { " mine( |\\p{Punct})", " yours$1" },
 			new String[] { " Mine( |\\p{Punct})", " Yours$1" },
 			new String[] { " myself( |\\p{Punct})", " yourself$1" },
 			new String[] { " Myself( |\\p{Punct})", " Yourself$1" },
 			new String[] { " am( |\\p{Punct})", " are$1" },
 			new String[] { " Am( |\\p{Punct})", " Are$1" },
 		});
-		put( new BytePair( 2, 1 ), new String[][] { 
-			new String[] { " (?:y|Y)ou're( |\\p{Punct})", " I'm$1" }, 
-			new String[] { " (?:y|Y)ou were", " I was" }, 
-			new String[] { " (?:y|Y)ou((?:'[\\w]+)?)( |\\p{Punct})", " I$1$2" }, 
-			new String[] { " your( |\\p{Punct})", " my$1" }, 
+		put( new BytePair( 2, 1 ), new String[][] {
+			new String[] { " (?:y|Y)ou're( |\\p{Punct})", " I'm$1" },
+			new String[] { " (?:y|Y)ou were", " I was" },
+			new String[] { " (?:y|Y)ou((?:'[\\w]+)?)( |\\p{Punct})", " I$1$2" },
+			new String[] { " your( |\\p{Punct})", " my$1" },
 			new String[] { " Your( |\\p{Punct})", " My$1" },
-			new String[] { " yours( |\\p{Punct})", " mine$1" }, 
+			new String[] { " yours( |\\p{Punct})", " mine$1" },
 			new String[] { " Yours( |\\p{Punct})", " Mine$1" },
 			new String[] { " yourself( |\\p{Punct})", " myself$1" },
 			new String[] { " Yourself( |\\p{Punct})", " Myself$1" },
+		});
+	}};
+	static HashMap<BytePair, String[][]> shiftTableFixes = new HashMap<BytePair, String[][]>() { private static final long serialVersionUID = -4049369740518911206L; {
+		put( new BytePair( 1, 2 ), new String[][] {
+			//Unfuck common phrases that only work in 1st person
+			new String[] { " Your your( |\\p{Punct})", " My my$1" },
+			new String[] { " your your( |\\p{Punct})", " my my$1" },
+			new String[] { " Oh your( |\\p{Punct})", " Oh my$1" },
+			new String[] { " oh your( |\\p{Punct})", " oh my$1" },
+			new String[] { " Your (?:g|G)od( |\\p{Punct})", " My God$1" },
+			new String[] { " your (?:g|G)od( |\\p{Punct})", " my God$1" },
+			new String[] { " Your goodness( |\\p{Punct})", " My goodness$1" },
+			new String[] { " your goodness( |\\p{Punct})", " my goodness$1" },
+		});
+		put( new BytePair( 2, 1 ), new String[][]{
+			
 		});
 	}};
 	//@formatter:on
@@ -604,12 +622,13 @@ public class Model {
 	 */
 	public static LabelList perspectiveShift( LabelList list, AproposLabel current, AproposLabel target ) {
 		BytePair key = new BytePair( current.getText().charAt( 0 ), target.getText().charAt( 0 ) );
-		String[][] shifts = shiftTable.get( key );
+		String[][] shifts = shiftTable.get( key ), shiftsInv = shiftTable.get( key.invert() ), fixes = shiftTableFixes.get( key ),
+				fixesInv = shiftTableFixes.get( key.invert() );
 		if ( shifts == null ) return list; // This PerspectiveShift is not supported
-		String[][] shiftsInv = shiftTable.get( key.invert() );
 		LabelList shifted = new LabelList();
 		for ( AproposLabel label : list ) {
-			shifted.add( new AproposLabel( perspectiveShift( label.getText(), shifts, shiftsInv ), label.getParentLabel() ) );
+			shifted.add(
+					new AproposLabel( perspectiveShift( label.getText(), shifts, shiftsInv, fixes, fixesInv ), label.getParentLabel() ) );
 		}
 		return shifted;
 	}
@@ -624,21 +643,30 @@ public class Model {
 	 */
 	public static AproposLabel perspectiveShift( AproposLabel label, AproposLabel current, AproposLabel target ) {
 		BytePair key = new BytePair( current.getText().charAt( 0 ), target.getText().charAt( 0 ) );
-		String[][] shifts = shiftTable.get( key );
+		String[][] shifts = shiftTable.get( key ), shiftsInv = shiftTable.get( key.invert() ), fixes = shiftTableFixes.get( key ),
+				fixesInv = shiftTableFixes.get( key.invert() );
 		if ( shifts == null ) return label; // This PerspectiveShift is not supported
-		String[][] shiftsInv = shiftTable.get( key.invert() );
-		return new AproposLabel( perspectiveShift( label.getText(), shifts, shiftsInv ), label.getParentLabel() );
+		return new AproposLabel( perspectiveShift( label.getText(), shifts, shiftsInv, fixes, fixesInv ), label.getParentLabel() );
 	}
 	
-	private static String perspectiveShift( String text, String[][] shifts, String[][] shiftsInv ) {
+	private static String perspectiveShift( String text, String[][] shifts, String[][] shiftsInv, String[][] fixes, String[][] fixesInv ) {
 		text = " " + text + " ";
+		String speakingCheck = text; // Remove all the fixes text, as these are idioms that use the language that would trigger speaking
+		if ( fixesInv != null ) {
+			for ( int i = 0; i < fixesInv.length; i++ )
+				speakingCheck = speakingCheck.replaceAll( fixesInv[i][1].replaceAll( "\\$1", "( |\\\\p{Punct})" ), "$1" );
+		}
 		if ( contains( text, Pattern.quote( "({ACTIVE})" ) ) | contains( text, Pattern.quote( "({PRIMARY})" ) ) )
 			;
-		else if ( contains( text, shiftsInv ) )
+		else if ( contains( speakingCheck, shiftsInv ) )
 			text = " ({PRIMARY})" + text; // TODO: Make this dynamic on perspectives
 		else
 			for ( int i = 0; i < shifts.length; i++ )
 				text = text.replaceAll( shifts[i][0], shifts[i][1] );
+		if ( fixes != null ) {
+			for ( int i = 0; i < fixes.length; i++ )
+				text = text.replaceAll( fixes[i][0], fixes[i][1] );
+		}
 		text = text.replaceAll( "^ (.*) $", "$1" );
 		return text;
 	}
@@ -1058,8 +1086,7 @@ public class Model {
 				}
 				catch ( IOException e ) {
 					String message = e.getClass().getSimpleName() + " parsing " + file.getAbsolutePath().replace( db, fs + "db" + fs )
-							+ " ("
-							+ e.getMessage() + ")";
+							+ " (" + e.getMessage() + ")";
 					view.handleException( new RuntimeException( message, e ) );
 					e.printStackTrace();
 				}

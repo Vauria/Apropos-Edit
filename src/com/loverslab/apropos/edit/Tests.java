@@ -9,13 +9,13 @@ import java.util.regex.Pattern;
 public class Tests {
 	
 	public static void main( String[] args ) throws Exception {
-		versionComp();
+		shifting();
 	}
 	
 	public static void shifting() {
 		LabelList list = new LabelList();
 		//@formatter:off
-		list.add( new AproposLabel( "{ACTIVE} keeps a steady rhythm as it is obviously enjoying my {MOUTH}.",null));
+		/*list.add( new AproposLabel( "{ACTIVE} keeps a steady rhythm as it is obviously enjoying my {MOUTH}.",null));
 		list.add( new AproposLabel( "I concentrate on keeping my breathing steady and let {ACTIVE} have his fun with my {MOUTH}.",null));
 		list.add( new AproposLabel( "As its {BEAST} {COCK} pushes deeper into my {MOUTH}, I can't ignore the intense taste of it's precum.",null));
 		list.add( new AproposLabel( "{SALTY} precum coats my tongue and throat... I try not to focus on it and work my tongue to help get him off faster.",null));
@@ -28,7 +28,10 @@ public class Tests {
 		list.add( new AproposLabel( "I can't believe this is happening! I can't believe it. I'll fuck them all? I could... I will!",null));
 		list.add( new AproposLabel( "Before I knew it, {ACTIVE} was on top of me, prodding to find a way into my {MOUTH} with its {BEAST} {COCK}.",null));
 		list.add( new AproposLabel( "Come on you stinking rat, coat my throat in your {VILE} {CUM}!",null));
-		list.add( new AproposLabel( "A rat is {FUCKING} my {MOUTH} as deep and fast as it can and I'm just waiting for my stomach to be filled with {VILE} {CUM}.!",null));
+		list.add( new AproposLabel( "A rat is {FUCKING} my {MOUTH} as deep and fast as it can and I'm just waiting for my stomach to be filled with {VILE} {CUM}.!",null));*/
+		list.add( new AproposLabel( "My my, two horny skeevers... my {PUSSY} is too {GENWT} to let them fuck it, but maybe... ooooh, this might just work...",null));
+		list.add( new AproposLabel( "Oh my! He's certainly enthusiastic, even with his packmate's dick so close. I moan around the slowly thrusting {COCK} in my mouth...",null));
+		list.add( new AproposLabel( "Oh my Gods! Dogs are so good at this...",null));
 		//@formatter:on
 		AproposLabel current = new AproposLabel( "1st Person", null );
 		AproposLabel target = new AproposLabel( "2st Person", null );
