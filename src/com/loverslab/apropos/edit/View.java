@@ -331,8 +331,8 @@ public class View extends JFrame implements ActionListener {
 		}.execute();
 	}
 	
-	public void verifyDatabase() {
-		model.new DatabaseRebuilder() {
+	public void verifyDatabase( boolean sort ) {
+		model.new DatabaseRebuilder( sort ) {
 			public void done() {
 				try {
 					get();

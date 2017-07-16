@@ -118,7 +118,21 @@ public class SidePanel extends JPanel {
 	private void initListeners() {
 		listenVerify = new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
-				parent.verifyDatabase();
+				int result = JOptionPane.showOptionDialog( parent,
+						"Do you want to sort the individual lines in each file alphabetically?\nDoing so allows for easier database merging, but the 1st and 2nd person lines will no longer have the same order.",
+						"Enable Line Sorting?", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null,
+						new String[] { "Sort", "Don't Sort" }, "Don't Sort" );
+				switch ( result ) {
+					case JOptionPane.OK_OPTION:
+						parent.verifyDatabase( true );
+						break;
+					case JOptionPane.NO_OPTION:
+						parent.verifyDatabase( false );
+						break;
+					default:
+						break;
+				}
+				
 			}
 		};
 		listenSynonyms = new AbstractAction() {

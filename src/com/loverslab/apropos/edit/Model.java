@@ -1051,6 +1051,7 @@ public class Model {
 	class JSonRebuilder extends SimpleFileVisitor<Path> {
 		private int max;
 		private int count;
+		private boolean sort;
 		
 		private Runnable postProgress = new Runnable() {
 			public void run() {
@@ -1059,9 +1060,10 @@ public class Model {
 			}
 		};
 		
-		public JSonRebuilder( int count ) {
+		public JSonRebuilder( int count, boolean sort ) {
 			super();
 			max = count;
+			this.sort = sort;
 		}
 		
 		public FileVisitResult visitFile( Path path, BasicFileAttributes attr ) {
@@ -1070,7 +1072,16 @@ public class Model {
 				for ( String str : skip )
 					if ( str.equals( file.getName() ) ) return FileVisitResult.CONTINUE;
 				try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
-					writePerspectives( getPerspectives( null, reader ), file );
+					if ( sort ) {
+						PerspectiveMap map = getPerspectives( null, reader );
+						for ( AproposLabel pers : map.keySet() ) {
+							LabelList list = map.get( pers );
+							list.sort( null );
+						}
+						writePerspectives( map, file );
+					}
+					else
+						writePerspectives( getPerspectives( null, reader ), file );
 					count++ ;
 					if ( count % 10 == 0 ) {
 						SwingUtilities.invokeLater( postProgress );
@@ -1099,6 +1110,12 @@ public class Model {
 	 * @see Model.JSonRebuilder
 	 */
 	public abstract class DatabaseRebuilder extends SwingWorker<Object, Object> {
+		private boolean sort;
+		
+		public DatabaseRebuilder( boolean sort ) {
+			super();
+			this.sort = sort;
+		}
 		
 		public Object doInBackground() {
 			FileCounter counter = new FileCounter();
@@ -1114,7 +1131,7 @@ public class Model {
 			}
 			
 			view.setProgress( "Rebuilding Database...", "Database Rebuilt", 0 );
-			JSonRebuilder rebuilder = new JSonRebuilder( counter.count );
+			JSonRebuilder rebuilder = new JSonRebuilder( counter.count, sort );
 			try {
 				Files.walkFileTree( Paths.get( db ), rebuilder );
 			}
