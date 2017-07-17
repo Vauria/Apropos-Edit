@@ -1,15 +1,47 @@
 package com.loverslab.apropos.edit;
 
+import java.awt.BorderLayout;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 public class Tests {
 	
 	public static void main( String[] args ) throws Exception {
-		shifting();
+		wordWrap();
+	}
+	
+	public static void wordWrap() {
+		final JFrame frame = new JFrame( "Word Wrap Test" );
+		frame.setLocationRelativeTo( null );
+		frame.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
+		
+		JPanel panel = new JPanel( new BorderLayout() );
+		SynonymsLengthMap map = null;
+		try ( ObjectInputStream ois = new ObjectInputStream( new FileInputStream( new File( "synLen.obj" ) ) ) ) {
+			map = (SynonymsLengthMap) ois.readObject();
+		}
+		catch ( IOException | ClassNotFoundException e ) {
+			e.printStackTrace();
+		}
+		
+		AproposLabel label = new AproposLabel(
+				"Oh my! He's certainly enthusiastic, even with his packmate's dick so close. I moan around the slowly thrusting {COCK} in my mouth...",
+				null );
+		panel.add( label.display( null, null, map ), BorderLayout.NORTH );
+		
+		frame.setContentPane( panel );
+		
+		frame.setSize( 800, 100 );
+		frame.setVisible( true );
 	}
 	
 	public static void shifting() {
@@ -141,6 +173,8 @@ public class Tests {
 }
 
 class ViewStub extends View {
+	private static final long serialVersionUID = 4108044065693221460L;
+	
 	public ViewStub() {}
 	
 	public void handleException( Throwable e ) {

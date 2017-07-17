@@ -4,9 +4,12 @@ import java.awt.FontMetrics;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.io.StringWriter;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -858,6 +861,15 @@ public class Model {
 				view.handleException( new FileNotFoundException( "No WearAndTear_Descriptors.txt file found" ) );
 			
 			synonymsLengths = new SynonymsLengthMap( synonyms );
+			
+			try ( ObjectOutputStream oos = new ObjectOutputStream( new FileOutputStream( new File( "synLen.obj" ) ) ) ) {
+				oos.writeObject( synonymsLengths );
+				oos.flush();
+			}
+			catch ( IOException e ) {
+				e.printStackTrace();
+			}
+			
 			return null;
 		}
 		
@@ -1772,9 +1784,10 @@ class SynonymsMap {
 	
 }
 
-class SynonymsLengthMap {
+class SynonymsLengthMap implements Serializable {
 	// I apologise for every part of this class's naming scheme.
 	
+	private static final long serialVersionUID = 2103287506847983320L;
 	private final HashMap<String, MinMax> map = new HashMap<String, MinMax>();
 	public final int max;
 	
@@ -1802,7 +1815,8 @@ class SynonymsLengthMap {
 		return map.get( key );
 	}
 	
-	public class MinMax {
+	public class MinMax implements Serializable {
+		private static final long serialVersionUID = 3999420674018453005L;
 		public int min, max;
 		
 		MinMax( int min, int max ) {

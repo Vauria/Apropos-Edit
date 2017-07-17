@@ -395,6 +395,7 @@ public class Prototype {
 			}
 		}
 		
+		@SuppressWarnings("unused")
 		public FileVisitResult preVisitDirectory( Path d, BasicFileAttributes attrs ) throws IOException {
 			File dir = d.toFile();
 			File mirror = new File( dir.getAbsolutePath().replace( main, sub ) );
