@@ -1,6 +1,7 @@
 package com.loverslab.apropos.edit;
 
 import java.awt.FontMetrics;
+import java.awt.geom.NoninvertibleTransformException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -619,8 +620,14 @@ public class Model {
 			if ( file.exists() )
 				try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
 					reader.beginObject();
-					while ( reader.hasNext() )
+					if ( uniques == null ) {
+						view.handleException(
+								new NoninvertibleTransformException( "Uniques actually was null somehow, lemme make it not real quick." ) );
+						uniques = new TreeMap<String, Boolean>( String.CASE_INSENSITIVE_ORDER );
+					}
+					while ( reader.hasNext() ) {
 						uniques.put( reader.nextName(), reader.nextBoolean() );
+					}
 				}
 				catch ( IllegalStateException | MalformedJsonException e ) {
 					String message = "Error parsing " + file.getAbsolutePath().replace( db, "\\db\\" ) + " (" + e.getMessage() + ")";
