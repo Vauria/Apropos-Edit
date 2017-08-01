@@ -27,11 +27,10 @@ import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -48,7 +47,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	
 	String string, simulateString;
 	AproposLabel parent;
-	JTextArea label, simuLabel;
+	JLabel label, simuLabel;
 	JTextField textField;
 	SynonymsLengthMap synonymsLength;
 	boolean displayed, hoverState, simulateState, highlighted;
@@ -113,16 +112,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		
 		// Create the JPanel for the "normal" state
 		JPanel labelPanel = new JPanel( new GridLayout( 1, 1 ) );
-		label = new JTextArea( string.equals( "" ) ? "<add new>" : string );
-		label.setWrapStyleWord( true );
-		label.setLineWrap( true );
-		label.setOpaque( false );
-		label.setEditable( true );
-		label.setFocusable( true );
-		label.setBackground( UIManager.getColor( "Label.background" ) );
-		label.setFont( UIManager.getFont( "Label.font" ) );
-		label.setBorder( UIManager.getBorder( "Label.border" ) );
-		
+		label = new JLabel( string.equals( "" ) ? "<add new>" : string );
 		labelPanel.add( label );
 		
 		updateBorder();
@@ -138,7 +128,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		
 		JPanel simulatePanel = new JPanel( new GridLayout( 1, 1 ) );
 		simulateString = "<pending simulation>";
-		simuLabel = new JTextArea( simulateString );
+		simuLabel = new JLabel( simulateString );
 		simulatePanel.add( simuLabel );
 		
 		this.addMouseListener( hl );
@@ -171,15 +161,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		setLayout( new GridLayout( 1, 1 ) );
 		AproposListener al = new AproposListener();
 		
-		label = new JTextArea( string.equals( "" ) ? "<add new>" : string );
-		label.setWrapStyleWord( true );
-		label.setLineWrap( true );
-		label.setOpaque( false );
-		label.setEditable( false );
-		label.setFocusable( false );
-		label.setBackground( UIManager.getColor( "Label.background" ) );
-		label.setFont( UIManager.getFont( "Label.font" ) );
-		label.setBorder( UIManager.getBorder( "Label.border" ) );
+		label = new JLabel( string.equals( "" ) ? "<add new>" : string );
 		add( label );
 		
 		this.addMouseListener( al );
@@ -256,7 +238,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		return textField;
 	}
 	
-	public JTextArea getLabel() {
+	public JLabel getLabel() {
 		return label;
 	}
 	
