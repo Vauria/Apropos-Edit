@@ -114,8 +114,8 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		
 		// Create the JPanel for the "normal" state
 		JPanel labelPanel = new JPanel( new GridBagLayout() );
-		GridBagConstraints cl = new GridBagConstraints( 0, 0, 1, 1, 1, 1, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets( 1, 0, 2, 0 ), 0, 0 );
+		GridBagConstraints cl = new GridBagConstraints( 0, 0, 1, 1, 1, 1, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets( 1, 0, 2, 0 ), 0, 0 );
 		label = new JLabel( string.equals( "" ) ? "<add new>" : toHTML( string ) );
 		labelPanel.add( label, cl );
 		
@@ -223,8 +223,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	public String toString() {
-		return ( parent != null ? parent.toString() + ( parent.toString().endsWith( Model.fs ) ? "" : Model.fs ) : "" )
-				+ getText();
+		return ( parent != null ? parent.toString() + ( parent.toString().endsWith( Model.fs ) ? "" : Model.fs ) : "" ) + getText();
 	}
 	
 	/**
@@ -619,8 +618,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 					if ( lstr.equals( "Orgasm" ) ) return 1;
 					if ( ostr.equals( "Orgasm" ) ) return -1;
 					if ( lstr.startsWith( "Stage " ) & ostr.startsWith( "Stage " ) )
-						return Integer.valueOf( lstr.replace( "Stage ", "" ) )
-								.compareTo( Integer.valueOf( ostr.replace( "Stage ", "" ) ) );
+						return Integer.valueOf( lstr.replace( "Stage ", "" ) ).compareTo( Integer.valueOf( ostr.replace( "Stage ", "" ) ) );
 					else
 						return lstr.compareTo( ostr );
 				case 4: // The Animation Perspective

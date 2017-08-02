@@ -161,7 +161,7 @@ public class Banner extends JPanel implements ItemListener, ActionListener {
 			
 			if ( old != null ) {
 				FilePane filePane = findFilePane( this );
-				if( filePane == null ) return;
+				if ( filePane == null ) return;
 				filePane.setViewType( FilePane.VIEWTYPE_DETAILS );
 				filePane.setViewType( FilePane.VIEWTYPE_LIST );
 				

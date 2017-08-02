@@ -40,7 +40,8 @@ public class Tests {
 			e.printStackTrace();
 		}
 		
-		GridBagConstraints c = new GridBagConstraints(0, 0, 1, 1, 0, 0, GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,0), 0, 0);
+		GridBagConstraints c = new GridBagConstraints( 0, 0, 1, 1, 0, 0, GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL,
+				new Insets( 0, 0, 0, 0 ), 0, 0 );
 		c.insets = new Insets( 25, 10, 5, 10 );
 		c.weightx = 1;
 		c.weighty = 1;
@@ -48,13 +49,14 @@ public class Tests {
 		AproposLabel label = new AproposLabel(
 				"Oh my! He's certainly enthusiastic, even with his packmate's dick so close. I moan around the slowly thrusting {COCK} in my mouth...",
 				null );
-		//JLabel jlabel = new JLabel("<html>Oh my! He's certainly enthusiastic, even with his packmate's dick so close. I moan around the slowly thrusting {COCK} in my mouth...");
-		//jlabel.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.GRAY));
+		// JLabel jlabel = new JLabel("<html>Oh my! He's certainly enthusiastic, even with his packmate's dick so close. I moan around the
+		// slowly thrusting {COCK} in my mouth...");
+		// jlabel.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.GRAY));
 		
 		panel.add( label.display( null, null, map ), c );
-		//panel.add(jlabel,c);
+		// panel.add(jlabel,c);
 		
-		JScrollPane scrollpane = new JScrollPane(panel,JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		JScrollPane scrollpane = new JScrollPane( panel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
 		
 		frame.setContentPane( scrollpane );
 		
@@ -68,27 +70,25 @@ public class Tests {
 		public ScrollPanel() {
 			super();
 		}
-		public ScrollPanel(LayoutManager layout) {
-			super(layout);
+		public ScrollPanel( LayoutManager layout ) {
+			super( layout );
 		}
 		
 		public Dimension getPreferredScrollableViewportSize() {
-	        return this.getPreferredSize();
-	    }
-	    public int getScrollableUnitIncrement(Rectangle visibleRect,
-	            int orientation, int direction) {
-	        return 16;
-	    }
-	    public int getScrollableBlockIncrement(Rectangle visibleRect,
-	            int orientation, int direction) {
-	        return 64;
-	    }
-	    public boolean getScrollableTracksViewportWidth() {
-	        return true;
-	    }
-	    public boolean getScrollableTracksViewportHeight() {
-	        return false;
-	    }
+			return this.getPreferredSize();
+		}
+		public int getScrollableUnitIncrement( Rectangle visibleRect, int orientation, int direction ) {
+			return 16;
+		}
+		public int getScrollableBlockIncrement( Rectangle visibleRect, int orientation, int direction ) {
+			return 64;
+		}
+		public boolean getScrollableTracksViewportWidth() {
+			return true;
+		}
+		public boolean getScrollableTracksViewportHeight() {
+			return false;
+		}
 		
 	}
 	

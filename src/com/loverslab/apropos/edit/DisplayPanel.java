@@ -552,21 +552,19 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 	}
 	
 	public Dimension getPreferredScrollableViewportSize() {
-        return getPreferredSize();
-    }
-    public int getScrollableUnitIncrement(Rectangle visibleRect,
-            int orientation, int direction) {
-        return 16;
-    }
-    public int getScrollableBlockIncrement(Rectangle visibleRect,
-            int orientation, int direction) {
-        return 64;
-    }
-    public boolean getScrollableTracksViewportWidth() {
-        return true;
-    }
-    public boolean getScrollableTracksViewportHeight() {
-        return false;
-    }
+		return getPreferredSize();
+	}
+	public int getScrollableUnitIncrement( Rectangle visibleRect, int orientation, int direction ) {
+		return 16;
+	}
+	public int getScrollableBlockIncrement( Rectangle visibleRect, int orientation, int direction ) {
+		return 64;
+	}
+	public boolean getScrollableTracksViewportWidth() {
+		return true;
+	}
+	public boolean getScrollableTracksViewportHeight() {
+		return false;
+	}
 	
 }

@@ -41,8 +41,7 @@ public class SidePanel extends JPanel {
 	private JButton simulateButton, duplicatesButton;
 	private boolean simulating = false, conflicts = false;
 	private AbstractAction listenVerify, listenSynonyms, listenLoad, listenNWLoad, listenSimulate, listenWrite, listenDuplicates,
-			listenCopyNew,
-			listenCopyAppend;
+			listenCopyNew, listenCopyAppend;
 	private ItemListener listenFolder, listenPosition;
 	
 	public SidePanel( View parent ) {
