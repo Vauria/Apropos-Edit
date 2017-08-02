@@ -160,10 +160,10 @@ public class View extends JFrame implements ActionListener {
 		sideScroll.setBorder( BorderFactory.createRaisedSoftBevelBorder() );
 		main.add( sideScroll, BorderLayout.LINE_START );
 		
-		displayScroll = new JScrollPane( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED );
+		displayScroll = new JScrollPane( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
 		display = new DisplayPanel( this, displayScroll );
 		displayScroll.setViewportView( display );
-		displayScroll.getVerticalScrollBar().setUnitIncrement( 16 );
+		//displayScroll.getVerticalScrollBar().setUnitIncrement( 16 );
 		main.add( displayScroll, BorderLayout.CENTER );
 		
 		JPanel infoPanel = new JPanel( new GridBagLayout() );

@@ -1,8 +1,10 @@
 package com.loverslab.apropos.edit;
 
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -15,11 +17,12 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.Scrollable;
 
 import com.google.gson.stream.MalformedJsonException;
 
 @SuppressWarnings("serial")
-public class DisplayPanel extends JPanel implements LineChangedListener, PopupMenuListener {
+public class DisplayPanel extends JPanel implements LineChangedListener, PopupMenuListener, Scrollable {
 	private View parent;
 	private JScrollPane scroll;
 	private MenuManager menuManager;
@@ -547,5 +550,23 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		}
 		
 	}
+	
+	public Dimension getPreferredScrollableViewportSize() {
+        return getPreferredSize();
+    }
+    public int getScrollableUnitIncrement(Rectangle visibleRect,
+            int orientation, int direction) {
+        return 16;
+    }
+    public int getScrollableBlockIncrement(Rectangle visibleRect,
+            int orientation, int direction) {
+        return 64;
+    }
+    public boolean getScrollableTracksViewportWidth() {
+        return true;
+    }
+    public boolean getScrollableTracksViewportHeight() {
+        return false;
+    }
 	
 }

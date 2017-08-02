@@ -1,6 +1,11 @@
 package com.loverslab.apropos.edit;
 
-import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.LayoutManager;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.io.File;
@@ -12,6 +17,8 @@ import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.Scrollable;
 
 public class Tests {
 	
@@ -24,7 +31,7 @@ public class Tests {
 		frame.setLocationRelativeTo( null );
 		frame.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
 		
-		JPanel panel = new JPanel( new BorderLayout() );
+		JPanel panel = new ScrollPanel( new GridBagLayout() );
 		SynonymsLengthMap map = null;
 		try ( ObjectInputStream ois = new ObjectInputStream( new FileInputStream( new File( "synLen.obj" ) ) ) ) {
 			map = (SynonymsLengthMap) ois.readObject();
@@ -33,15 +40,56 @@ public class Tests {
 			e.printStackTrace();
 		}
 		
+		GridBagConstraints c = new GridBagConstraints(0, 0, 1, 1, 0, 0, GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,0), 0, 0);
+		c.insets = new Insets( 25, 10, 5, 10 );
+		c.weightx = 1;
+		c.weighty = 1;
+		
 		AproposLabel label = new AproposLabel(
 				"Oh my! He's certainly enthusiastic, even with his packmate's dick so close. I moan around the slowly thrusting {COCK} in my mouth...",
 				null );
-		panel.add( label.display( null, null, map ), BorderLayout.NORTH );
+		//JLabel jlabel = new JLabel("<html>Oh my! He's certainly enthusiastic, even with his packmate's dick so close. I moan around the slowly thrusting {COCK} in my mouth...");
+		//jlabel.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.GRAY));
 		
-		frame.setContentPane( panel );
+		panel.add( label.display( null, null, map ), c );
+		//panel.add(jlabel,c);
+		
+		JScrollPane scrollpane = new JScrollPane(panel,JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		
+		frame.setContentPane( scrollpane );
 		
 		frame.setSize( 800, 100 );
 		frame.setVisible( true );
+	}
+	
+	static class ScrollPanel extends JPanel implements Scrollable {
+		private static final long serialVersionUID = -5835799549417498766L;
+		
+		public ScrollPanel() {
+			super();
+		}
+		public ScrollPanel(LayoutManager layout) {
+			super(layout);
+		}
+		
+		public Dimension getPreferredScrollableViewportSize() {
+	        return this.getPreferredSize();
+	    }
+	    public int getScrollableUnitIncrement(Rectangle visibleRect,
+	            int orientation, int direction) {
+	        return 16;
+	    }
+	    public int getScrollableBlockIncrement(Rectangle visibleRect,
+	            int orientation, int direction) {
+	        return 64;
+	    }
+	    public boolean getScrollableTracksViewportWidth() {
+	        return true;
+	    }
+	    public boolean getScrollableTracksViewportHeight() {
+	        return false;
+	    }
+		
 	}
 	
 	public static void shifting() {

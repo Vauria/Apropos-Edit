@@ -37,7 +37,8 @@ import javax.swing.event.DocumentListener;
 import com.loverslab.apropos.edit.SynonymsLengthMap.MinMax;
 
 /**
- * A JLabel disguised as JPanel designed to be initialised without fully creating all the sub-components and then allow editing.
+ * A JLabel disguised as JPanel designed to be initialised without fully creating all the sub-components and then allow
+ * editing.
  * 
  * Original Author James McMinn
  * github.com/JamesMcMinn/EditableJLabel
@@ -65,7 +66,8 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	/**
-	 * Creates an AproposLabel using a given virtual path, such that <code>Label.equals(new AproposLabel(Label.toString()))</code>
+	 * Creates an AproposLabel using a given virtual path, such that
+	 * <code>Label.equals(new AproposLabel(Label.toString()))</code>
 	 * <br>
 	 * (or at least it would if <code>equals(Object o)</code> was implemented)
 	 * 
@@ -111,9 +113,11 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		EditingListener hl = new EditingListener();
 		
 		// Create the JPanel for the "normal" state
-		JPanel labelPanel = new JPanel( new GridLayout( 1, 1 ) );
-		label = new JLabel( string.equals( "" ) ? "<add new>" : string );
-		labelPanel.add( label );
+		JPanel labelPanel = new JPanel( new GridBagLayout() );
+		GridBagConstraints cl = new GridBagConstraints( 0, 0, 1, 1, 1, 1, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets( 1, 0, 2, 0 ), 0, 0 );
+		label = new JLabel( string.equals( "" ) ? "<add new>" : toHTML( string ) );
+		labelPanel.add( label, cl );
 		
 		updateBorder();
 		
@@ -161,7 +165,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		setLayout( new GridLayout( 1, 1 ) );
 		AproposListener al = new AproposListener();
 		
-		label = new JLabel( string.equals( "" ) ? "<add new>" : string );
+		label = new JLabel( string.equals( "" ) ? "<add new>" : toHTML( string ) );
 		add( label );
 		
 		this.addMouseListener( al );
@@ -172,6 +176,16 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		displayed = true;
 		
 		return this;
+	}
+	
+	public static String toHTML( String text ) {
+		String html = "<html>" + text;
+		return html;
+	}
+	
+	public static String fromHTML( String html ) {
+		String text = html.substring( 6 );
+		return text;
 	}
 	
 	/**
@@ -186,12 +200,12 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		}
 		if ( this.textField == null ) {
 			this.string = text;
-			this.label.setText( text );
+			this.label.setText( toHTML( text ) );
 			return;
 		}
 		if ( getText().equals( "" ) ) {
 			if ( !text.equals( "" ) ) {
-				this.label.setText( text );
+				this.label.setText( toHTML( text ) );
 				this.string = text;
 				fireLineInserted( this );
 			}
@@ -199,7 +213,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		else if ( text.equals( "" ) )
 			this.label.setText( "<add new>" );
 		else
-			this.label.setText( text );
+			this.label.setText( toHTML( text ) );
 		this.textField.setText( text );
 		this.string = text;
 	}
@@ -209,7 +223,8 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	public String toString() {
-		return ( parent != null ? parent.toString() + ( parent.toString().endsWith( Model.fs ) ? "" : Model.fs ) : "" ) + getText();
+		return ( parent != null ? parent.toString() + ( parent.toString().endsWith( Model.fs ) ? "" : Model.fs ) : "" )
+				+ getText();
 	}
 	
 	/**
@@ -604,7 +619,8 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 					if ( lstr.equals( "Orgasm" ) ) return 1;
 					if ( ostr.equals( "Orgasm" ) ) return -1;
 					if ( lstr.startsWith( "Stage " ) & ostr.startsWith( "Stage " ) )
-						return Integer.valueOf( lstr.replace( "Stage ", "" ) ).compareTo( Integer.valueOf( ostr.replace( "Stage ", "" ) ) );
+						return Integer.valueOf( lstr.replace( "Stage ", "" ) )
+								.compareTo( Integer.valueOf( ostr.replace( "Stage ", "" ) ) );
 					else
 						return lstr.compareTo( ostr );
 				case 4: // The Animation Perspective
