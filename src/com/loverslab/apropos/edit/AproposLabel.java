@@ -3,10 +3,12 @@ package com.loverslab.apropos.edit;
 import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.FontMetrics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.Point;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
@@ -474,15 +476,6 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		}
 	}
 	
-	/**
-	 * Gets the number of characters into the given string is based on a relative point co-ordinate
-	 */
-	public int positionFromPoint( int x, String s ) {
-		int w = label.getGraphics().getFontMetrics().stringWidth( s );
-		float pos = ( (float) x / (float) w ) * (float) s.length();
-		return Math.min( (int) pos, s.length() );
-	}
-	
 	public Color getWarningColor( String text ) {
 		int min = 0, max = 0, ub = synonymsLength.max;
 		for ( String key : synonymsLength.keySet() ) {
@@ -519,6 +512,30 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	/**
+	 * Gets the number of characters into the given string is based on a relative point co-ordinate
+	 * 
+	 * @deprecated this is why we google the problem first.
+	 */
+	public int positionFromPoint( Point p, String s, boolean deprecated ) {
+		int x = p.x, y = p.y;
+		FontMetrics metrics = label.getGraphics().getFontMetrics();
+		int w = metrics.stringWidth( s );
+		int h = metrics.getMaxAscent() + metrics.getMaxDescent();
+		int size = label.getSize().width;
+		float line = (float) y / (float) h;
+		int xline = ( (int) Math.floor( line ) ) * size + x;
+		float pos = ( (float) xline / (float) w ) * (float) s.length();
+		return Math.min( Math.round( pos ), s.length() );
+	}
+	
+	/**
+	 * Gets the number of characters into the given string a given point is
+	 */
+	public int positionFromPoint( Point p, String s ) {
+		return label.getAccessibleContext().getAccessibleText().getIndexAtPoint( p ) - 1;
+	}
+
+	/**
 	 * A listener for non-editable AproposLabels, only provides PopupMenu actions
 	 */
 	public class AproposListener implements MouseListener {
@@ -553,7 +570,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 			if ( e.getClickCount() == 2 & !e.isPopupTrigger() & !getHoverState() ) {
 				setHoverState( true );
 				textField.grabFocus();
-				textField.setCaretPosition( positionFromPoint( e.getX(), textField.getText() ) );
+				textField.setCaretPosition( positionFromPoint( e.getPoint(), textField.getText() ) );
 			}
 		}
 		public void release() {
