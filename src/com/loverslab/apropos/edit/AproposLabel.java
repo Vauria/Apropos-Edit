@@ -29,10 +29,15 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
+import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.DocumentFilter;
 
 import com.loverslab.apropos.edit.SynonymsLengthMap.MinMax;
 
@@ -49,7 +54,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	String string, simulateString;
 	AproposLabel parent;
 	JLabel label, simuLabel;
-	JTextField textField;
+	JTextArea textField;
 	SynonymsLengthMap synonymsLength;
 	boolean displayed, hoverState, simulateState, highlighted;
 	
@@ -123,17 +128,29 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		
 		// Create the JPanel for the "hover state"
 		JPanel inputPanel = new JPanel( new GridLayout( 1, 1 ) );
-		textField = new JTextField( string );
+		textField = new JTextArea( string );
+		textField.setLineWrap( true );
+		textField.setWrapStyleWord( true );
 		textField.addMouseListener( hl );
 		textField.addKeyListener( hl );
 		textField.addFocusListener( hl );
-		textField.getDocument().addDocumentListener( hl );
+		Document doc = textField.getDocument();
+		// Adding a document filter that just eats all newline characters, so pressing enter just saves the line
+		( (AbstractDocument) doc ).setDocumentFilter( new DocumentFilter() {
+			public void insertString( FilterBypass fb, int offset, String string, AttributeSet attr ) throws BadLocationException {
+				fb.insertString( offset, string.replaceAll( "\n", "" ), attr );
+			}
+			public void replace( FilterBypass fb, int offset, int length, String text, AttributeSet attrs ) throws BadLocationException {
+				fb.replace( offset, length, text.replaceAll( "\n", "" ), attrs );
+			}
+		} );
+		doc.addDocumentListener( hl );
 		inputPanel.add( textField );
 		
-		JPanel simulatePanel = new JPanel( new GridLayout( 1, 1 ) );
+		JPanel simulatePanel = new JPanel( new GridBagLayout() );
 		simulateString = "<pending simulation>";
 		simuLabel = new JLabel( simulateString );
-		simulatePanel.add( simuLabel );
+		simulatePanel.add( simuLabel, cl );
 		
 		this.addMouseListener( hl );
 		this.addLineChangedListener( lcL );
@@ -248,7 +265,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		return label;
 	}
 	
-	public JTextField getTextField() {
+	public JTextArea getTextField() {
 		return textField;
 	}
 	
@@ -315,7 +332,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	public void setSimulateString( String string ) {
-		simulateString = string;
+		simulateString = toHTML( string );
 	}
 	
 	public void simulate() {
@@ -554,8 +571,9 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		}
 		public void keyTyped( KeyEvent e ) {
 			if ( e.getKeyChar() == KeyEvent.VK_ENTER ) {
-				setText( textField.getText() );
-				fireValueChanged( textField.getText() );
+				String text = textField.getText();
+				setText( text );
+				fireValueChanged( text );
 				if ( getSimulateState() ) fireLineUpdated( AproposLabel.this );
 				setHoverState( false );
 				locked = true;
