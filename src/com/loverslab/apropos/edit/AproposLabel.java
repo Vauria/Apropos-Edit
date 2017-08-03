@@ -532,7 +532,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	 * Gets the number of characters into the given string a given point is
 	 */
 	public int positionFromPoint( Point p, String s ) {
-		return label.getAccessibleContext().getAccessibleText().getIndexAtPoint( p ) - 1;
+		return s.equals( "" ) ? 0 : Math.max( label.getAccessibleContext().getAccessibleText().getIndexAtPoint( p ) - 1, 0 );
 	}
 
 	/**
