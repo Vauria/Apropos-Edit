@@ -54,27 +54,35 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.fill = GridBagConstraints.HORIZONTAL;
-		c.weightx = 1;
 		c.gridy = 0;
 		c.gridx = 0;
 		
 		for ( AproposLabel stage : stageMap.keySet() ) {
-			c.insets = new Insets( 25, 10, 5, 10 );
+			c.insets = new Insets( 25, 4, 5, 10 );
 			c.gridy++ ;
 			c.gridx = 0;
 			c.gridwidth = 1;
 			c.gridheight = 1;
+			c.weightx = 1;
+			add( new Box( 6, 6, 6, 10 ), c );
+			c.weightx = 1;
 			add( stage.display( this, this, false ), c );
 			PerspectiveMap persMap = stageMap.get( stage );
 			if ( persMap == null ) System.out.println( stageMap );
 			for ( AproposLabel perspec : persMap.keySet() ) {
-				c.insets = new Insets( 0, 40, 0, 5 );
+				c.insets = new Insets( 0, 9, 0, 5 );
 				c.gridy++ ;
+				c.weightx = 1;
+				add( new Box( 31, 31, 31, 5 ), c );
+				c.weightx = 1;
 				add( perspec.display( this, this, false ), c );
 				LabelList list = persMap.get( perspec );
-				c.insets = new Insets( 0, 70, 0, 5 );
+				c.insets = new Insets( 0, 19, 0, 5 );
 				for ( AproposLabel label : list ) {
 					c.gridy++ ;
+					c.weightx = 1;
+					add( new Box( 51, 51, 51, 5 ), c );
+					c.weightx = 1;
 					add( label.display( this, this, parent.model.synonymsLengths ), c );
 				}
 			}
@@ -90,6 +98,14 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		add( sep, c );
 		
 		revalidate();
+	}
+	
+	public class Box extends JPanel {
+		public Box( int minx, int prefx, int maxx, int y ) {
+			setMinimumSize( new Dimension( minx, y ) );
+			setPreferredSize( new Dimension( prefx, y ) );
+			setMaximumSize( new Dimension( maxx, y ) );
+		}
 	}
 	
 	public void refresh() {
