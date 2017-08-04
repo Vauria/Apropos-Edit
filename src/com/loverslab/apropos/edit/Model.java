@@ -4,11 +4,9 @@ import java.awt.FontMetrics;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.nio.file.FileVisitResult;
@@ -861,14 +859,6 @@ public class Model {
 				view.handleException( new FileNotFoundException( "No WearAndTear_Descriptors.txt file found" ) );
 			
 			synonymsLengths = new SynonymsLengthMap( synonyms );
-			
-			try ( ObjectOutputStream oos = new ObjectOutputStream( new FileOutputStream( new File( "synLen.obj" ) ) ) ) {
-				oos.writeObject( synonymsLengths );
-				oos.flush();
-			}
-			catch ( IOException e ) {
-				e.printStackTrace();
-			}
 			
 			return null;
 		}
