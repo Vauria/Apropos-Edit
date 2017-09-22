@@ -18,11 +18,12 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.Scrollable;
+import javax.swing.SwingUtilities;
 
 import com.google.gson.stream.MalformedJsonException;
 
 @SuppressWarnings("serial")
-public class DisplayPanel extends JPanel implements LineChangedListener, PopupMenuListener, Scrollable {
+public class DisplayPanel extends JPanel implements LineChangedListener, PopupMenuListener, Scrollable, DisplayPanelContainer {
 	private View parent;
 	private JScrollPane scroll;
 	private MenuManager menuManager;
@@ -565,7 +566,25 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 	public boolean getScrollableTracksViewportHeight() {
 		return false;
 	}
+	public DisplayPanel getDisplayPanel() {
+		return this;
+	}
 	
+}
+
+class ScrollableDisplayPanel extends JScrollPane implements DisplayPanelContainer {
+	private static final long serialVersionUID = 7178177870076629501L;
+	private DisplayPanel display;
+	
+	public ScrollableDisplayPanel( View parent ) {
+		super( VERTICAL_SCROLLBAR_ALWAYS, HORIZONTAL_SCROLLBAR_NEVER );
+		display = new DisplayPanel( parent, this );
+		setViewportView( display );
+	}
+	
+	public DisplayPanel getDisplayPanel() {
+		return display;
+	}
 }
 
 class ResetScroll implements Runnable {

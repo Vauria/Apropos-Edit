@@ -73,15 +73,13 @@ import com.loverslab.apropos.edit.View.UpdateChecker.Release;
  * 
  */
 @SuppressWarnings("serial") // No one Serialises Swing anymore
-public class View extends JFrame implements ActionListener {
+public class View extends JFrame implements ActionListener, DisplayPanelContainer {
 	
 	public final String version = "1.2a4";
 	Globals globals;
 	Model model;
 	Banner banner;
 	SidePanel side;
-	DisplayPanel display;
-	JScrollPane displayScroll;
 	JDialog dialog, dialogLock;
 	JPanel messagePanel;
 	JLabel progressLabel;
@@ -92,6 +90,7 @@ public class View extends JFrame implements ActionListener {
 	HashMap<DisplayPanel, AbstractAction> conflictedActions = new HashMap<DisplayPanel, AbstractAction>();
 	volatile LinkedList<Throwable> exceptionQueue = new LinkedList<Throwable>();
 	volatile LinkedList<Throwable> displayedExceptions = new LinkedList<Throwable>();
+	private MainTabView mainview;
 	
 	public static void main( String[] args ) {
 		// Create and initialise the UI on the EDT (Event Dispatch Thread)
@@ -160,11 +159,10 @@ public class View extends JFrame implements ActionListener {
 		sideScroll.setBorder( BorderFactory.createRaisedSoftBevelBorder() );
 		main.add( sideScroll, BorderLayout.LINE_START );
 		
-		displayScroll = new JScrollPane( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
-		display = new DisplayPanel( this, displayScroll );
-		displayScroll.setViewportView( display );
-		// displayScroll.getVerticalScrollBar().setUnitIncrement( 16 );
-		main.add( displayScroll, BorderLayout.CENTER );
+		mainview = new MainTabView( this );
+		mainview.registerKeybinds( getRootPane().getInputMap( JComponent.WHEN_IN_FOCUSED_WINDOW ), getRootPane().getActionMap(),
+				getRootPane() );
+		main.add( mainview, BorderLayout.CENTER );
 		
 		JPanel infoPanel = new JPanel( new GridBagLayout() );
 		progressLabel = new JLabel( "Idle" );
@@ -243,7 +241,11 @@ public class View extends JFrame implements ActionListener {
 				.put( KeyStroke.getKeyStroke( KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK, true ), "CLOSE" );
 		getRootPane().getActionMap().put( "CLOSE", new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
+				if ( mainview.getTabCount() == 0 )
 				dispatchEvent( new WindowEvent( frame, WindowEvent.WINDOW_CLOSING ) );
+				else {
+					mainview.remove( mainview.getSelectedComponent() );
+				}
 			}
 		} );
 	}
@@ -254,6 +256,10 @@ public class View extends JFrame implements ActionListener {
 	
 	private void maximize() {
 		setExtendedState( MAXIMIZED_BOTH );
+	}
+	
+	public DisplayPanel getDisplayPanel() {
+		return mainview.getDisplayPanel();
 	}
 	
 	public void ensureOnScreen( Frame frame, Point position, Dimension dimension ) {
@@ -295,7 +301,7 @@ public class View extends JFrame implements ActionListener {
 	}
 	
 	public boolean displayHasLabels() {
-		StageMap map = display.stageMap;
+		StageMap map = getDisplayPanel().stageMap;
 		return map != null ? map.size() != 0 : false;
 	}
 	
@@ -370,7 +376,7 @@ public class View extends JFrame implements ActionListener {
 	}
 	
 	public void simulateLabels( String active, String primary ) {
-		simulateLabels( display, active, primary );
+		simulateLabels( getDisplayPanel(), active, primary );
 	}
 	
 	public void simulateLabels( DisplayPanel display, String active, String primary ) {
@@ -386,7 +392,7 @@ public class View extends JFrame implements ActionListener {
 	}
 	
 	public void deSimLabels() {
-		deSimLabels( display );
+		deSimLabels( getDisplayPanel() );
 	}
 	
 	void deSimLabels( DisplayPanel display ) {
@@ -412,7 +418,7 @@ public class View extends JFrame implements ActionListener {
 	}
 	
 	public void setConflicted( boolean b, DisplayPanel display ) {
-		if ( display == this.display )
+		if ( display == this.getDisplayPanel() )
 			side.setConflicted( b );
 		else
 			conflictedActions.get( display ).actionPerformed( new ActionEvent( this.model, ActionEvent.ACTION_PERFORMED, "Reset" ) );
@@ -450,9 +456,7 @@ public class View extends JFrame implements ActionListener {
 							JScrollPane displayNWScroll = new JScrollPane( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
 									JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED );
 							DisplayPanel displayNW = new DisplayPanel( View.this, displayNWScroll );
-							displayNW.load( stageMap, true );
 							displayNWScroll.setViewportView( displayNW );
-							displayNWScroll.getVerticalScrollBar().setUnitIncrement( 16 );
 							displayPanel.add( displayNWScroll, BorderLayout.CENTER );
 							
 							JPanel buttonPanel = new JPanel();
@@ -602,9 +606,11 @@ public class View extends JFrame implements ActionListener {
 							displayFrames.add( displayFrame );
 							displayFrame.setContentPane( displayPanel );
 							displayFrame.setVisible( true );
+							
+							displayNW.load( stageMap, true );
 						}
 						else
-							display.load( stageMap, true );
+							mainview.openMap( stageMap );
 					}
 				}
 				catch ( InterruptedException | ExecutionException e ) {
@@ -618,7 +624,7 @@ public class View extends JFrame implements ActionListener {
 	
 	public void writeDisplay() {
 		setProgress( "Writing Lines...", "Lines Saved", 0 );
-		model.new PositionWriter( display.stageMap ) {
+		model.new PositionWriter( getDisplayPanel().stageMap ) {
 			public void done() {
 				try {
 					get();
@@ -676,7 +682,7 @@ public class View extends JFrame implements ActionListener {
 								side.publishAnimation( s );
 						}
 					}.execute();
-					display.load( get(), true );
+					getDisplayPanel().load( get(), true );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
 					handleException( e );
@@ -715,8 +721,8 @@ public class View extends JFrame implements ActionListener {
 								side.publishAnimation( s );
 						}
 					}.execute();
-					setConflicted( map.checkDuplicates(), display );
-					display.load( get(), true );
+					setConflicted( map.checkDuplicates(), getDisplayPanel() );
+					getDisplayPanel().load( get(), true );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
 					handleException( e );
@@ -1055,4 +1061,8 @@ public class View extends JFrame implements ActionListener {
 		
 	}
 	
+}
+
+interface DisplayPanelContainer {
+	public DisplayPanel getDisplayPanel();
 }
