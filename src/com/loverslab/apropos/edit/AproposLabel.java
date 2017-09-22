@@ -143,6 +143,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 				fb.insertString( offset, string.replaceAll( "\n", "" ), attr );
 			}
 			public void replace( FilterBypass fb, int offset, int length, String text, AttributeSet attrs ) throws BadLocationException {
+				if ( text == "\n" ) return;
 				fb.replace( offset, length, text.replaceAll( "\n", "" ), attrs );
 			}
 		} );
