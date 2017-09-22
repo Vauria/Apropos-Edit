@@ -383,6 +383,14 @@ public class Model {
 				+ s.replace( ( stage.equals( "" ) ? "" : ( "_" + stage ) ) + ".txt", "" ) + File.separator + befriendStage( stage ) );
 	}
 	
+	public static String shorten( String s ) {
+		return s.replaceFirst( "FemaleActor_", "FA_" ).replaceFirst( "MaleActor_", "MA_" );
+	}
+	
+	public static String expand( String s ) {
+		return s.replaceFirst( "^FA_", "FemaleActor_" ).replaceFirst( "^MA_", "MaleActor_" );
+	}
+	
 	public Position getPosition( String animString ) {
 		return getPosition( extractFolder( animString ), animString );
 	}

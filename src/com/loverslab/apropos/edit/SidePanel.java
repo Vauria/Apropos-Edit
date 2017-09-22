@@ -112,258 +112,6 @@ public class SidePanel extends JPanel {
 	}
 	
 	/**
-	 * Create all the listeners for this panel
-	 */
-	private void initListeners() {
-		listenVerify = new AbstractAction() {
-			public void actionPerformed( ActionEvent e ) {
-				int result = JOptionPane.showOptionDialog( parent,
-						"Do you want to sort the individual lines in each file alphabetically?\nDoing so allows for easier database merging, but the 1st and 2nd person lines will no longer have the same order.",
-						"Enable Line Sorting?", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null,
-						new String[] { "Sort", "Don't Sort" }, "Don't Sort" );
-				switch ( result ) {
-					case JOptionPane.OK_OPTION:
-						parent.verifyDatabase( true );
-						break;
-					case JOptionPane.NO_OPTION:
-						parent.verifyDatabase( false );
-						break;
-					default:
-						break;
-				}
-				
-			}
-		};
-		listenSynonyms = new AbstractAction() {
-			public void actionPerformed( ActionEvent e ) {
-				parent.openSynonymsEditor();
-			}
-		};
-		listenLoad = new AbstractAction() {
-			public void actionPerformed( ActionEvent e ) {
-				resetButtons();
-				String folder = (String) animations.getSelectedItem();
-				String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), rapeCheck.isSelected() );
-				parent.displayPosition( folder, animString, false );
-			}
-		};
-		listenNWLoad = new AbstractAction() {
-			public void actionPerformed( ActionEvent e ) {
-				String folder = (String) animations.getSelectedItem();
-				String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), rapeCheck.isSelected() );
-				parent.displayPosition( folder, animString, true );
-			}
-		};
-		listenSimulate = new AbstractAction() {
-			public void actionPerformed( ActionEvent e ) {
-				if ( parent.displayHasLabels() ) {
-					simulating = !simulating;
-					if ( simulating ) {
-						JPanel panel = new JPanel( new GridLayout( 2, 2 ) );
-						JTextField activeField = new JTextField( parent.globals.getProperty( "active" ) );
-						JTextField primaryField = new JTextField( parent.globals.getProperty( "primary" ) );
-						
-						panel.add( new JLabel( "Name for Active (Your Partner's Name)" ) );
-						panel.add( activeField );
-						panel.add( new JLabel( "Name for Primary (Like your PC's Name)" ) );
-						panel.add( primaryField );
-						
-						int result = JOptionPane.showConfirmDialog( parent, panel, "Chose names for {ACTIVE} and {PRIMARY}",
-								JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE );
-						
-						switch ( result ) {
-							case JOptionPane.OK_OPTION:
-								simulateButton.setText( "Reset" );
-								String active = activeField.getText();
-								String primary = primaryField.getText();
-								parent.globals.setProperty( "active", active );
-								parent.globals.setProperty( "primary", primary );
-								parent.simulateLabels( active, primary );
-								break;
-							default:
-								break;
-						}
-					}
-					else {
-						simulateButton.setText( "Simulate" );
-						parent.deSimLabels();
-					}
-				}
-				else
-					parent.handleException( new Exception( "You must load a file before you can Simulate it" ) );
-			}
-		};
-		listenDuplicates = new AbstractAction() {
-			public void actionPerformed( ActionEvent e ) {
-				if ( parent.displayHasLabels() ) {
-					boolean c = !conflicts;
-					resetButtons();
-					conflicts = c;
-					parent.deSimLabels();
-					if ( conflicts ) {
-						if ( parent.checkDuplicates( parent.display ) )
-							duplicatesButton.setText( "Resolve Conflicts" );
-						else {
-							conflicts = false;
-							parent.handleException( new Information( "No Duplicates Found" ) );
-						}
-					}
-					else {
-						parent.resolveConflicts( parent.display );
-					}
-				}
-				else
-					parent.handleException( new Exception( "You must load a file before you can check it for duplicates" ) );
-			}
-		};
-		listenWrite = new AbstractAction() {
-			public void actionPerformed( ActionEvent e ) {
-				if ( parent.displayHasLabels() )
-					parent.writeDisplay();
-				else
-					parent.handleException( new Exception( "You must load a file before you can write it" ) );
-			}
-		};
-		listenCopyNew = new AbstractAction() {
-			public void actionPerformed( ActionEvent e ) {
-				String newAnim = JOptionPane.showInputDialog( parent,
-						new String[] { "Enter the filename for the new position, excluding Stages",
-								"E.g. 'FemaleActor_Wolf_Oral', 'FemaleActor_AnubsWolfTest', or 'FemaleActor_NecroDoggy_Rape'" },
-						"Copy to New Folder", JOptionPane.QUESTION_MESSAGE );
-				if ( newAnim != null && !newAnim.equals( "" ) ) {
-					String folder = (String) animations.getSelectedItem();
-					String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), rapeCheck.isSelected() );
-					parent.copyToNew( folder, animString, newAnim );
-				}
-			}
-		};
-		listenCopyAppend = new AbstractAction() {
-			public void actionPerformed( ActionEvent e ) {
-				
-				JComboBox<String> animations = new JComboBox<String>( new DefaultComboBoxModel<String>( new String[ 0 ] ) );
-				for ( int i = 0; i < SidePanel.this.animationsModel.getSize(); i++ )
-					animations.addItem( SidePanel.this.animations.getItemAt( i ) );
-				
-				JComboBox<Position> positions = new JComboBox<Position>( new DefaultComboBoxModel<Position>( Position.values() ) );
-				
-				animations.addItemListener( new ItemListener() {
-					public void itemStateChanged( ItemEvent e ) {
-						positions.removeAllItems();
-						for ( Position position : parent.model.getPositions( (String) animations.getSelectedItem() ) )
-							positions.addItem( position );
-					}
-				} );
-				
-				JCheckBox rapeCheck = new JCheckBox( "Rape", false );
-				
-				positions.addItemListener( new ItemListener() {
-					public void itemStateChanged( ItemEvent e ) {
-						if ( e.getStateChange() == ItemEvent.SELECTED ) {
-							String folder = (String) animations.getSelectedItem();
-							String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), false );
-							int rape = parent.model.hasRape( folder, animString );
-							rapeCheck.setSelected( rape == 2 );
-							rapeCheck.setEnabled( rape > 2 || rape < 1 );
-						}
-					}
-				} );
-				
-				JComponent[] components = new JComponent[] { animations, positions, rapeCheck };
-				if ( JOptionPane.showConfirmDialog( parent, components, "Select an Existing Position", JOptionPane.OK_CANCEL_OPTION,
-						JOptionPane.QUESTION_MESSAGE ) == JOptionPane.OK_OPTION ) {
-					String newFolder = (String) animations.getSelectedItem();
-					String newAnim = Model.getAnimString( newFolder, (Position) positions.getSelectedItem(), rapeCheck.isSelected() );
-					String folder = (String) SidePanel.this.animations.getSelectedItem();
-					String animString = Model.getAnimString( folder, (Position) SidePanel.this.positions.getSelectedItem(),
-							SidePanel.this.rapeCheck.isSelected() );
-					parent.copyAppend( folder, animString, newFolder, newAnim );
-				}
-			}
-		};
-		listenFolder = new ItemListener() {
-			public void itemStateChanged( ItemEvent e ) {
-				if ( e.getStateChange() == ItemEvent.SELECTED ) {
-					positions.removeAllItems();
-					for ( Position position : parent.model.getPositions( (String) animations.getSelectedItem() ) )
-						positions.addItem( position );
-				}
-			}
-		};
-		listenPosition = new ItemListener() {
-			public void itemStateChanged( ItemEvent e ) {
-				if ( e.getStateChange() == ItemEvent.SELECTED ) {
-					String folder = (String) animations.getSelectedItem();
-					String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), false );
-					int rape = parent.model.hasRape( folder, animString );
-					rapeCheck.setSelected( rape == 2 );
-					rapeCheck.setEnabled( rape > 2 || rape < 1 );
-				}
-			}
-			
-		};
-	}
-	
-	public void registerKeybinds( InputMap input, ActionMap action ) {
-		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK, true ), "SYNONYMS" );
-		action.put( "SYNONYMS", listenSynonyms );
-		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK, true ), "OPEN" );
-		action.put( "OPEN", listenLoad );
-		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK, true ), "OPENNW" );
-		action.put( "OPENNW", listenNWLoad );
-		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK, true ), "COPYNEW" );
-		action.put( "COPYNEW", listenCopyNew );
-		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK, true ), "COPYAPPEND" );
-		action.put( "COPYAPPEND", listenCopyAppend );
-		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK, true ), "SAVE" );
-		action.put( "SAVE", listenWrite );
-		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK, true ), "SIMULATE" );
-		action.put( "SIMULATE", listenSimulate );
-		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK, true ), "SIMULATESKIP" );
-		action.put( "SIMULATESKIP", new AbstractAction() {
-			public void actionPerformed( ActionEvent e ) {
-				if ( parent.displayHasLabels() ) {
-					simulating = !simulating;
-					if ( simulating ) {
-						simulateButton.setText( "Reset" );
-						parent.simulateLabels( parent.globals.getProperty( "active" ), parent.globals.getProperty( "primary" ) );
-					}
-					else {
-						simulateButton.setText( "Simulate" );
-						parent.deSimLabels();
-					}
-				}
-				else
-					parent.handleException( new Exception( "You must load a file before you can Simulate it" ) );
-			}
-		} );
-		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_F, InputEvent.ALT_DOWN_MASK, true ), "GRABFOLDER" );
-		action.put( "GRABFOLDER", new AbstractAction() {
-			public void actionPerformed( ActionEvent e ) {
-				animations.grabFocus();
-			}
-		} );
-		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_P, InputEvent.ALT_DOWN_MASK, true ), "GRABPOSITION" );
-		action.put( "GRABPOSITION", new AbstractAction() {
-			public void actionPerformed( ActionEvent e ) {
-				positions.grabFocus();
-			}
-		} );
-		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_R, InputEvent.ALT_DOWN_MASK, true ), "GRABRAPE" );
-		action.put( "GRABRAPE", new AbstractAction() {
-			public void actionPerformed( ActionEvent e ) {
-				rapeCheck.grabFocus();
-			}
-		} );
-		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_F5, 0, true ), "REFRESH" );
-		action.put( "REFRESH", new AbstractAction() {
-			public void actionPerformed( ActionEvent e ) {
-				StageMap map = parent.display.stageMap;
-				setSelectedAnim( map.firstKey() );
-			}
-		} );
-	}
-	
-	/**
 	 * Add interactive options for all the options that affect the entire database
 	 */
 	private void addDBWide( GridBagConstraints c ) {
@@ -475,7 +223,7 @@ public class SidePanel extends JPanel {
 		c.gridx++ ;
 		add( suggestSynsInfo, c );
 	}
-	
+
 	/**
 	 * Add interactive options for all the options that only affect one animation
 	 */
@@ -499,7 +247,19 @@ public class SidePanel extends JPanel {
 		Insets insHelp = new Insets( 0, 3, 0, 5 );
 		
 		animationsModel = new DefaultComboBoxModel<String>( new String[ 0 ] );
-		animations = new JComboBox<String>( animationsModel );
+		animations = new JComboBox<String>( animationsModel ) {
+			// Change methods so folders are stored internally with a shorthand
+			public void addItem( String item ) {
+				super.addItem( Model.shorten( item ) );
+			}
+			public Object getSelectedItem() {
+				return Model.expand( (String) super.getSelectedItem() );
+			}
+			public String getItemAt( int index ) {
+				return Model.expand( super.getItemAt( index ) );
+			}
+			
+		};
 		animations.addItemListener( listenFolder );
 		animations.setEnabled( false );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
@@ -648,6 +408,258 @@ public class SidePanel extends JPanel {
 		c.weightx = 0;
 		c.gridx++ ;
 		add( duplicatesInfo, c );
+	}
+
+	/**
+	 * Create all the listeners for this panel
+	 */
+	private void initListeners() {
+		listenVerify = new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				int result = JOptionPane.showOptionDialog( parent,
+						"Do you want to sort the individual lines in each file alphabetically?\nDoing so allows for easier database merging, but the 1st and 2nd person lines will no longer have the same order.",
+						"Enable Line Sorting?", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null,
+						new String[] { "Sort", "Don't Sort" }, "Don't Sort" );
+				switch ( result ) {
+					case JOptionPane.OK_OPTION:
+						parent.verifyDatabase( true );
+						break;
+					case JOptionPane.NO_OPTION:
+						parent.verifyDatabase( false );
+						break;
+					default:
+						break;
+				}
+				
+			}
+		};
+		listenSynonyms = new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				parent.openSynonymsEditor();
+			}
+		};
+		listenLoad = new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				resetButtons();
+				String folder = (String) animations.getSelectedItem();
+				String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), rapeCheck.isSelected() );
+				parent.displayPosition( folder, animString, false );
+			}
+		};
+		listenNWLoad = new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				String folder = (String) animations.getSelectedItem();
+				String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), rapeCheck.isSelected() );
+				parent.displayPosition( folder, animString, true );
+			}
+		};
+		listenSimulate = new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				if ( parent.displayHasLabels() ) {
+					simulating = !simulating;
+					if ( simulating ) {
+						JPanel panel = new JPanel( new GridLayout( 2, 2 ) );
+						JTextField activeField = new JTextField( parent.globals.getProperty( "active" ) );
+						JTextField primaryField = new JTextField( parent.globals.getProperty( "primary" ) );
+						
+						panel.add( new JLabel( "Name for Active (Your Partner's Name)" ) );
+						panel.add( activeField );
+						panel.add( new JLabel( "Name for Primary (Like your PC's Name)" ) );
+						panel.add( primaryField );
+						
+						int result = JOptionPane.showConfirmDialog( parent, panel, "Chose names for {ACTIVE} and {PRIMARY}",
+								JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE );
+						
+						switch ( result ) {
+							case JOptionPane.OK_OPTION:
+								simulateButton.setText( "Reset" );
+								String active = activeField.getText();
+								String primary = primaryField.getText();
+								parent.globals.setProperty( "active", active );
+								parent.globals.setProperty( "primary", primary );
+								parent.simulateLabels( active, primary );
+								break;
+							default:
+								break;
+						}
+					}
+					else {
+						simulateButton.setText( "Simulate" );
+						parent.deSimLabels();
+					}
+				}
+				else
+					parent.handleException( new Exception( "You must load a file before you can Simulate it" ) );
+			}
+		};
+		listenDuplicates = new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				if ( parent.displayHasLabels() ) {
+					boolean c = !conflicts;
+					resetButtons();
+					conflicts = c;
+					parent.deSimLabels();
+					if ( conflicts ) {
+						if ( parent.checkDuplicates( parent.getDisplayPanel() ) )
+							duplicatesButton.setText( "Resolve Conflicts" );
+						else {
+							conflicts = false;
+							parent.handleException( new Information( "No Duplicates Found" ) );
+						}
+					}
+					else {
+						parent.resolveConflicts( parent.getDisplayPanel() );
+					}
+				}
+				else
+					parent.handleException( new Exception( "You must load a file before you can check it for duplicates" ) );
+			}
+		};
+		listenWrite = new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				if ( parent.displayHasLabels() )
+					parent.writeDisplay();
+				else
+					parent.handleException( new Exception( "You must load a file before you can write it" ) );
+			}
+		};
+		listenCopyNew = new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				String newAnim = JOptionPane.showInputDialog( parent,
+						new String[] { "Enter the filename for the new position, excluding Stages",
+								"E.g. 'FemaleActor_Wolf_Oral', 'FemaleActor_AnubsWolfTest', or 'FemaleActor_NecroDoggy_Rape'" },
+						"Copy to New Folder", JOptionPane.QUESTION_MESSAGE );
+				if ( newAnim != null && !newAnim.equals( "" ) ) {
+					String folder = (String) animations.getSelectedItem();
+					String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), rapeCheck.isSelected() );
+					parent.copyToNew( folder, animString, newAnim );
+				}
+			}
+		};
+		listenCopyAppend = new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				
+				JComboBox<String> animations = new JComboBox<String>( new DefaultComboBoxModel<String>( new String[ 0 ] ) );
+				for ( int i = 0; i < SidePanel.this.animationsModel.getSize(); i++ )
+					animations.addItem( SidePanel.this.animations.getItemAt( i ) );
+				
+				JComboBox<Position> positions = new JComboBox<Position>( new DefaultComboBoxModel<Position>( Position.values() ) );
+				
+				animations.addItemListener( new ItemListener() {
+					public void itemStateChanged( ItemEvent e ) {
+						positions.removeAllItems();
+						for ( Position position : parent.model.getPositions( (String) animations.getSelectedItem() ) )
+							positions.addItem( position );
+					}
+				} );
+				
+				JCheckBox rapeCheck = new JCheckBox( "Rape", false );
+				
+				positions.addItemListener( new ItemListener() {
+					public void itemStateChanged( ItemEvent e ) {
+						if ( e.getStateChange() == ItemEvent.SELECTED ) {
+							String folder = (String) animations.getSelectedItem();
+							String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), false );
+							int rape = parent.model.hasRape( folder, animString );
+							rapeCheck.setSelected( rape == 2 );
+							rapeCheck.setEnabled( rape > 2 || rape < 1 );
+						}
+					}
+				} );
+				
+				JComponent[] components = new JComponent[] { animations, positions, rapeCheck };
+				if ( JOptionPane.showConfirmDialog( parent, components, "Select an Existing Position", JOptionPane.OK_CANCEL_OPTION,
+						JOptionPane.QUESTION_MESSAGE ) == JOptionPane.OK_OPTION ) {
+					String newFolder = (String) animations.getSelectedItem();
+					String newAnim = Model.getAnimString( newFolder, (Position) positions.getSelectedItem(), rapeCheck.isSelected() );
+					String folder = (String) SidePanel.this.animations.getSelectedItem();
+					String animString = Model.getAnimString( folder, (Position) SidePanel.this.positions.getSelectedItem(),
+							SidePanel.this.rapeCheck.isSelected() );
+					parent.copyAppend( folder, animString, newFolder, newAnim );
+				}
+			}
+		};
+		listenFolder = new ItemListener() {
+			public void itemStateChanged( ItemEvent e ) {
+				if ( e.getStateChange() == ItemEvent.SELECTED ) {
+					positions.removeAllItems();
+					for ( Position position : parent.model.getPositions( (String) animations.getSelectedItem() ) )
+						positions.addItem( position );
+				}
+			}
+		};
+		listenPosition = new ItemListener() {
+			public void itemStateChanged( ItemEvent e ) {
+				if ( e.getStateChange() == ItemEvent.SELECTED ) {
+					String folder = (String) animations.getSelectedItem();
+					String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), false );
+					int rape = parent.model.hasRape( folder, animString );
+					rapeCheck.setSelected( rape == 2 );
+					rapeCheck.setEnabled( rape > 2 || rape < 1 );
+				}
+			}
+			
+		};
+	}
+	
+	public void registerKeybinds( InputMap input, ActionMap action ) {
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK, true ), "SYNONYMS" );
+		action.put( "SYNONYMS", listenSynonyms );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK, true ), "OPEN" );
+		action.put( "OPEN", listenLoad );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK, true ), "OPENNW" );
+		action.put( "OPENNW", listenNWLoad );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK, true ), "COPYNEW" );
+		action.put( "COPYNEW", listenCopyNew );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK, true ), "COPYAPPEND" );
+		action.put( "COPYAPPEND", listenCopyAppend );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK, true ), "SAVE" );
+		action.put( "SAVE", listenWrite );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK, true ), "SIMULATE" );
+		action.put( "SIMULATE", listenSimulate );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK, true ), "SIMULATESKIP" );
+		action.put( "SIMULATESKIP", new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				if ( parent.displayHasLabels() ) {
+					simulating = !simulating;
+					if ( simulating ) {
+						simulateButton.setText( "Reset" );
+						parent.simulateLabels( parent.globals.getProperty( "active" ), parent.globals.getProperty( "primary" ) );
+					}
+					else {
+						simulateButton.setText( "Simulate" );
+						parent.deSimLabels();
+					}
+				}
+				else
+					parent.handleException( new Exception( "You must load a file before you can Simulate it" ) );
+			}
+		} );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_F, InputEvent.ALT_DOWN_MASK, true ), "GRABFOLDER" );
+		action.put( "GRABFOLDER", new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				animations.grabFocus();
+			}
+		} );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_P, InputEvent.ALT_DOWN_MASK, true ), "GRABPOSITION" );
+		action.put( "GRABPOSITION", new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				positions.grabFocus();
+			}
+		} );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_R, InputEvent.ALT_DOWN_MASK, true ), "GRABRAPE" );
+		action.put( "GRABRAPE", new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				rapeCheck.grabFocus();
+			}
+		} );
+		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_F5, 0, true ), "REFRESH" );
+		action.put( "REFRESH", new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				StageMap map = parent.getDisplayPanel().stageMap;
+				setSelectedAnim( map.firstKey() );
+			}
+		} );
 	}
 	
 }
