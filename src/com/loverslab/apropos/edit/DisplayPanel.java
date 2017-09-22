@@ -49,7 +49,6 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		menuManager = new MenuManager();
 		
 		removeAll();
-		if ( resetScroll ) scroll.getVerticalScrollBar().setValue( 0 );
 		GridBagConstraints c = new GridBagConstraints();
 		
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
@@ -89,7 +88,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		c.gridx = 0;
 		add( sep, c );
 		
-		revalidate();
+		if ( resetScroll ) SwingUtilities.invokeLater( new ResetScroll( scroll ) );
 	}
 	
 	public void refresh() {
@@ -567,4 +566,16 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		return false;
 	}
 	
+}
+
+class ResetScroll implements Runnable {
+	JScrollPane scrollpane;
+	
+	public ResetScroll( JScrollPane scrollpane ) {
+		this.scrollpane = scrollpane;
+	}
+	
+	public void run() {
+		scrollpane.getVerticalScrollBar().setValue( 0 );
+	}
 }
