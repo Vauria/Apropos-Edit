@@ -306,8 +306,7 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 	}
 	
 	public boolean displayHasLabels() {
-		StageMap map = getDisplayPanel().stageMap;
-		return map != null ? map.size() != 0 : false;
+		return mainview.displayHasLabels();
 	}
 	
 	public boolean displayHasLabels( DisplayPanel display ) {

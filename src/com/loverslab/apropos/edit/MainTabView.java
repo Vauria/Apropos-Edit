@@ -54,6 +54,14 @@ public class MainTabView extends JTabbedPane implements DisplayPanelContainer {
 		return ( (DisplayPanelContainer) getComponentAt( getSelectedIndex() ) ).getDisplayPanel();
 	}
 	
+	public boolean displayHasLabels() {
+		if ( getTabCount() == 0 ) return false;
+		String title = getTitleAt( getSelectedIndex() );
+		if ( title.contains( "Update Available" ) ) return false;
+		StageMap map = getDisplayPanel().stageMap;
+		return map.size() != 0;
+	}
+	
 	public void openMap( StageMap map ) {
 		ScrollableDisplayPanel display = new ScrollableDisplayPanel( parent );
 		addTab( Model.shorten( map.firstKey().getParentLabel().getText() ), display );
