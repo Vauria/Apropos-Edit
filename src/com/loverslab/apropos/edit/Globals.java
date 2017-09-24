@@ -20,6 +20,7 @@ public class Globals extends Properties {
 			setProperty( "position", "auto" );
 			setProperty( "active", "Sven" );
 			setProperty( "primary", "Dovahkiin" );
+			setProperty( "oc", "0" );
 		}
 	};
 	

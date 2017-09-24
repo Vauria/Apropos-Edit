@@ -1,16 +1,43 @@
 package com.loverslab.apropos.edit;
 
 import java.awt.AWTKeyStroke;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.KeyboardFocusManager;
+import java.awt.LayoutManager;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.RandomAccessFile;
+import java.net.HttpURLConnection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
+import javax.swing.BorderFactory;
 import javax.swing.InputMap;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
+import javax.swing.Scrollable;
+import javax.swing.SwingWorker;
+
+import org.commonmark.node.Node;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
+
+import com.loverslab.apropos.edit.View.UpdateChecker.Release;
 
 @SuppressWarnings("serial")
 public class MainTabView extends JTabbedPane implements DisplayPanelContainer {
@@ -35,6 +62,82 @@ public class MainTabView extends JTabbedPane implements DisplayPanelContainer {
 	}
 	
 	public void openSearch() {}
+	
+	public void openRelease( Release release ) {
+		ScrollSavvyPanel panel = new ScrollSavvyPanel( new BorderLayout() );
+		
+		JLabel title = new JLabel( release.name );
+		title.setFont( title.getFont().deriveFont( 40f ) );
+		panel.add( title, BorderLayout.NORTH );
+		
+		Parser parser = Parser.builder().build();
+		Node document = parser.parse( "<html>" + release.body + "</html>" );
+		HtmlRenderer renderer = HtmlRenderer.builder().build();
+		String html = renderer.render( document );
+		
+		JLabel description = new JLabel( html );
+		description.setBorder( BorderFactory.createEmptyBorder( 0, 15, 0, 15 ) );
+		panel.add( description, BorderLayout.CENTER );
+		
+		JPanel download = new JPanel( new GridBagLayout() );
+		GridBagConstraints c = new GridBagConstraints();
+		c.weighty = 1.0;
+		c.anchor = GridBagConstraints.NORTH;
+		JButton button = new JButton( "Download Now" );
+		final JProgressBar progress = new JProgressBar();
+		download.add( button, c );
+		c.gridy = 1;
+		download.add( progress, c );
+		panel.add( download, BorderLayout.SOUTH );
+		
+		button.addActionListener( new ActionListener() {
+			public void actionPerformed( ActionEvent e ) {
+				new SwingWorker<Object, Integer>() {
+					protected Object doInBackground() throws Exception {
+						try {
+							HttpURLConnection con = (HttpURLConnection) release.download.openConnection();
+							con.connect();
+							if ( con.getResponseCode() / 100 != 2 )
+								JOptionPane.showMessageDialog( parent, "Connection could not be established.\nTry again later?" );
+							long size = con.getContentLengthLong();
+							System.out.println( size );
+							String fileName = release.download.getFile();
+							System.out.println( fileName );
+							RandomAccessFile jar = new RandomAccessFile( fileName.substring( fileName.lastIndexOf( '/' ) + 1 ), "rw" );
+							long downloaded = 0l;
+							InputStream stream = con.getInputStream();
+							while ( true ) {
+								byte[] buffer = new byte[ ( ( size - downloaded ) < 1024 ) ? (int) ( size - downloaded ) : 1024 ];
+								int read = stream.read( buffer );
+								if ( read == -1 ) break;
+								jar.write( buffer, 0, read );
+								downloaded += read;
+								publish( (int) ( downloaded * 100 / size ) );
+							}
+							jar.close();
+							stream.close();
+						}
+						catch ( IOException e ) {
+							e.printStackTrace();
+						}
+						return null;
+					}
+					protected void process( List<Integer> chunks ) {
+						progress.setValue( chunks.get( chunks.size() - 1 ) );
+					}
+					protected void done() {
+						progress.setValue( 100 );
+						JOptionPane.showMessageDialog( parent,
+								"Download Complete!\nYou can now close the editor and find the new version in the same folder." );
+					}
+				}.execute();
+				
+			}
+		} );
+		
+		JScrollPane scroll = new JScrollPane( panel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
+		addTab( "Update Available: " + release.tagName, scroll );
+	}
 	
 	public void registerKeybinds( InputMap input, ActionMap action, java.awt.Container root ) {
 		KeyStroke next = KeyStroke.getKeyStroke( "ctrl TAB" ), prev = KeyStroke.getKeyStroke( "ctrl shift TAB" );
@@ -76,4 +179,36 @@ public class MainTabView extends JTabbedPane implements DisplayPanelContainer {
 		setSelectedIndex( ind );
 	}
 	
+}
+
+class ScrollSavvyPanel extends JPanel implements Scrollable {
+	private static final long serialVersionUID = 3447298266512731802L;
+	
+	public ScrollSavvyPanel() {
+		super();
+	}
+	public ScrollSavvyPanel( boolean isDoubleBuffered ) {
+		super( isDoubleBuffered );
+	}
+	public ScrollSavvyPanel( LayoutManager layout, boolean isDoubleBuffered ) {
+		super( layout, isDoubleBuffered );
+	}
+	public ScrollSavvyPanel( LayoutManager layout ) {
+		super( layout );
+	}
+	public Dimension getPreferredScrollableViewportSize() {
+		return getPreferredSize();
+	}
+	public int getScrollableUnitIncrement( Rectangle visibleRect, int orientation, int direction ) {
+		return 16;
+	}
+	public int getScrollableBlockIncrement( Rectangle visibleRect, int orientation, int direction ) {
+		return 64;
+	}
+	public boolean getScrollableTracksViewportWidth() {
+		return true;
+	}
+	public boolean getScrollableTracksViewportHeight() {
+		return false;
+	}
 }
