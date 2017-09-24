@@ -7,5 +7,10 @@
 			<attribute name="javadoc_location" value="jar:platform:/resource/AproposEditor/gson-2.6.2-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="commonmark-0.10.0.jar" sourcepath="commonmark-0.10.0-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/Apropos-Edit/commonmark-0.10.0-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
