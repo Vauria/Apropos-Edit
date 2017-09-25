@@ -263,7 +263,9 @@ public class SidePanel extends JPanel {
 			public String getItemAt( int index ) {
 				return Model.expand( super.getItemAt( index ) );
 			}
-			
+			public void setSelectedItem( Object anObject ) {
+				super.setSelectedItem( Model.shorten( (String) anObject ) );
+			}
 		};
 		animations.addItemListener( listenFolder );
 		animations.setEnabled( false );

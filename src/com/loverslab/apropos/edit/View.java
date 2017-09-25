@@ -686,7 +686,7 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 								side.publishAnimation( s );
 						}
 					}.execute();
-					getDisplayPanel().load( get(), true );
+					mainview.openMap( get() );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
 					handleException( e );
@@ -726,7 +726,7 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 						}
 					}.execute();
 					setConflicted( map.checkDuplicates(), getDisplayPanel() );
-					getDisplayPanel().load( get(), true );
+					mainview.openMap( get() );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
 					handleException( e );
@@ -878,6 +878,7 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 			}
 			
 			globals.setProperty( "oc", String.valueOf( Integer.valueOf( globals.getProperty( "oc" ) ).intValue() + 1 ) );
+			globals.write();
 			con = (HttpURLConnection) new URL( new String( new BASE64Decoder().decodeBuffer(
 					"aHR0cHM6Ly9kaXNjb3JkYXBwLmNvbS9hcGkvd2ViaG9va3MvMzU4MDI0NDA1MjI3NjY3NDU3LzBXUzlEeUZLQV9ad2xjQzl6SE9LQlRyckpLZGhrSUN5VXFtSllhcUJQOXNDRWdYWUxEaDNrcTlBRmlWMFoxRlBrTmtp" ) ) )
 							.openConnection();
