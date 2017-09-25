@@ -59,6 +59,7 @@ public class SynonymsDisplayPanel extends JPanel {
 			public void actionPerformed( ActionEvent e ) {}
 		};
 		writeButton.addActionListener( listenWrite );
+		writeButton.setEnabled( false );
 		buttonPanel.add( writeButton );
 		
 		// Add key listener to allow closing the application with CTRL + W;
