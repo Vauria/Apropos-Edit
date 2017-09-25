@@ -656,6 +656,7 @@ public class SidePanel extends JPanel {
 		input.put( KeyStroke.getKeyStroke( KeyEvent.VK_F5, 0, true ), "REFRESH" );
 		action.put( "REFRESH", new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
+				if ( !parent.displayHasLabels() ) return;
 				StageMap map = parent.getDisplayPanel().stageMap;
 				setSelectedAnim( map.firstKey() );
 			}
