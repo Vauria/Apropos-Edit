@@ -111,6 +111,11 @@ public class SidePanel extends JPanel {
 		if ( b ) duplicatesButton.setText( "Resolve Conflicts" );
 	}
 	
+	@SuppressWarnings("rawtypes")
+	public boolean selectionIsValid( JComboBox a, JComboBox b ) {
+		return a.getSelectedIndex() != -1 & b.getSelectedIndex() != -1;
+	}
+	
 	/**
 	 * Add interactive options for all the options that affect the entire database
 	 */
@@ -440,6 +445,10 @@ public class SidePanel extends JPanel {
 		};
 		listenLoad = new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
+				if ( !selectionIsValid( animations, positions ) ) {
+					parent.handleException( new Exception( "The Selection is invalid, try a different Folder/Position Combination" ) );
+					return;
+				}
 				resetButtons();
 				String folder = (String) animations.getSelectedItem();
 				String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), rapeCheck.isSelected() );
@@ -448,6 +457,10 @@ public class SidePanel extends JPanel {
 		};
 		listenNWLoad = new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
+				if ( !selectionIsValid( animations, positions ) ) {
+					parent.handleException( new Exception( "The Selection is invalid, try a different Folder/Position Combination" ) );
+					return;
+				}
 				String folder = (String) animations.getSelectedItem();
 				String animString = Model.getAnimString( folder, (Position) positions.getSelectedItem(), rapeCheck.isSelected() );
 				parent.displayPosition( folder, animString, true );
@@ -525,6 +538,10 @@ public class SidePanel extends JPanel {
 		};
 		listenCopyNew = new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
+				if ( !selectionIsValid( animations, positions ) ) {
+					parent.handleException( new Exception( "The Selection is invalid, try a different Folder/Position Combination" ) );
+					return;
+				}
 				String newAnim = JOptionPane.showInputDialog( parent,
 						new String[] { "Enter the filename for the new position, excluding Stages",
 								"E.g. 'FemaleActor_Wolf_Oral', 'FemaleActor_AnubsWolfTest', or 'FemaleActor_NecroDoggy_Rape'" },
@@ -570,6 +587,10 @@ public class SidePanel extends JPanel {
 				JComponent[] components = new JComponent[] { animations, positions, rapeCheck };
 				if ( JOptionPane.showConfirmDialog( parent, components, "Select an Existing Position", JOptionPane.OK_CANCEL_OPTION,
 						JOptionPane.QUESTION_MESSAGE ) == JOptionPane.OK_OPTION ) {
+					if ( !selectionIsValid( animations, positions ) ) {
+						parent.handleException( new Exception( "The Selection is invalid, try a different Folder/Position Combination" ) );
+						return;
+					}
 					String newFolder = (String) animations.getSelectedItem();
 					String newAnim = Model.getAnimString( newFolder, (Position) positions.getSelectedItem(), rapeCheck.isSelected() );
 					String folder = (String) SidePanel.this.animations.getSelectedItem();

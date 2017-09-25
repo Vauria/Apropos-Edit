@@ -384,10 +384,12 @@ public class Model {
 	}
 	
 	public static String shorten( String s ) {
+		if ( s == null ) return null;
 		return s.replaceFirst( "FemaleActor_", "FA_" ).replaceFirst( "MaleActor_", "MA_" );
 	}
 	
 	public static String expand( String s ) {
+		if ( s == null ) return null;
 		return s.replaceFirst( "^FA_", "FemaleActor_" ).replaceFirst( "^MA_", "MaleActor_" );
 	}
 	
