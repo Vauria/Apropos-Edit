@@ -94,6 +94,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 	
 	public void refresh() {
 		load( stageMap, false );
+		revalidate();
 	}
 	
 	public void lineInserted( AproposLabel above ) {
