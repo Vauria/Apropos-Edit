@@ -1164,6 +1164,125 @@ public class Model {
 		
 	}
 	
+	@SuppressWarnings("unused")
+	class DatabaseSearch extends SimpleFileVisitor<Path> {
+		
+		private Thread t;
+		private SearchTerms terms;
+		private Object resultspanel;
+		private int page = 1;
+		
+		public DatabaseSearch( SearchTerms terms, Object resultspanel ) {
+			this.terms = terms;
+			this.resultspanel = resultspanel;
+		}
+		
+		public void execute() {
+			view.setProgress( "Searching: " + terms.name, "Search Page " + page + " Complete", 0 );
+			t = new Thread( new Start(), "edit.search.thread" );
+			t.start();
+		}
+		
+		public FileVisitResult preVisitDirectory( Path dir, BasicFileAttributes attrs ) throws IOException {
+			return FileVisitResult.SKIP_SUBTREE;
+		}
+		
+		public FileVisitResult visitFile( Path file, BasicFileAttributes attrs ) throws IOException {
+			return FileVisitResult.CONTINUE;
+		}
+	
+		private class Start implements Runnable {
+			public void run() {
+				try {
+					Files.walkFileTree( Paths.get( db ), DatabaseSearch.this );
+				}
+				catch ( IOException e ) {
+					view.handleException( e );
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		private class UpdateProgress implements Runnable {
+			private int p;
+			
+			public UpdateProgress( int p ) {
+				this.p = p;
+			}
+			public void run() {
+				view.updateProgress( p );
+			}
+		}
+		
+		private class PublishStageMap implements Runnable {
+			private StageMap map;
+			
+			public PublishStageMap( StageMap map ) {
+				this.map = map;
+			}
+			public void run() {}
+		}
+		
+	}
+
+	public abstract class SearchTerms {
+		
+		String name;
+		boolean first, second, third;
+		
+		/**
+		 * Constructor that sets the values for the included <code>matchesPerspective</code> function.
+		 * 
+		 * @param first Open 1st Perspective?
+		 * @param second Open 2nd Perspective?
+		 * @param third Open 3rd Perspective?
+		 */
+		public SearchTerms( String name, boolean first, boolean second, boolean third ) {
+			this.name = name;
+			this.first = first;
+			this.second = second;
+			this.third = third;
+		}
+		
+		/**
+		 * Checks this perspective label against the three constructor bools, will only open their labellist if this returns true.
+		 * 
+		 * @param perslabel
+		 * @return
+		 */
+		public boolean matchesPerspective( AproposLabel perslabel ) {
+			if ( perslabel.getText().equals( "1st Person" ) ) return first;
+			if ( perslabel.getText().equals( "2nd Person" ) ) return second;
+			if ( perslabel.getText().equals( "3rd Person" ) ) return third;
+			return false;
+		}
+		
+		/**
+		 * Gets given the name of a directory, which will only be opened if this returns true. Can be used to limit themes or FA/MA
+		 * 
+		 * @param dirname
+		 * @return
+		 */
+		public abstract boolean matchesDirectory( String dirname );
+		
+		/**
+		 * Gets given the name of a file, only opened if this returns true. Can be used to limit Positions, Uniques, Stages or Rape
+		 * 
+		 * @param filename
+		 * @return
+		 */
+		public abstract boolean matchesFile( String filename );
+		
+		/**
+		 * The function that each line will be checked against
+		 * 
+		 * @param text
+		 * @return true if this line matched the SearchTerms, and should be displayed.
+		 */
+		public abstract boolean matches( String text );
+		
+	}
+	
 	/**
 	 * Takes every line in a Map of AproposLabels, replaces the synonyms, toggles the display state and highlights one from each perspective
 	 */
