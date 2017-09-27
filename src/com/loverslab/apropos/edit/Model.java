@@ -1164,13 +1164,15 @@ public class Model {
 		
 	}
 	
-	@SuppressWarnings("unused")
 	class DatabaseSearch extends SimpleFileVisitor<Path> {
 		
 		private Thread t;
 		private SearchTerms terms;
 		private Object resultspanel;
 		private int page = 1;
+		private int hitAnimations = 0, hitLines = 0;
+		private AproposLabel positionlabel;
+		private StageMap currentmap;
 		
 		public DatabaseSearch( SearchTerms terms, Object resultspanel ) {
 			this.terms = terms;
@@ -1184,17 +1186,63 @@ public class Model {
 		}
 		
 		public FileVisitResult preVisitDirectory( Path dir, BasicFileAttributes attrs ) throws IOException {
+			if ( terms.matchesDirectory( dir.getFileName().toString() ) ) { return FileVisitResult.CONTINUE; }
 			return FileVisitResult.SKIP_SUBTREE;
 		}
 		
-		public FileVisitResult visitFile( Path file, BasicFileAttributes attrs ) throws IOException {
+		public FileVisitResult visitFile( Path path, BasicFileAttributes attrs ) throws IOException {
+			File file = path.toFile();
+			for ( String str : skip )
+				if ( str.equals( file.getName() ) ) return FileVisitResult.CONTINUE;
+			AproposLabel stagelabel = stageLabelFromFile( file );
+			if ( positionlabel != null ) {
+				// Check if we're still in the same animation
+				if ( positionlabel.toString().equals( stagelabel.getParentLabel().toString() ) ) {}
+				else {
+					// New animation! Time to publish the last one!
+					publishStageMap();
+				}
+			}
+			if ( terms.matchesStage( stagelabel ) ) {
+				PerspectiveMap map = getPerspectives( stagelabel, file );
+				boolean hit = false;
+				for ( AproposLabel perslabel : map.keySet() )
+					if ( terms.matchesPerspective( perslabel ) ) for ( AproposLabel line : map.get( perslabel ) )
+						if ( terms.matches( line.getText() ) ) {
+							line.setMatch( true );
+							hit = true;
+							hitLines++ ;
+						}
+				if ( hit ) {
+					if ( positionlabel == null ) {
+						positionlabel = stagelabel.getParentLabel();
+						currentmap = new StageMap();
+					}
+					currentmap.put( stagelabel, map );
+				}
+			}
 			return FileVisitResult.CONTINUE;
 		}
-	
+		
+		public void publishStageMap() {
+			if ( positionlabel != null ) {
+				hitAnimations++ ;
+				int pAnims = ( hitAnimations * 100 ) / ( terms.maxAnimations * page );
+				int pLines = ( hitLines * 100 ) / ( terms.maxLines * page );
+				int progress = Math.max( pAnims, pLines );
+				SwingUtilities.invokeLater( new UpdateProgress( Math.min( progress, 100 ) ) );
+				SwingUtilities.invokeLater( new PublishStageMap( currentmap ) );
+				positionlabel = null;
+				currentmap = null;
+			}
+		}
+		
 		private class Start implements Runnable {
 			public void run() {
 				try {
 					Files.walkFileTree( Paths.get( db ), DatabaseSearch.this );
+					publishStageMap();
+					SwingUtilities.invokeLater( new UpdateProgress( 100 ) );
 				}
 				catch ( IOException e ) {
 					view.handleException( e );
@@ -1220,32 +1268,49 @@ public class Model {
 			public PublishStageMap( StageMap map ) {
 				this.map = map;
 			}
-			public void run() {}
+			public void run() {
+				System.out.println( "===== New Publish =====" );
+				System.out.println( map.firstKey().getParentLabel() );
+				for ( AproposLabel stage : map.keySet() ) {
+					System.out.println( "\t" + stage.getText() );
+					for ( AproposLabel perspec : map.get( stage ).keySet() ) {
+						System.out.println( "\t\t" + stage.getText() );
+						for ( AproposLabel line : map.get( stage ).get( perspec ) ) {
+							if ( line.isMatch() ) {
+								System.out.println( "\t\t\t" + line.getText() );
+							}
+						}
+					}
+				}
+			}
 		}
 		
 	}
-
+	
 	public abstract class SearchTerms {
 		
 		String name;
-		boolean first, second, third;
+		int maxAnimations = 50, maxLines = 500;
+		boolean first = true, second = true, third = true;
 		
-		/**
-		 * Constructor that sets the values for the included <code>matchesPerspective</code> function.
-		 * 
-		 * @param first Open 1st Perspective?
-		 * @param second Open 2nd Perspective?
-		 * @param third Open 3rd Perspective?
-		 */
-		public SearchTerms( String name, boolean first, boolean second, boolean third ) {
+		public SearchTerms( String name ) {
+			super();
 			this.name = name;
+		}
+		
+		public void setLimits( int maxAnimations, int maxLines ) {
+			this.maxAnimations = maxAnimations;
+			this.maxLines = maxLines;
+		}
+		
+		public void setPerspectives( boolean first, boolean second, boolean third ) {
 			this.first = first;
 			this.second = second;
 			this.third = third;
 		}
 		
 		/**
-		 * Checks this perspective label against the three constructor bools, will only open their labellist if this returns true.
+		 * Checks this perspective label against the three configurable bools, will only open their labellist if this returns true.
 		 * 
 		 * @param perslabel
 		 * @return
@@ -1266,12 +1331,13 @@ public class Model {
 		public abstract boolean matchesDirectory( String dirname );
 		
 		/**
-		 * Gets given the name of a file, only opened if this returns true. Can be used to limit Positions, Uniques, Stages or Rape
+		 * Gets given the label for a stage, which will only be opened if this returns true. Can be used to discard certain stages,
+		 * positions, rape files, etc
 		 * 
-		 * @param filename
+		 * @param stagelabel
 		 * @return
 		 */
-		public abstract boolean matchesFile( String filename );
+		public abstract boolean matchesStage( AproposLabel stagelabel );
 		
 		/**
 		 * The function that each line will be checked against
@@ -1422,6 +1488,13 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 		return hasConflicts;
 	}
 	
+	public boolean hasMatches() {
+		for ( AproposLabel l : this ) {
+			if ( l.isMatch() ) return true;
+		}
+		return false;
+	}
+	
 	public int totalSize() {
 		return size();
 	}
@@ -1565,6 +1638,15 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 		return bool;
 	}
 	
+	public boolean hasMatches() {
+		boolean bool = false;
+		for ( AproposLabel key : keySet() ) {
+			bool = bool | get( key ).hasMatches();
+			if ( bool ) break;
+		}
+		return bool;
+	}
+	
 	public int totalSize() {
 		int i = 0;
 		for ( AproposLabel label : keySet() ) {
@@ -1663,6 +1745,10 @@ interface AproposMap {
 	 * @return true if any of the submaps have conflicts
 	 */
 	public boolean isConflicted();
+	/**
+	 * @return true if any of the submaps have matches
+	 */
+	public boolean hasMatches();
 	/**
 	 * @return This map represented in JSON
 	 * @throws IOException

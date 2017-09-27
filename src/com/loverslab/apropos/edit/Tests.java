@@ -20,10 +20,13 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.Scrollable;
 
+import com.loverslab.apropos.edit.Model.DatabaseSearch;
+import com.loverslab.apropos.edit.Model.SearchTerms;
+
 public class Tests {
 	
 	public static void main( String[] args ) throws Exception {
-		wordWrap();
+		searchTest();
 	}
 	
 	public static void wordWrap() {
@@ -158,6 +161,15 @@ public class Tests {
 		}
 	}
 	
+	public static void labelFromFile() {
+		String s = "/Users/Kealan/Dumps/Workspace/Apropos Diffing/dbOfficial/FemaleActor_Wolf/FemaleActor_Wolf_Vaginal_Rape_Orgasm.txt";
+		System.out.println( s );
+		AproposLabel test = Model.stageLabelFromFile( new File( s ) );
+		System.out.println( test );
+		System.out.println( test.getDepth() );
+		System.out.println( test.getParentLabel() );
+	}
+	
 	public static void labelFromPath() {
 		String s = "E:\\User Files\\Dumps\\Workspace\\Apropos Diffing\\dbOfficial\\FemaleActor_aMSleeping\\FemaleActor_aMSleeping_Rape\\Stage 1\\2nd Person";
 		System.out.println( s );
@@ -218,6 +230,32 @@ public class Tests {
 		System.out.println( m.synonyms.get( "{WTVAGINAL}", 8 ) );
 	}
 	
+	public static void searchTest() throws Exception {
+		Model m = new Model( new ViewStub() );
+		Globals globals = new Globals( new File( "apropos-edit.config" ) );
+		globals.read();
+		String db = globals.getProperty( "locations" ).split( globals.delimiter )[0];
+		m.setDataBase( db );
+		Thread.sleep( 2000 );
+		
+		SearchTerms terms = m.new SearchTerms( "Test" ) {
+			public boolean matchesStage( AproposLabel stagelabel ) {
+				return true;
+			}
+			
+			public boolean matchesDirectory( String dirname ) {
+				return true;
+			}
+			
+			public boolean matches( String text ) {
+				return text.contains( "knot" );
+			}
+		};
+		
+		DatabaseSearch search = m.new DatabaseSearch( terms, null );
+		search.execute();
+	}
+	
 }
 
 class ViewStub extends View {
@@ -228,4 +266,13 @@ class ViewStub extends View {
 	public void handleException( Throwable e ) {
 		e.printStackTrace();
 	}
+	
+	public void setProgress( String working, String complete, int percent ) {
+		System.err.println( "Starting task " + working );
+	}
+	
+	public void updateProgress( int percent ) {
+		System.err.println( percent + "% Complete" );
+	}
+	
 }

@@ -58,7 +58,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	JLabel label, simuLabel;
 	JTextArea textField;
 	SynonymsLengthMap synonymsLength;
-	boolean displayed, hoverState, simulateState, highlighted;
+	private boolean displayed, hoverState, simulateState, highlighted, matched = false;
 	
 	/**
 	 * Creates a non-displayable AproposLabel with the given parent and given text
@@ -332,6 +332,14 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	
 	public void deMark() {
 		label.setForeground( Color.BLACK );
+	}
+	
+	public void setMatch( boolean b ) {
+		matched = b;
+	}
+	
+	public boolean isMatch() {
+		return matched;
 	}
 	
 	public void setSimulateString( String string ) {
