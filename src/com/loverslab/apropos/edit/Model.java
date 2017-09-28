@@ -1168,15 +1168,15 @@ public class Model {
 		
 		private Thread t;
 		private SearchTerms terms;
-		private Object resultspanel;
+		private SearchView searchview;
 		private int page = 1;
 		private int hitAnimations = 0, hitLines = 0;
 		private AproposLabel positionlabel;
 		private StageMap currentmap;
 		
-		public DatabaseSearch( SearchTerms terms, Object resultspanel ) {
+		public DatabaseSearch( SearchTerms terms, SearchView searchview ) {
 			this.terms = terms;
-			this.resultspanel = resultspanel;
+			this.searchview = searchview;
 		}
 		
 		public void execute() {
@@ -1192,6 +1192,7 @@ public class Model {
 		
 		public FileVisitResult visitFile( Path path, BasicFileAttributes attrs ) throws IOException {
 			File file = path.toFile();
+			if ( !file.getName().endsWith( ".txt" ) ) return FileVisitResult.CONTINUE;
 			for ( String str : skip )
 				if ( str.equals( file.getName() ) ) return FileVisitResult.CONTINUE;
 			AproposLabel stagelabel = stageLabelFromFile( file );
@@ -1234,6 +1235,17 @@ public class Model {
 				SwingUtilities.invokeLater( new PublishStageMap( currentmap ) );
 				positionlabel = null;
 				currentmap = null;
+				if ( progress >= 100 ) {
+					try {
+						synchronized ( this ) {
+							this.wait();
+						}
+					}
+					catch ( InterruptedException e ) {
+						view.handleException( e );
+						e.printStackTrace();
+					}
+				}
 			}
 		}
 		
@@ -1269,12 +1281,24 @@ public class Model {
 				this.map = map;
 			}
 			public void run() {
+				searchview.addStageMap( map );
+			}
+		}
+		
+		@SuppressWarnings("unused")
+		private class PublishStageMapDebug implements Runnable {
+			private StageMap map;
+			
+			public PublishStageMapDebug( StageMap map ) {
+				this.map = map;
+			}
+			public void run() {
 				System.out.println( "===== New Publish =====" );
 				System.out.println( map.firstKey().getParentLabel() );
 				for ( AproposLabel stage : map.keySet() ) {
 					System.out.println( "\t" + stage.getText() );
 					for ( AproposLabel perspec : map.get( stage ).keySet() ) {
-						System.out.println( "\t\t" + stage.getText() );
+						System.out.println( "\t\t" + perspec.getText() );
 						for ( AproposLabel line : map.get( stage ).get( perspec ) ) {
 							if ( line.isMatch() ) {
 								System.out.println( "\t\t\t" + line.getText() );

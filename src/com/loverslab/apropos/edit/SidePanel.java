@@ -40,7 +40,8 @@ public class SidePanel extends JPanel {
 	private JCheckBox rapeCheck;
 	private JButton simulateButton, duplicatesButton;
 	private boolean simulating = false, conflicts = false;
-	private AbstractAction listenVerify, listenSynonyms, listenLoad, listenNWLoad, listenSimulate, listenWrite, listenDuplicates,
+	private AbstractAction listenVerify, listenSynonyms, listenSearch, listenLoad, listenNWLoad, listenSimulate, listenWrite,
+			listenDuplicates,
 			listenCopyNew, listenCopyAppend;
 	private ItemListener listenFolder, listenPosition;
 	
@@ -172,6 +173,23 @@ public class SidePanel extends JPanel {
 		c.weightx = 0;
 		c.gridx++ ;
 		add( synonymsInfo, c );
+		
+		JButton searchButton = new JButton( "Database Search" );
+		searchButton.addActionListener( listenSearch );
+		JLabel searchInfo = new JLabel( "(?)" );
+		searchInfo.setToolTipText( "<html>Opens a separate window that allows you to view and edit this database's<br>"
+				+ "three synonyms files, Synonyms.txt, Arousal_Descriptors.txt and<br>" + "WearAndTear_Descriptors.txt</html>" );
+		c.anchor = GridBagConstraints.FIRST_LINE_START;
+		c.insets = insButton;
+		c.weightx = 1.0;
+		c.gridy++ ;
+		c.gridx = 0;
+		add( searchButton, c );
+		c.anchor = GridBagConstraints.LINE_START;
+		c.insets = insHelp;
+		c.weightx = 0;
+		c.gridx++ ;
+		add( searchInfo, c );
 		
 		JButton fixButton = new JButton( "Fix Comma Errors" );
 		fixButton.setEnabled( false );
@@ -443,6 +461,11 @@ public class SidePanel extends JPanel {
 		listenSynonyms = new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
 				parent.openSynonymsEditor();
+			}
+		};
+		listenSearch = new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				parent.startSearch();
 			}
 		};
 		listenLoad = new AbstractAction() {

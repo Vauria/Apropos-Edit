@@ -379,6 +379,10 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 		
 	}
 	
+	public void startSearch() {
+		mainview.openSearch();
+	}
+	
 	public void simulateLabels( String active, String primary ) {
 		simulateLabels( getDisplayPanel(), active, primary );
 	}

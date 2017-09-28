@@ -29,6 +29,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 	private MenuManager menuManager;
 	StageMap stageMap;
 	private JSeparator sep;
+	private boolean matchesOnly;
 	
 	public DisplayPanel( View parent, JScrollPane scroll ) {
 		super( true );
@@ -37,6 +38,11 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		
 		setLayout( new GridBagLayout() );
 		
+	}
+	
+	public DisplayPanel( View parent, boolean matchesOnly ) {
+		this( parent, null );
+		this.matchesOnly = matchesOnly;
 	}
 	
 	public DisplayPanel( View parent, JScrollPane scroll, StageMap stageMap ) {
@@ -75,7 +81,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 				c.insets = new Insets( 0, 70, 0, 5 );
 				for ( AproposLabel label : list ) {
 					c.gridy++ ;
-					add( label.display( this, this, parent.model.synonymsLengths ), c );
+					if ( !matchesOnly | label.isMatch() ) add( label.display( this, this, parent.model.synonymsLengths ), c );
 				}
 			}
 		}
