@@ -1420,13 +1420,42 @@ public class Model {
 			return mode == 2 | ( isRape & mode == 1 ) | ( !isRape & mode == 0 );
 		}
 		
-		/**
-		 * {@inheritDoc}
-		 * <br>
-		 * NB. The method {@link #matchesRape(boolean)} should be called in this method's implementation
-		 */
-		public abstract boolean matchesStage( AproposLabel stageLabel );
+		public boolean matchesDirectory( String dirname ) {
+			// TODO: Add Support for Themes/Uniques/Stuff
+			return true;
+		}
 		
+		public boolean matchesStage( AproposLabel stagelabel ) {
+			return matchesRape( stagelabel.getParentLabel().getText().contains( "_Rape" ) );
+		}
+		
+	}
+	
+	public static class SimpleUserSearchTerms extends UserSearchTerms {
+		public SimpleUserSearchTerms( String name ) {
+			super( name );
+		}
+		public boolean matches( String text ) {
+			return false;
+		}
+	}
+	
+	public static class WWordUserSearchTerms extends UserSearchTerms {
+		public WWordUserSearchTerms( String name ) {
+			super( name );
+		}
+		public boolean matches( String text ) {
+			return false;
+		}
+	}
+	
+	public static class RegexUserSearchTerms extends UserSearchTerms {
+		public RegexUserSearchTerms( String name ) {
+			super( name );
+		}
+		public boolean matches( String text ) {
+			return false;
+		}
 	}
 	
 	public static abstract class NoFilterSearchTerms extends SearchTerms {
