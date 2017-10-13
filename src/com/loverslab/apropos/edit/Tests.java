@@ -22,6 +22,7 @@ import javax.swing.Scrollable;
 
 import com.loverslab.apropos.edit.Model.DatabaseSearch;
 import com.loverslab.apropos.edit.Model.SearchTerms;
+import com.loverslab.apropos.edit.Model.UserSearchTerms;
 
 public class Tests {
 	
@@ -238,7 +239,7 @@ public class Tests {
 		m.setDataBase( db );
 		Thread.sleep( 2000 );
 		
-		SearchTerms terms = m.new SearchTerms( "Test" ) {
+		SearchTerms terms = new UserSearchTerms( "Test" ) {
 			public boolean matchesStage( AproposLabel stagelabel ) {
 				return true;
 			}

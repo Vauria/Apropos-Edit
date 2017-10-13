@@ -1,10 +1,12 @@
 package com.loverslab.apropos.edit;
 
+import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
@@ -12,6 +14,7 @@ import java.awt.event.KeyEvent;
 
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
+import javax.swing.ButtonGroup;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.InputMap;
@@ -19,12 +22,16 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+
+import com.loverslab.apropos.edit.Model.SearchTerms;
 
 /**
  * Left Side Panel to hold all buttons and options for interacting with the database or an animation.
@@ -41,8 +48,7 @@ public class SidePanel extends JPanel {
 	private JButton simulateButton, duplicatesButton;
 	private boolean simulating = false, conflicts = false;
 	private AbstractAction listenVerify, listenSynonyms, listenSearch, listenLoad, listenNWLoad, listenSimulate, listenWrite,
-			listenDuplicates,
-			listenCopyNew, listenCopyAppend;
+			listenDuplicates, listenCopyNew, listenCopyAppend;
 	private ItemListener listenFolder, listenPosition;
 	
 	public SidePanel( View parent ) {
@@ -246,7 +252,7 @@ public class SidePanel extends JPanel {
 		c.gridx++ ;
 		add( suggestSynsInfo, c );
 	}
-
+	
 	/**
 	 * Add interactive options for all the options that only affect one animation
 	 */
@@ -434,7 +440,7 @@ public class SidePanel extends JPanel {
 		c.gridx++ ;
 		add( duplicatesInfo, c );
 	}
-
+	
 	/**
 	 * Create all the listeners for this panel
 	 */
@@ -465,7 +471,8 @@ public class SidePanel extends JPanel {
 		};
 		listenSearch = new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
-				parent.startSearch();
+				SearchDialog dialog = new SearchDialog( parent );
+				dialog.show();
 			}
 		};
 		listenLoad = new AbstractAction() {
@@ -707,6 +714,103 @@ public class SidePanel extends JPanel {
 				setSelectedAnim( map.firstKey() );
 			}
 		} );
+	}
+	
+}
+
+class SearchDialog implements ActionListener {
+	
+	private View parent;
+	private SearchTerms lastTerms, newTerms;
+	private JFrame frame;
+	private JTextField searchField;
+	private JRadioButton searchModeSimple, searchModeWWord, searchModeRegex;
+	private JCheckBox caseSens;
+	private JCheckBox filterPersp1, filterPersp2, filterPersp3;
+	private JRadioButton filterNoRape, filterOnlyRape, filterRapeBoth;
+	
+	public SearchDialog( View parent ) {
+		this.parent = parent;
+		
+		frame = new JFrame( "Database Search" );
+		
+		JPanel panel = new JPanel( new BorderLayout() ), termsPanel = new JPanel( new GridBagLayout() ),
+				filterPanel = new JPanel( new GridBagLayout() );
+		GridBagConstraints c = new GridBagConstraints();
+		
+		searchField = new JTextField();
+		searchModeSimple = new JRadioButton( "Simple" );
+		searchModeWWord = new JRadioButton( "Whole Word" );
+		searchModeRegex = new JRadioButton( "Regex" );
+		ButtonGroup searchBG = new ButtonGroup();
+		searchBG.add( searchModeSimple );
+		searchBG.add( searchModeWWord );
+		searchBG.add( searchModeRegex );
+		caseSens = new JCheckBox( "Case Sensitive", true );
+		
+		filterPersp1 = new JCheckBox( "1st Person", true );
+		filterPersp2 = new JCheckBox( "2nd Person", true );
+		filterPersp3 = new JCheckBox( "3rd Person", true );
+		filterNoRape = new JRadioButton( "No Rape" );
+		filterOnlyRape = new JRadioButton( "Only Rape" );
+		filterRapeBoth = new JRadioButton( "Both" );
+		ButtonGroup rapeBG = new ButtonGroup();
+		rapeBG.add( filterNoRape );
+		rapeBG.add( filterOnlyRape );
+		rapeBG.add( filterRapeBoth );
+		filterRapeBoth.setSelected( true );
+		
+		c.anchor = GridBagConstraints.NORTH;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.weightx = 1.0;
+		c.weighty = 0;
+		c.gridwidth = 4;
+		c.gridy = 0;
+		c.gridx = 0;
+		termsPanel.add( searchField, c );
+		c.gridy++ ;
+		c.gridwidth = 1;
+		termsPanel.add( searchModeSimple, c );
+		c.gridx++ ;
+		termsPanel.add( searchModeWWord, c );
+		c.gridx++ ;
+		termsPanel.add( searchModeRegex, c );
+		c.gridx++ ;
+		termsPanel.add( caseSens, c );
+		
+		c = new GridBagConstraints();
+		
+		c.anchor = GridBagConstraints.NORTHWEST;
+		c.gridy = 0;
+		c.gridx = 0;
+		// c.weightx = 1.0;
+		filterPanel.add( filterPersp1, c );
+		c.gridy++ ;
+		filterPanel.add( filterPersp2, c );
+		c.gridy++ ;
+		filterPanel.add( filterPersp3, c );
+		c.gridy = 0;
+		c.gridx++ ;
+		filterPanel.add( filterNoRape, c );
+		c.gridy++ ;
+		filterPanel.add( filterOnlyRape, c );
+		c.gridy++ ;
+		filterPanel.add( filterRapeBoth, c );
+		
+		panel.add( termsPanel, BorderLayout.NORTH );
+		panel.add( filterPanel, BorderLayout.WEST );
+		
+		frame.setContentPane( panel );
+		frame.pack();
+	}
+	
+	public void show() {
+		frame.setLocationRelativeTo( parent );
+		frame.setVisible( true );
+	}
+	
+	public void actionPerformed( ActionEvent e ) {
+		parent.startSearch( newTerms );
 	}
 	
 }

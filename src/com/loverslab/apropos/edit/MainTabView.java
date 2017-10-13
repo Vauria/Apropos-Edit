@@ -38,6 +38,7 @@ import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 
 import com.loverslab.apropos.edit.Model.SearchTerms;
+import com.loverslab.apropos.edit.Model.UserSearchTerms;
 import com.loverslab.apropos.edit.View.UpdateChecker.Release;
 
 @SuppressWarnings("serial")
@@ -70,10 +71,11 @@ public class MainTabView extends JTabbedPane implements DisplayPanelContainer {
 		display.getDisplayPanel().load( map, true );
 	}
 	
-	public void openSearch() {
+	public void openSearch( SearchTerms terms ) {
 		SearchView search = new SearchView( parent );
 		
-		SearchTerms terms = parent.model.new SearchTerms( "Test" ) {
+		if ( terms == null ) {
+			terms = new UserSearchTerms( "Test" ) {
 			public boolean matchesStage( AproposLabel stagelabel ) {
 				return true;
 			}
@@ -86,6 +88,7 @@ public class MainTabView extends JTabbedPane implements DisplayPanelContainer {
 				return text.contains( "knot" );
 			}
 		};
+		}
 		
 		addTab( terms.name, search.main );
 		parent.model.new DatabaseSearch( terms, search ).execute();

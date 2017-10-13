@@ -1311,11 +1311,10 @@ public class Model {
 		
 	}
 	
-	public abstract class SearchTerms {
+	public static abstract class SearchTerms {
 		
 		String name;
 		int maxAnimations = 50, maxLines = 500;
-		boolean first = true, second = true, third = true;
 		
 		public SearchTerms( String name ) {
 			super();
@@ -1327,24 +1326,13 @@ public class Model {
 			this.maxLines = maxLines;
 		}
 		
-		public void setPerspectives( boolean first, boolean second, boolean third ) {
-			this.first = first;
-			this.second = second;
-			this.third = third;
-		}
-		
 		/**
 		 * Checks this perspective label against the three configurable bools, will only open their labellist if this returns true.
 		 * 
 		 * @param perslabel
 		 * @return
 		 */
-		public boolean matchesPerspective( AproposLabel perslabel ) {
-			if ( perslabel.getText().equals( "1st Person" ) ) return first;
-			if ( perslabel.getText().equals( "2nd Person" ) ) return second;
-			if ( perslabel.getText().equals( "3rd Person" ) ) return third;
-			return false;
-		}
+		public abstract boolean matchesPerspective( AproposLabel perslabel );
 		
 		/**
 		 * Gets given the name of a directory, which will only be opened if this returns true. Can be used to limit themes or FA/MA
@@ -1370,6 +1358,91 @@ public class Model {
 		 * @return true if this line matched the SearchTerms, and should be displayed.
 		 */
 		public abstract boolean matches( String text );
+		
+	}
+	
+	public static abstract class UserSearchTerms extends SearchTerms {
+		
+		boolean first = true, second = true, third = true;
+		int mode = 2;
+		
+		/**
+		 * An extension of SearchTerms to provide more methods for constructing and deconstructing SearchTerm objects
+		 * 
+		 * @param name
+		 */
+		public UserSearchTerms( String name ) {
+			super( name );
+		}
+		
+		/**
+		 * Designed to take the value from three JCheckBoxes (at least one should be true)
+		 * <br>
+		 * Decides how {@link #matchesPerspective(AproposLabel)} will return given a <code>PerspectiveLabel</code>
+		 * 
+		 * @param first
+		 * @param second
+		 * @param third
+		 */
+		public void setPerspectives( boolean first, boolean second, boolean third ) {
+			this.first = first;
+			this.second = second;
+			this.third = third;
+		}
+		
+		/**
+		 * Designed to take the value from three JRadioButtons (i.e. only one should be true)
+		 * <br>
+		 * Decides how {@link #matchesRape(boolean)} will return in {@link #matchesStage(AproposLabel)}.
+		 * 
+		 * @param noRape
+		 * @param rapeOnly
+		 * @param both
+		 */
+		public void setRapes( boolean noRape, boolean rapeOnly, boolean both ) {
+			if ( noRape )
+				mode = 0;
+			else if ( rapeOnly ) mode = 1;
+		}
+		
+		public boolean matchesPerspective( AproposLabel perslabel ) {
+			if ( perslabel.getText().equals( "1st Person" ) ) return first;
+			if ( perslabel.getText().equals( "2nd Person" ) ) return second;
+			if ( perslabel.getText().equals( "3rd Person" ) ) return third;
+			return false;
+		}
+		
+		/**
+		 * @param isRape If the current StageLabel denotes rape
+		 * @return true if the user wished to include this label in their results
+		 */
+		public boolean matchesRape( boolean isRape ) {
+			return mode == 2 | ( isRape & mode == 1 ) | ( !isRape & mode == 0 );
+		}
+		
+		/**
+		 * {@inheritDoc}
+		 * <br>
+		 * NB. The method {@link #matchesRape(boolean)} should be called in this method's implementation
+		 */
+		public abstract boolean matchesStage( AproposLabel stageLabel );
+		
+	}
+	
+	public static abstract class NoFilterSearchTerms extends SearchTerms {
+		
+		public NoFilterSearchTerms( String name ) {
+			super( name );
+		}
+		public boolean matchesPerspective( AproposLabel perslabel ) {
+			return true;
+		}
+		public boolean matchesDirectory( String dirname ) {
+			return true;
+		}
+		public boolean matchesStage( AproposLabel stagelabel ) {
+			return true;
+		}
 		
 	}
 	

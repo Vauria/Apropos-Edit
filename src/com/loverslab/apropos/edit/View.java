@@ -69,6 +69,7 @@ import javax.swing.SwingWorker;
 import javax.swing.ToolTipManager;
 
 import com.google.gson.stream.JsonReader;
+import com.loverslab.apropos.edit.Model.SearchTerms;
 import com.loverslab.apropos.edit.View.UpdateChecker.Release;
 
 import sun.misc.BASE64Decoder;
@@ -379,8 +380,8 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 		
 	}
 	
-	public void startSearch() {
-		mainview.openSearch();
+	public void startSearch( SearchTerms terms ) {
+		mainview.openSearch( terms );
 	}
 	
 	public void simulateLabels( String active, String primary ) {
