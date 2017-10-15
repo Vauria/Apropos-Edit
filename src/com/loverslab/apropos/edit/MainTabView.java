@@ -38,7 +38,6 @@ import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 
 import com.loverslab.apropos.edit.Model.SearchTerms;
-import com.loverslab.apropos.edit.Model.UserSearchTerms;
 import com.loverslab.apropos.edit.View.UpdateChecker.Release;
 
 @SuppressWarnings("serial")
@@ -73,24 +72,8 @@ public class MainTabView extends JTabbedPane implements DisplayPanelContainer {
 	
 	public void openSearch( SearchTerms terms ) {
 		SearchView search = new SearchView( parent );
-		
-		if ( terms == null ) {
-			terms = new UserSearchTerms( "Test" ) {
-			public boolean matchesStage( AproposLabel stagelabel ) {
-				return true;
-			}
-			
-			public boolean matchesDirectory( String dirname ) {
-				return true;
-			}
-			
-			public boolean matches( String text ) {
-				return text.contains( "knot" );
-			}
-		};
-		}
-		
 		addTab( terms.name, search.main );
+		setSelectedIndex( getTabCount() - 1 );
 		parent.model.new DatabaseSearch( terms, search ).execute();
 	}
 	
@@ -168,6 +151,7 @@ public class MainTabView extends JTabbedPane implements DisplayPanelContainer {
 		
 		JScrollPane scroll = new JScrollPane( panel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
 		addTab( "Update Available: " + release.tagName, scroll );
+		setSelectedIndex( getTabCount() - 1 );
 	}
 	
 	public void registerKeybinds( InputMap input, ActionMap action, java.awt.Container root ) {

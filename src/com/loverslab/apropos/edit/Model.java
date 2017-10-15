@@ -1,12 +1,16 @@
 package com.loverslab.apropos.edit;
 
 import java.awt.FontMetrics;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.nio.file.FileVisitResult;
@@ -16,6 +20,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1361,10 +1366,13 @@ public class Model {
 		
 	}
 	
-	public static abstract class UserSearchTerms extends SearchTerms {
+	public static abstract class UserSearchTerms extends SearchTerms implements Serializable {
 		
+		private static final long serialVersionUID = -4581630134768413310L;
 		boolean first = true, second = true, third = true;
-		int mode = 2;
+		int searchMode = 0, rapeMode = 2;
+		String search;
+		boolean caseSens;
 		
 		/**
 		 * An extension of SearchTerms to provide more methods for constructing and deconstructing SearchTerm objects
@@ -1401,8 +1409,17 @@ public class Model {
 		 */
 		public void setRapes( boolean noRape, boolean rapeOnly, boolean both ) {
 			if ( noRape )
-				mode = 0;
-			else if ( rapeOnly ) mode = 1;
+				rapeMode = 0;
+			else if ( rapeOnly ) rapeMode = 1;
+		}
+		
+		/**
+		 * Sets the search string entered by the user. used in {@link SearchTerms#matches(String)}
+		 * 
+		 * @param str
+		 */
+		public void setSearchString( String str ) {
+			search = str;
 		}
 		
 		public boolean matchesPerspective( AproposLabel perslabel ) {
@@ -1417,7 +1434,7 @@ public class Model {
 		 * @return true if the user wished to include this label in their results
 		 */
 		public boolean matchesRape( boolean isRape ) {
-			return mode == 2 | ( isRape & mode == 1 ) | ( !isRape & mode == 0 );
+			return rapeMode == 2 | ( isRape & rapeMode == 1 ) | ( !isRape & rapeMode == 0 );
 		}
 		
 		public boolean matchesDirectory( String dirname ) {
@@ -1429,32 +1446,77 @@ public class Model {
 			return matchesRape( stagelabel.getParentLabel().getText().contains( "_Rape" ) );
 		}
 		
+		public String serialise() {
+			try {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				ObjectOutputStream oos = new ObjectOutputStream( baos );
+				oos.writeObject( this );
+				oos.close();
+				return Base64.getEncoder().encodeToString( baos.toByteArray() );
+			}
+			catch ( IOException e ) {
+				Thread.getDefaultUncaughtExceptionHandler().uncaughtException( Thread.currentThread(), e );
+			}
+			return null;
+		}
+		
+		public static UserSearchTerms deserialise( String obj ) {
+			try {
+				ObjectInputStream ois = new ObjectInputStream( new ByteArrayInputStream( Base64.getDecoder().decode( obj ) ) );
+				UserSearchTerms terms = (UserSearchTerms) ois.readObject();
+				ois.close();
+				return terms;
+			}
+			catch ( IOException | ClassNotFoundException e ) {
+				Thread.getDefaultUncaughtExceptionHandler().uncaughtException( Thread.currentThread(), e );
+			}
+			return null;
+		}
+		
 	}
 	
 	public static class SimpleUserSearchTerms extends UserSearchTerms {
+		private static final long serialVersionUID = 7921686259569421410L;
 		public SimpleUserSearchTerms( String name ) {
 			super( name );
+			searchMode = 0;
 		}
 		public boolean matches( String text ) {
-			return false;
+			if ( !caseSens ) {
+				text = text.toLowerCase();
+				search = search.toLowerCase();
+			}
+			return text.matches( "^.*" + Pattern.quote( search ) + ".*$" );
 		}
 	}
 	
 	public static class WWordUserSearchTerms extends UserSearchTerms {
+		private static final long serialVersionUID = -6481315721704786126L;
 		public WWordUserSearchTerms( String name ) {
 			super( name );
+			searchMode = 1;
 		}
 		public boolean matches( String text ) {
+			if ( !caseSens ) {
+				text = text.toLowerCase();
+				search = search.toLowerCase();
+			}
 			return false;
 		}
 	}
 	
 	public static class RegexUserSearchTerms extends UserSearchTerms {
+		private static final long serialVersionUID = -5000239467274727949L;
 		public RegexUserSearchTerms( String name ) {
 			super( name );
+			searchMode = 2;
 		}
 		public boolean matches( String text ) {
-			return false;
+			if ( !caseSens ) {
+				text = text.toLowerCase();
+				search = search.toLowerCase();
+			}
+			return text.matches( "^.*" + search + ".*$" );
 		}
 	}
 	

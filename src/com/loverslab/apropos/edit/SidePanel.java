@@ -31,7 +31,10 @@ import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 
-import com.loverslab.apropos.edit.Model.SearchTerms;
+import com.loverslab.apropos.edit.Model.RegexUserSearchTerms;
+import com.loverslab.apropos.edit.Model.SimpleUserSearchTerms;
+import com.loverslab.apropos.edit.Model.UserSearchTerms;
+import com.loverslab.apropos.edit.Model.WWordUserSearchTerms;
 
 /**
  * Left Side Panel to hold all buttons and options for interacting with the database or an animation.
@@ -721,7 +724,7 @@ public class SidePanel extends JPanel {
 class SearchDialog implements ActionListener {
 	
 	private View parent;
-	private SearchTerms lastTerms, newTerms;
+	private UserSearchTerms lastTerms, newTerms;
 	private JFrame frame;
 	private JTextField searchField;
 	private JRadioButton searchModeSimple, searchModeWWord, searchModeRegex;
@@ -747,6 +750,9 @@ class SearchDialog implements ActionListener {
 		searchBG.add( searchModeWWord );
 		searchBG.add( searchModeRegex );
 		caseSens = new JCheckBox( "Case Sensitive", true );
+		searchModeSimple.setSelected( true );
+		
+		searchField.addActionListener( this );
 		
 		filterPersp1 = new JCheckBox( "1st Person", true );
 		filterPersp2 = new JCheckBox( "2nd Person", true );
@@ -800,6 +806,8 @@ class SearchDialog implements ActionListener {
 		panel.add( termsPanel, BorderLayout.NORTH );
 		panel.add( filterPanel, BorderLayout.WEST );
 		
+		if ( lastTerms != null ) setState( lastTerms );
+		
 		frame.setContentPane( panel );
 		frame.pack();
 	}
@@ -810,7 +818,63 @@ class SearchDialog implements ActionListener {
 	}
 	
 	public void actionPerformed( ActionEvent e ) {
+		frame.setVisible( false );
+		newTerms = getTerms();
 		parent.startSearch( newTerms );
+		frame.dispose();
+	}
+	
+	private void setState( UserSearchTerms terms ) {
+		searchField.setText( terms.search );
+		switch ( terms.searchMode ) {
+			case 0:
+				searchModeSimple.setSelected( true );
+				break;
+			case 1:
+				searchModeWWord.setSelected( true );
+				break;
+			case 2:
+				searchModeRegex.setSelected( true );
+				break;
+		}
+		caseSens.setSelected( terms.caseSens );
+		filterPersp1.setSelected( terms.first );
+		filterPersp2.setSelected( terms.second );
+		filterPersp3.setSelected( terms.third );
+		switch ( terms.rapeMode ) {
+			case 0:
+				filterNoRape.setSelected( true );
+				break;
+			case 1:
+				filterOnlyRape.setSelected( true );
+				break;
+			case 2:
+				filterRapeBoth.setSelected( true );
+				break;
+		}
+	}
+	
+	private UserSearchTerms getTerms() {
+		int searchMode = searchModeSimple.isSelected() ? 0 : ( searchModeWWord.isSelected() ? 1 : 2 );
+		String name = "uhhhhh.";
+		
+		UserSearchTerms terms = null;
+		switch ( searchMode ) {
+			case 0:
+				terms = new SimpleUserSearchTerms( name );
+				break;
+			case 1:
+				terms = new WWordUserSearchTerms( name );
+				break;
+			case 2:
+				terms = new RegexUserSearchTerms( name );
+				break;
+		}
+		terms.setSearchString( searchField.getText() );
+		terms.setRapes( filterNoRape.isSelected(), filterOnlyRape.isSelected(), filterRapeBoth.isSelected() );
+		terms.setPerspectives( filterPersp1.isSelected(), filterPersp2.isSelected(), filterPersp3.isSelected() );
+		
+		return terms;
 	}
 	
 }
