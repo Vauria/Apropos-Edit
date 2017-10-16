@@ -23,8 +23,9 @@ public class SearchView implements DisplayPanelContainer {
 	
 	DatabaseSearch search;
 	int page;
-	JPanel main, cards, currentpage;
-	ArrayList<JPanel> pages = new ArrayList<JPanel>();
+	JPanel main, cards;
+	ScrollSavvyPanel currentpage;
+	ArrayList<ScrollSavvyPanel> pages = new ArrayList<ScrollSavvyPanel>();
 	CardLayout cl;
 	GridBagConstraints c;
 	JButton prev, next;
@@ -83,6 +84,7 @@ public class SearchView implements DisplayPanelContainer {
 	private void addPage( int p ) {
 		currentpage = new ScrollSavvyPanel( new GridBagLayout() );
 		JScrollPane scroll = new JScrollPane( currentpage, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
+		currentpage.setScrollPane( scroll );
 		
 		c = new GridBagConstraints();
 		c.weightx = 1.0;
@@ -147,7 +149,8 @@ public class SearchView implements DisplayPanelContainer {
 				search.notify();
 			}
 		}
-		cl.show( cards, "PAGE-" + page );
+		pages.get( page - 1 ).getScrollPane().getVerticalScrollBar().setValue( 0 );
+		cl.next( cards );
 		pagenum.setText( "Page " + page );
 		prev.setEnabled( true );
 	}
@@ -155,7 +158,8 @@ public class SearchView implements DisplayPanelContainer {
 	public void pagePrev() {
 		page-- ;
 		if ( page == 1 ) prev.setEnabled( false );
-		cl.show( cards, "PAGE-" + page );
+		pages.get( page - 1 ).getScrollPane().getVerticalScrollBar().setValue( 0 );
+		cl.previous( cards );
 		pagenum.setText( "Page " + page );
 		next.setEnabled( true );
 	}

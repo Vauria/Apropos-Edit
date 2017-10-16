@@ -239,7 +239,9 @@ public class Tests {
 		m.setDataBase( db );
 		Thread.sleep( 2000 );
 		
-		SearchTerms terms = new UserSearchTerms( "Test" ) {
+		SearchTerms terms = new UserSearchTerms() {
+			private static final long serialVersionUID = -1326037863059987072L;
+			
 			public boolean matchesStage( AproposLabel stagelabel ) {
 				return true;
 			}

@@ -73,7 +73,7 @@ public class MainTabView extends JTabbedPane implements DisplayPanelContainer {
 	
 	public void openSearch( SearchTerms terms ) {
 		SearchView search = new SearchView( parent, terms.name );
-		addTab( terms.name, search.main );
+		addTab( "Search:" + terms.name, search.main );
 		setSelectedIndex( getTabCount() - 1 );
 		
 		DatabaseSearch databaseSearch = parent.model.new DatabaseSearch( terms, search );
@@ -202,6 +202,7 @@ public class MainTabView extends JTabbedPane implements DisplayPanelContainer {
 
 class ScrollSavvyPanel extends JPanel implements Scrollable {
 	private static final long serialVersionUID = 3447298266512731802L;
+	private JScrollPane pane;
 	
 	public ScrollSavvyPanel() {
 		super();
@@ -214,6 +215,12 @@ class ScrollSavvyPanel extends JPanel implements Scrollable {
 	}
 	public ScrollSavvyPanel( LayoutManager layout ) {
 		super( layout );
+	}
+	public JScrollPane getScrollPane() {
+		return pane;
+	}
+	public void setScrollPane( JScrollPane pane ) {
+		this.pane = pane;
 	}
 	public Dimension getPreferredScrollableViewportSize() {
 		return getPreferredSize();

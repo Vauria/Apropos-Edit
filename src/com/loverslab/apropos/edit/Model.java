@@ -1393,14 +1393,17 @@ public class Model {
 		int searchMode = 0, rapeMode = 2;
 		String search;
 		boolean caseSens;
+		private String[] searchModes = new String[] { "Simple", "Whole Word", "Regex" };
+		private String[] rapeModes = new String[] { "No Rape", "Rape Only", "" };
+		private String[] perModes = new String[] { "", "1st Only", "2nd Only", "No 3rd", "3rd Only", "No 2nd", "No 1st", "" };
 		
 		/**
 		 * An extension of SearchTerms to provide more methods for constructing and deconstructing SearchTerm objects
 		 * 
 		 * @param name
 		 */
-		public UserSearchTerms( String name ) {
-			super( name );
+		public UserSearchTerms() {
+			super();
 		}
 		
 		/**
@@ -1440,6 +1443,14 @@ public class Model {
 		 */
 		public void setSearchString( String str ) {
 			search = str;
+		}
+		
+		public void generateName() {
+			int perMode = ( first ? 1 : 0 ) + ( second ? 1 : 0 ) * 2 + ( third ? 1 : 0 ) * 4;
+			String perStr = perModes[perMode];
+			String rapeStr = rapeModes[rapeMode];
+			name = search + "-" + searchModes[searchMode] + ( perStr.length() > 1 ? ", " + perStr : "" )
+					+ ( rapeStr.length() > 1 ? ", " + rapeStr : "" );
 		}
 		
 		public boolean matchesPerspective( AproposLabel perslabel ) {
@@ -1497,8 +1508,9 @@ public class Model {
 	
 	public static class SimpleUserSearchTerms extends UserSearchTerms {
 		private static final long serialVersionUID = 7921686259569421410L;
-		public SimpleUserSearchTerms( String name ) {
-			super( name );
+		
+		public SimpleUserSearchTerms() {
+			super();
 			searchMode = 0;
 		}
 		public boolean matches( String text ) {
@@ -1512,8 +1524,9 @@ public class Model {
 	
 	public static class WWordUserSearchTerms extends UserSearchTerms {
 		private static final long serialVersionUID = -6481315721704786126L;
-		public WWordUserSearchTerms( String name ) {
-			super( name );
+		
+		public WWordUserSearchTerms() {
+			super();
 			searchMode = 1;
 		}
 		public boolean matches( String text ) {
@@ -1527,8 +1540,9 @@ public class Model {
 	
 	public static class RegexUserSearchTerms extends UserSearchTerms {
 		private static final long serialVersionUID = -5000239467274727949L;
-		public RegexUserSearchTerms( String name ) {
-			super( name );
+		
+		public RegexUserSearchTerms() {
+			super();
 			searchMode = 2;
 		}
 		public boolean matches( String text ) {

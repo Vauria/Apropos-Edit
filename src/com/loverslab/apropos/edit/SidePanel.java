@@ -858,24 +858,24 @@ class SearchDialog implements ActionListener {
 	
 	private UserSearchTerms getTerms() {
 		int searchMode = searchModeSimple.isSelected() ? 0 : ( searchModeWWord.isSelected() ? 1 : 2 );
-		String name = "uhhhhh.";
 		
 		UserSearchTerms terms = null;
 		switch ( searchMode ) {
 			case 0:
-				terms = new SimpleUserSearchTerms( name );
+				terms = new SimpleUserSearchTerms();
 				break;
 			case 1:
-				terms = new WWordUserSearchTerms( name );
+				terms = new WWordUserSearchTerms();
 				break;
 			case 2:
-				terms = new RegexUserSearchTerms( name );
+				terms = new RegexUserSearchTerms();
 				break;
 		}
 		terms.caseSens = caseSens.isSelected();
 		terms.setSearchString( searchField.getText() );
 		terms.setRapes( filterNoRape.isSelected(), filterOnlyRape.isSelected(), filterRapeBoth.isSelected() );
 		terms.setPerspectives( filterPersp1.isSelected(), filterPersp2.isSelected(), filterPersp3.isSelected() );
+		terms.generateName();
 		
 		return terms;
 	}
