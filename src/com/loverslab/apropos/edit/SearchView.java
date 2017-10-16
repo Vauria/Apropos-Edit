@@ -6,6 +6,9 @@ import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -14,18 +17,24 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
 
+import com.loverslab.apropos.edit.Model.DatabaseSearch;
+
 public class SearchView implements DisplayPanelContainer {
 	
+	DatabaseSearch search;
 	int page;
 	JPanel main, cards, currentpage;
+	ArrayList<JPanel> pages = new ArrayList<JPanel>();
 	CardLayout cl;
 	GridBagConstraints c;
 	JButton prev, next;
 	JLabel pagenum;
-	private View parent;
+	private View view;
+	private String name;
 	
-	public SearchView( View parent ) {
-		this.parent = parent;
+	public SearchView( View parent, String name ) {
+		this.view = parent;
+		this.name = name;
 		initPanels();
 	}
 	
@@ -38,6 +47,19 @@ public class SearchView implements DisplayPanelContainer {
 		next = new JButton( "Next" );
 		pagenum = new JLabel( "Page 1" );
 		pagenum.setHorizontalAlignment( SwingConstants.CENTER );
+		
+		prev.addActionListener( new ActionListener() {
+			public void actionPerformed( ActionEvent e ) {
+				pagePrev();
+			}
+		} );
+		next.addActionListener( new ActionListener() {
+			public void actionPerformed( ActionEvent e ) {
+				pageNext();
+			}
+		} );
+		prev.setEnabled( false );
+		next.setEnabled( false );
 		
 		c.anchor = GridBagConstraints.CENTER;
 		c.weighty = 1.0;
@@ -69,6 +91,7 @@ public class SearchView implements DisplayPanelContainer {
 		
 		cards.add( scroll, "PAGE-" + p );
 		page = p;
+		pages.add( currentpage );
 	}
 	
 	public void addStageMap( StageMap map ) {
@@ -84,7 +107,7 @@ public class SearchView implements DisplayPanelContainer {
 		con.insets = new Insets( 3, 0, 2, 0 );
 		container.add( name, con );
 		
-		DisplayPanel display = new DisplayPanel( parent, true );
+		DisplayPanel display = new DisplayPanel( view, true );
 		display.load( map, false );
 		con.fill = GridBagConstraints.BOTH;
 		con.weighty = 1.0;
@@ -95,6 +118,46 @@ public class SearchView implements DisplayPanelContainer {
 		c.gridy++ ;
 		currentpage.add( container, c );
 		currentpage.revalidate();
+	}
+	
+	/**
+	 * Called when the currently loading page has been completed
+	 * 
+	 * @param searchComplete true if there are no futher pages to be loaded
+	 */
+	public void pageComplete( boolean searchComplete ) {
+		if ( !searchComplete ) {
+			if ( page == pages.size() ) {
+				next.setEnabled( true );
+			}
+		}
+		else {
+			view.setProgress( "", "Search Complete", 100 );
+		}
+	}
+	
+	public void pageNext() {
+		page++ ;
+		// We are on the last generated page, start generating the next page.
+		if ( page == pages.size() + 1 ) {
+			next.setEnabled( false );
+			addPage( page );
+			view.setProgress( "Searching: " + name, "Search Page " + page + " Complete", 0 );
+			synchronized ( search ) {
+				search.notify();
+			}
+		}
+		cl.show( cards, "PAGE-" + page );
+		pagenum.setText( "Page " + page );
+		prev.setEnabled( true );
+	}
+	
+	public void pagePrev() {
+		page-- ;
+		if ( page == 1 ) prev.setEnabled( false );
+		cl.show( cards, "PAGE-" + page );
+		pagenum.setText( "Page " + page );
+		next.setEnabled( true );
 	}
 	
 	public DisplayPanel getDisplayPanel() {

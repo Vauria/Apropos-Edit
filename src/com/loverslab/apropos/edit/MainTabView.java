@@ -37,6 +37,7 @@ import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 
+import com.loverslab.apropos.edit.Model.DatabaseSearch;
 import com.loverslab.apropos.edit.Model.SearchTerms;
 import com.loverslab.apropos.edit.View.UpdateChecker.Release;
 
@@ -71,10 +72,13 @@ public class MainTabView extends JTabbedPane implements DisplayPanelContainer {
 	}
 	
 	public void openSearch( SearchTerms terms ) {
-		SearchView search = new SearchView( parent );
+		SearchView search = new SearchView( parent, terms.name );
 		addTab( terms.name, search.main );
 		setSelectedIndex( getTabCount() - 1 );
-		parent.model.new DatabaseSearch( terms, search ).execute();
+		
+		DatabaseSearch databaseSearch = parent.model.new DatabaseSearch( terms, search );
+		search.search = databaseSearch;
+		databaseSearch.execute();
 	}
 	
 	public void openRelease( Release release ) {

@@ -964,11 +964,12 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 	 * @param p Current progress value
 	 */
 	public void setProgress( String working, String complete, int percent ) {
+		progressTimeout.cancel();
+		
 		progressCompleteMessage = complete;
 		progressLabel.setText( working );
-		progressBar.setValue( percent );
 		
-		progressTimeout.cancel();
+		updateProgress( percent );
 	}
 	
 	public void updateProgress( int percent ) {

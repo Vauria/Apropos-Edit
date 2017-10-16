@@ -872,6 +872,7 @@ class SearchDialog implements ActionListener {
 				terms = new RegexUserSearchTerms( name );
 				break;
 		}
+		terms.caseSens = caseSens.isSelected();
 		terms.setSearchString( searchField.getText() );
 		terms.setRapes( filterNoRape.isSelected(), filterOnlyRape.isSelected(), filterRapeBoth.isSelected() );
 		terms.setPerspectives( filterPersp1.isSelected(), filterPersp2.isSelected(), filterPersp3.isSelected() );

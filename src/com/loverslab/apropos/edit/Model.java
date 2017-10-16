@@ -1241,10 +1241,12 @@ public class Model {
 				positionlabel = null;
 				currentmap = null;
 				if ( progress >= 100 ) {
+					SwingUtilities.invokeLater( new PublishPage( false ) );
 					try {
 						synchronized ( this ) {
 							this.wait();
 						}
+						page++ ;
 					}
 					catch ( InterruptedException e ) {
 						view.handleException( e );
@@ -1259,7 +1261,7 @@ public class Model {
 				try {
 					Files.walkFileTree( Paths.get( db ), DatabaseSearch.this );
 					publishStageMap();
-					SwingUtilities.invokeLater( new UpdateProgress( 100 ) );
+					SwingUtilities.invokeLater( new PublishPage( true ) );
 				}
 				catch ( IOException e ) {
 					view.handleException( e );
@@ -1276,6 +1278,17 @@ public class Model {
 			}
 			public void run() {
 				view.updateProgress( p );
+			}
+		}
+		
+		private class PublishPage implements Runnable {
+			private boolean searchComplete;
+			
+			public PublishPage( boolean searchComplete ) {
+				this.searchComplete = searchComplete;
+			}
+			public void run() {
+				searchview.pageComplete( searchComplete );
 			}
 		}
 		
