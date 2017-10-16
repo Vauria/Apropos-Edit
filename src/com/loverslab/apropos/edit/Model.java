@@ -1321,6 +1321,13 @@ public class Model {
 		String name;
 		int maxAnimations = 50, maxLines = 500;
 		
+		/**
+		 * Protected Constructor for Deserialisation
+		 */
+		protected SearchTerms() {
+			super();
+		}
+		
 		public SearchTerms( String name ) {
 			super();
 			this.name = name;

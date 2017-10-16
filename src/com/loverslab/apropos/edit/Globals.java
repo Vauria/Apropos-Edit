@@ -21,6 +21,7 @@ public class Globals extends Properties {
 			setProperty( "active", "Sven" );
 			setProperty( "primary", "Dovahkiin" );
 			setProperty( "oc", "0" );
+			setProperty( "lastsearch", "" );
 		}
 	};
 	

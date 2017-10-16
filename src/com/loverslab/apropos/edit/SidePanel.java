@@ -806,6 +806,7 @@ class SearchDialog implements ActionListener {
 		panel.add( termsPanel, BorderLayout.NORTH );
 		panel.add( filterPanel, BorderLayout.WEST );
 		
+		lastTerms = parent.searchHistory.peekFirst();
 		if ( lastTerms != null ) setState( lastTerms );
 		
 		frame.setContentPane( panel );
@@ -820,6 +821,7 @@ class SearchDialog implements ActionListener {
 	public void actionPerformed( ActionEvent e ) {
 		frame.setVisible( false );
 		newTerms = getTerms();
+		parent.searchHistory.addFirst( newTerms );
 		parent.startSearch( newTerms );
 		frame.dispose();
 	}

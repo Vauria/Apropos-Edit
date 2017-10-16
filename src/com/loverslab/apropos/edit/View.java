@@ -70,6 +70,7 @@ import javax.swing.ToolTipManager;
 
 import com.google.gson.stream.JsonReader;
 import com.loverslab.apropos.edit.Model.SearchTerms;
+import com.loverslab.apropos.edit.Model.UserSearchTerms;
 import com.loverslab.apropos.edit.View.UpdateChecker.Release;
 
 import sun.misc.BASE64Decoder;
@@ -93,6 +94,7 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 	JProgressBar progressBar;
 	Timer progressTimeout = new Timer();
 	ArrayList<JFrame> displayFrames = new ArrayList<JFrame>();
+	LinkedList<UserSearchTerms> searchHistory = new LinkedList<UserSearchTerms>();
 	HashMap<DisplayPanel, AbstractAction> conflictedActions = new HashMap<DisplayPanel, AbstractAction>();
 	volatile LinkedList<Throwable> exceptionQueue = new LinkedList<Throwable>();
 	volatile LinkedList<Throwable> displayedExceptions = new LinkedList<Throwable>();
@@ -142,6 +144,8 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 		
 		String defaultDB = globals.getProperty( "locations" ).split( globals.delimiter )[0];
 		if ( !defaultDB.equals( "" ) ) actionPerformed( new ActionEvent( this, ActionEvent.ACTION_PERFORMED, defaultDB ) );
+		String lastSearch = globals.getProperty( "lastsearch" );
+		if ( !lastSearch.equals( "" ) ) searchHistory.addFirst( UserSearchTerms.deserialise( lastSearch ) );
 		
 		setVisible( true );
 	}
@@ -227,6 +231,7 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 			public void windowClosing( WindowEvent e ) {
 				globals.setProperty( "size", isMaximized() ? "max" : getSize().width + globals.delimiter + getSize().height );
 				globals.setProperty( "position", isMaximized() ? "max" : getLocation().getX() + globals.delimiter + getLocation().getY() );
+				if ( searchHistory.peekFirst() != null ) globals.setProperty( "lastsearch", searchHistory.peekFirst().serialise() );
 				globals.write();
 				dispose();
 				System.exit( 0 );
