@@ -750,7 +750,7 @@ public class Prototype {
 					if ( e.getKeyChar() == KeyEvent.VK_ENTER ) {
 						setText( textField.getText() );
 						for ( ValueChangedListener v : listeners ) {
-							v.valueChanged( textField.getText(), EditableJLabel.this );
+							v.valueChanged( textField.getText(), null );
 						}
 						setHoverState( false );
 						locked = true;

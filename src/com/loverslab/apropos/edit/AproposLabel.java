@@ -289,6 +289,8 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 			cl.show( this, "SIMULATE" );
 		else
 			cl.show( this, "NORMAL" );
+		
+		fireStateChanged( hover );
 	}
 	
 	public boolean getHoverState() {
@@ -485,6 +487,38 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		}
 	}
 	
+	public void addInteractionListener( InteractionListener listener ) {
+		listenerList.add( InteractionListener.class, listener );
+	}
+	
+	public void removeInteractionListener( InteractionListener listener ) {
+		listenerList.remove( InteractionListener.class, listener );
+	}
+	
+	void fireStateChanged( boolean editing ) {
+		// Guaranteed to return a non-null array
+		Object[] listeners = listenerList.getListenerList();
+		// Process the listeners last to first, notifying
+		// those that are interested in this event
+		for ( int i = listeners.length - 2; i >= 0; i -= 2 ) {
+			if ( listeners[i] == InteractionListener.class ) {
+				( (InteractionListener) listeners[i + 1] ).stateChanged( editing, this );
+			}
+		}
+	}
+	
+	void fireClicked() {
+		// Guaranteed to return a non-null array
+		Object[] listeners = listenerList.getListenerList();
+		// Process the listeners last to first, notifying
+		// those that are interested in this event
+		for ( int i = listeners.length - 2; i >= 0; i -= 2 ) {
+			if ( listeners[i] == InteractionListener.class ) {
+				( (InteractionListener) listeners[i + 1] ).clicked( this );
+			}
+		}
+	}
+	
 	public Color getWarningColor( String text ) {
 		int min = 0, max = 0, ub = synonymsLength.max;
 		for ( String key : synonymsLength.keySet() ) {
@@ -543,26 +577,25 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	public int positionFromPoint( Point p, String s ) {
 		return s.equals( "" ) ? 0 : Math.max( label.getAccessibleContext().getAccessibleText().getIndexAtPoint( p ) - 1, 0 );
 	}
-
+	
 	/**
 	 * A listener for non-editable AproposLabels, only provides PopupMenu actions
 	 */
 	public class AproposListener implements MouseListener {
 		
 		public void mousePressed( MouseEvent e ) {
-			if ( e.isPopupTrigger() & !getHoverState() ) {
-				firepopupMenuTriggered( AproposLabel.this, e );
-			}
+			if ( e.isPopupTrigger() & !getHoverState() ) firepopupMenuTriggered( AproposLabel.this, e );
 		}
 		public void mouseReleased( MouseEvent e ) {
-			if ( e.isPopupTrigger() & !getHoverState() ) {
-				firepopupMenuTriggered( AproposLabel.this, e );
-			}
+			if ( e.isPopupTrigger() & !getHoverState() ) firepopupMenuTriggered( AproposLabel.this, e );
+		}
+		public void mouseClicked( MouseEvent e ) {
+			if ( !e.isPopupTrigger() & !getHoverState() ) fireClicked();
+			
 		}
 		
 		public void mouseEntered( MouseEvent e ) {}
 		public void mouseExited( MouseEvent e ) {}
-		public void mouseClicked( MouseEvent e ) {}
 	}
 	
 	/**
@@ -576,11 +609,13 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 			oldValue = textField.getText();
 		}
 		public void mouseClicked( MouseEvent e ) {
-			if ( e.getClickCount() == 2 & !e.isPopupTrigger() & !getHoverState() ) {
+			if ( !e.isPopupTrigger() & !getHoverState() ) if ( e.getClickCount() == 2 ) {
 				setHoverState( true );
 				textField.grabFocus();
 				textField.setCaretPosition( positionFromPoint( e.getPoint(), textField.getText() ) );
 			}
+			else
+				fireClicked();
 		}
 		public void release() {
 			this.locked = false;
@@ -827,7 +862,7 @@ class AproposConflictLabel extends AproposLabel {
  * A listener that will be notified whenever the text of an attached JLabel is modified
  */
 interface ValueChangedListener extends EventListener {
-	public void valueChanged( String value, JComponent source );
+	public void valueChanged( String value, AproposLabel source );
 }
 
 /**
@@ -844,4 +879,9 @@ interface LineChangedListener extends EventListener {
  */
 interface PopupMenuListener extends EventListener {
 	public void popupMenuTriggered( AproposLabel label, MouseEvent e );
+}
+
+interface InteractionListener extends EventListener {
+	public void stateChanged( boolean editing, JComponent source );
+	public void clicked( JComponent source );
 }

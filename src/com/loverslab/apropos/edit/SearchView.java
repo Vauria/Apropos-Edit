@@ -15,6 +15,7 @@ import java.util.HashMap;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -23,7 +24,7 @@ import javax.swing.SwingUtilities;
 
 import com.loverslab.apropos.edit.Model.DatabaseSearch;
 
-public class SearchView extends JPanel implements DisplayPanelContainer, MouseListener {
+public class SearchView extends JPanel implements DisplayPanelContainer, MouseListener, InteractionListener {
 	
 	private static final long serialVersionUID = -2550756315633568153L;
 	DatabaseSearch search;
@@ -125,6 +126,7 @@ public class SearchView extends JPanel implements DisplayPanelContainer, MouseLi
 		con.gridy++ ;
 		container.add( display, con );
 		
+		display.addInteractionListener( this );
 		displayLookup.put( container, display );
 		
 		c.gridy++ ;
@@ -206,13 +208,14 @@ public class SearchView extends JPanel implements DisplayPanelContainer, MouseLi
 	public void mouseClicked( MouseEvent e ) {
 		setSelected( (JPanel) ( pages.get( page - 1 ).getComponentAt( e.getPoint() ) ) );
 	}
+	public void clicked( JComponent source ) {
+		setSelected( getJPanel( (DisplayPanel) source ) );
+	}
 	
+	public void stateChanged( boolean editing, JComponent source ) {}
 	public void mousePressed( MouseEvent e ) {}
-	
 	public void mouseReleased( MouseEvent e ) {}
-	
 	public void mouseEntered( MouseEvent e ) {}
-	
 	public void mouseExited( MouseEvent e ) {}
 	
 }

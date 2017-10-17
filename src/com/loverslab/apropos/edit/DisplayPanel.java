@@ -11,6 +11,7 @@ import java.awt.event.MouseEvent;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
+import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
@@ -23,7 +24,8 @@ import javax.swing.SwingUtilities;
 import com.google.gson.stream.MalformedJsonException;
 
 @SuppressWarnings("serial")
-public class DisplayPanel extends JPanel implements LineChangedListener, PopupMenuListener, Scrollable, DisplayPanelContainer {
+public class DisplayPanel extends JPanel
+		implements LineChangedListener, PopupMenuListener, InteractionListener, Scrollable, DisplayPanelContainer {
 	private View parent;
 	private JScrollPane scroll;
 	private MenuManager menuManager;
@@ -70,6 +72,7 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 			c.gridx = 0;
 			c.gridwidth = 1;
 			c.gridheight = 1;
+			stage.addInteractionListener( this );
 			add( stage.display( this, this, false ), c );
 			PerspectiveMap persMap = stageMap.get( stage );
 			for ( AproposLabel perspec : persMap.keySet() ) {
@@ -77,10 +80,12 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 				if ( !matchesOnly | list.hasMatches() ) {
 					c.insets = new Insets( 0, 40, 0, 5 );
 					c.gridy++ ;
+					perspec.addInteractionListener( this );
 					add( perspec.display( this, this, false ), c );
 					c.insets = new Insets( 0, 70, 0, 5 );
 					for ( AproposLabel label : list ) {
 						c.gridy++ ;
+						label.addInteractionListener( this );
 						if ( !matchesOnly | label.isMatch() ) add( label.display( this, this, parent.model.synonymsLengths ), c );
 					}
 				}
@@ -134,6 +139,40 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 		label.setSimulateString( parent.model.insert( label.getText() ) );
 		label.simulate();
 	}
+	
+	public void addInteractionListener( InteractionListener listener ) {
+		listenerList.add( InteractionListener.class, listener );
+	}
+	public void removeInteractionListener( InteractionListener listener ) {
+		listenerList.remove( InteractionListener.class, listener );
+	}
+	void fireStateChanged( boolean editing ) {
+		// Guaranteed to return a non-null array
+		Object[] listeners = listenerList.getListenerList();
+		// Process the listeners last to first, notifying
+		// those that are interested in this event
+		for ( int i = listeners.length - 2; i >= 0; i -= 2 ) {
+			if ( listeners[i] == InteractionListener.class ) {
+				( (InteractionListener) listeners[i + 1] ).stateChanged( editing, this );
+			}
+		}
+	}
+	void fireClicked() {
+		// Guaranteed to return a non-null array
+		Object[] listeners = listenerList.getListenerList();
+		// Process the listeners last to first, notifying
+		// those that are interested in this event
+		for ( int i = listeners.length - 2; i >= 0; i -= 2 ) {
+			if ( listeners[i] == InteractionListener.class ) {
+				( (InteractionListener) listeners[i + 1] ).clicked( this );
+			}
+		}
+	}
+	public void stateChanged( boolean editing, JComponent source ) {}
+	public void clicked( JComponent source ) {
+		fireClicked();
+	}
+	
 	
 	public void sectionRemoved( AproposLabel section ) {
 		switch ( section.getDepth() ) {
