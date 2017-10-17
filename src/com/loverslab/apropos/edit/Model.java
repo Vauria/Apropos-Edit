@@ -1656,6 +1656,7 @@ public class Model {
 class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 	private static final long serialVersionUID = -3091716550688577792L;
 	private boolean hasConflicts = false;
+	private Boolean hasMatches = null;
 	
 	public LabelList() {}
 	
@@ -1711,10 +1712,16 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 	}
 	
 	public boolean hasMatches() {
+		if ( hasMatches != null ) return hasMatches;
+		boolean bool = false;
 		for ( AproposLabel l : this ) {
-			if ( l.isMatch() ) return true;
+			if ( l.isMatch() ) {
+				bool = true;
+				break;
+			}
 		}
-		return false;
+		hasMatches = bool;
+		return bool;
 	}
 	
 	public int totalSize() {
@@ -1812,6 +1819,7 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 	private static final long serialVersionUID = 7745720831421872902L;
 	String indent;
 	int keyDepth;
+	private Boolean hasMatches = null;
 	
 	public Result query( AproposLabel key ) {
 		if ( key.getDepth() == keyDepth ) {
@@ -1861,11 +1869,13 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 	}
 	
 	public boolean hasMatches() {
+		if ( hasMatches != null ) return hasMatches;
 		boolean bool = false;
 		for ( AproposLabel key : keySet() ) {
-			bool = bool | get( key ).hasMatches();
+			bool = get( key ).hasMatches();
 			if ( bool ) break;
 		}
+		hasMatches = bool;
 		return bool;
 	}
 	

@@ -72,16 +72,17 @@ public class DisplayPanel extends JPanel implements LineChangedListener, PopupMe
 			c.gridheight = 1;
 			add( stage.display( this, this, false ), c );
 			PerspectiveMap persMap = stageMap.get( stage );
-			if ( persMap == null ) System.out.println( stageMap );
 			for ( AproposLabel perspec : persMap.keySet() ) {
-				c.insets = new Insets( 0, 40, 0, 5 );
-				c.gridy++ ;
-				add( perspec.display( this, this, false ), c );
 				LabelList list = persMap.get( perspec );
-				c.insets = new Insets( 0, 70, 0, 5 );
-				for ( AproposLabel label : list ) {
+				if ( !matchesOnly | list.hasMatches() ) {
+					c.insets = new Insets( 0, 40, 0, 5 );
 					c.gridy++ ;
-					if ( !matchesOnly | label.isMatch() ) add( label.display( this, this, parent.model.synonymsLengths ), c );
+					add( perspec.display( this, this, false ), c );
+					c.insets = new Insets( 0, 70, 0, 5 );
+					for ( AproposLabel label : list ) {
+						c.gridy++ ;
+						if ( !matchesOnly | label.isMatch() ) add( label.display( this, this, parent.model.synonymsLengths ), c );
+					}
 				}
 			}
 		}
