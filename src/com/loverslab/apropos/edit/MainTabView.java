@@ -73,7 +73,7 @@ public class MainTabView extends JTabbedPane implements DisplayPanelContainer {
 	
 	public void openSearch( SearchTerms terms ) {
 		SearchView search = new SearchView( parent, terms.name );
-		addTab( "Search:" + terms.name, search.main );
+		addTab( "Search:" + terms.name, search );
 		setSelectedIndex( getTabCount() - 1 );
 		
 		DatabaseSearch databaseSearch = parent.model.new DatabaseSearch( terms, search );

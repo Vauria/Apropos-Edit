@@ -8,7 +8,10 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -19,17 +22,20 @@ import javax.swing.SwingConstants;
 
 import com.loverslab.apropos.edit.Model.DatabaseSearch;
 
-public class SearchView implements DisplayPanelContainer {
+public class SearchView extends JPanel implements DisplayPanelContainer, MouseListener {
 	
+	private static final long serialVersionUID = -2550756315633568153L;
 	DatabaseSearch search;
 	int page;
-	JPanel main, cards;
-	ScrollSavvyPanel currentpage;
+	JPanel cards;
+	ScrollSavvyPanel currentPage;
+	DisplayPanel currentPanel;
 	ArrayList<ScrollSavvyPanel> pages = new ArrayList<ScrollSavvyPanel>();
+	HashMap<JPanel, DisplayPanel> displayLookup = new HashMap<JPanel, DisplayPanel>();
 	CardLayout cl;
 	GridBagConstraints c;
 	JButton prev, next;
-	JLabel pagenum;
+	JLabel pageNum;
 	private View view;
 	private String name;
 	
@@ -40,14 +46,14 @@ public class SearchView implements DisplayPanelContainer {
 	}
 	
 	private void initPanels() {
-		main = new JPanel( new BorderLayout() );
+		setLayout( new BorderLayout() );
 		
 		JPanel buttons = new JPanel( new GridBagLayout() );
 		GridBagConstraints c = new GridBagConstraints();
 		prev = new JButton( "Previous" );
 		next = new JButton( "Next" );
-		pagenum = new JLabel( "Page 1" );
-		pagenum.setHorizontalAlignment( SwingConstants.CENTER );
+		pageNum = new JLabel( "Page 1" );
+		pageNum.setHorizontalAlignment( SwingConstants.CENTER );
 		
 		prev.addActionListener( new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
@@ -69,7 +75,7 @@ public class SearchView implements DisplayPanelContainer {
 		c.gridx = 1;
 		buttons.add( prev, c );
 		c.gridx++ ;
-		buttons.add( pagenum, c );
+		buttons.add( pageNum, c );
 		c.gridx++ ;
 		buttons.add( next, c );
 		
@@ -77,14 +83,15 @@ public class SearchView implements DisplayPanelContainer {
 		cards = new JPanel( cl );
 		
 		addPage( 1 );
-		main.add( buttons, BorderLayout.SOUTH );
-		main.add( cards, BorderLayout.CENTER );
+		add( buttons, BorderLayout.SOUTH );
+		add( cards, BorderLayout.CENTER );
 	}
 	
 	private void addPage( int p ) {
-		currentpage = new ScrollSavvyPanel( new GridBagLayout() );
-		JScrollPane scroll = new JScrollPane( currentpage, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
-		currentpage.setScrollPane( scroll );
+		currentPage = new ScrollSavvyPanel( new GridBagLayout() );
+		JScrollPane scroll = new JScrollPane( currentPage, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
+		currentPage.setScrollPane( scroll );
+		currentPage.addMouseListener( this );
 		
 		c = new GridBagConstraints();
 		c.weightx = 1.0;
@@ -93,7 +100,7 @@ public class SearchView implements DisplayPanelContainer {
 		
 		cards.add( scroll, "PAGE-" + p );
 		page = p;
-		pages.add( currentpage );
+		pages.add( currentPage );
 	}
 	
 	public void addStageMap( StageMap map ) {
@@ -117,9 +124,11 @@ public class SearchView implements DisplayPanelContainer {
 		con.gridy++ ;
 		container.add( display, con );
 		
+		displayLookup.put( container, display );
+		
 		c.gridy++ ;
-		currentpage.add( container, c );
-		currentpage.revalidate();
+		currentPage.add( container, c );
+		currentPage.revalidate();
 	}
 	
 	/**
@@ -128,6 +137,11 @@ public class SearchView implements DisplayPanelContainer {
 	 * @param searchComplete true if there are no futher pages to be loaded
 	 */
 	public void pageComplete( boolean searchComplete ) {
+		synchronized ( currentPage.getTreeLock() ) {
+			setSelected( (JPanel) currentPage.getComponent( 0 ) );
+		}
+		currentPage.getScrollPane().getVerticalScrollBar().setValue( 0 );
+		
 		if ( !searchComplete ) {
 			if ( page == pages.size() ) {
 				next.setEnabled( true );
@@ -151,7 +165,7 @@ public class SearchView implements DisplayPanelContainer {
 		}
 		pages.get( page - 1 ).getScrollPane().getVerticalScrollBar().setValue( 0 );
 		cl.next( cards );
-		pagenum.setText( "Page " + page );
+		pageNum.setText( "Page " + page );
 		prev.setEnabled( true );
 	}
 	
@@ -160,12 +174,44 @@ public class SearchView implements DisplayPanelContainer {
 		if ( page == 1 ) prev.setEnabled( false );
 		pages.get( page - 1 ).getScrollPane().getVerticalScrollBar().setValue( 0 );
 		cl.previous( cards );
-		pagenum.setText( "Page " + page );
+		pageNum.setText( "Page " + page );
 		next.setEnabled( true );
 	}
 	
-	public DisplayPanel getDisplayPanel() {
-		return null;
+	public JPanel getJPanel( DisplayPanel panel ) {
+		return (JPanel) panel.getParent();
 	}
+	
+	public void setSelected( JPanel panel ) {
+		if ( getDisplayPanel() != null ) {
+			JPanel old = getJPanel( getDisplayPanel() );
+			if ( panel == old ) return;
+			old.setBorder( BorderFactory.createEmptyBorder() );
+		}
+		
+		panel.setBorder( BorderFactory.createCompoundBorder( BorderFactory.createRaisedSoftBevelBorder(),
+				BorderFactory.createMatteBorder( 0, 2, 0, 2, Color.RED ) ) );
+		setSelected( displayLookup.get( panel ) );
+	}
+	
+	public void setSelected( DisplayPanel panel ) {
+		currentPanel = panel;
+	}
+	
+	public DisplayPanel getDisplayPanel() {
+		return currentPanel;
+	}
+	
+	public void mouseClicked( MouseEvent e ) {
+		setSelected( (JPanel) ( pages.get( page - 1 ).getComponentAt( e.getPoint() ) ) );
+	}
+	
+	public void mousePressed( MouseEvent e ) {}
+	
+	public void mouseReleased( MouseEvent e ) {}
+	
+	public void mouseEntered( MouseEvent e ) {}
+	
+	public void mouseExited( MouseEvent e ) {}
 	
 }
