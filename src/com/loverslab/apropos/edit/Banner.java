@@ -135,6 +135,8 @@ public class Banner extends JPanel implements ItemListener, ActionListener {
 									? parent.globals.delimiter : "" ) + chosenFile.getAbsolutePath() );
 					locations.insertItemAt( chosenFile.getAbsolutePath(), locations.getItemCount() - 1 );
 					locations.setSelectedIndex( locations.getItemCount() - 2 );
+					// Above call will trigger another itemStateChange event, which we will rely on to trigger the Database Change
+					return;
 				}
 				else {
 					locations.setSelectedIndex( 0 );
