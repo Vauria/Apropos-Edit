@@ -19,6 +19,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 
 import com.loverslab.apropos.edit.Model.DatabaseSearch;
 
@@ -140,7 +141,7 @@ public class SearchView extends JPanel implements DisplayPanelContainer, MouseLi
 		synchronized ( currentPage.getTreeLock() ) {
 			setSelected( (JPanel) currentPage.getComponent( 0 ) );
 		}
-		currentPage.getScrollPane().getVerticalScrollBar().setValue( 0 );
+		SwingUtilities.invokeLater( new ResetScroll( currentPage.getScrollPane() ) );
 		
 		if ( !searchComplete ) {
 			if ( page == pages.size() ) {
