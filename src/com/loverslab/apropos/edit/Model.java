@@ -1696,7 +1696,7 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 		if ( hasConflicts ) return true;
 		int match = 0;
 		LabelList conflictList = new LabelList( size() ); // ConflictLabels will be stored in a temporary list to preserve the main list
-		ArrayList<Integer> skip = new ArrayList<Integer>( size() );
+		TreeSet<Integer> skip = new TreeSet<Integer>();
 		for ( int i = 0; i < size(); i++ ) {
 			if ( skip.contains( i ) ) continue;
 			AproposConflictLabel label = new AproposConflictLabel( get( i ) );
