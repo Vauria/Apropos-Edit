@@ -67,7 +67,7 @@ public class DisplayPanel extends JPanel
 		c.gridx = 0;
 		
 		for ( AproposLabel stage : stageMap.keySet() ) {
-			c.insets = new Insets( 25, 10, 5, 10 );
+			c.insets = new Insets( 10, 10, 5, 10 );
 			c.gridy++ ;
 			c.gridx = 0;
 			c.gridwidth = 1;

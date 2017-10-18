@@ -115,7 +115,7 @@ public class SearchView extends JPanel implements DisplayPanelContainer, MouseLi
 		con.weightx = 1;
 		con.gridx = 0;
 		con.gridy = 0;
-		con.insets = new Insets( 3, 0, 2, 0 );
+		con.insets = new Insets( 0, 0, 2, 0 );
 		container.add( name, con );
 		
 		DisplayPanel display = new DisplayPanel( view, true );
@@ -192,7 +192,7 @@ public class SearchView extends JPanel implements DisplayPanelContainer, MouseLi
 			old.setBorder( BorderFactory.createEmptyBorder() );
 		}
 		
-		panel.setBorder( BorderFactory.createCompoundBorder( BorderFactory.createRaisedSoftBevelBorder(),
+		panel.setBorder( BorderFactory.createCompoundBorder( BorderFactory.createRaisedBevelBorder(),
 				BorderFactory.createMatteBorder( 0, 2, 0, 2, Color.RED ) ) );
 		setSelected( displayLookup.get( panel ) );
 	}
