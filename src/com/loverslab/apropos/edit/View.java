@@ -42,8 +42,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
@@ -66,6 +64,7 @@ import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
+import javax.swing.Timer;
 import javax.swing.ToolTipManager;
 
 import com.google.gson.stream.JsonReader;
@@ -92,7 +91,7 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 	JLabel progressLabel;
 	String progressCompleteMessage;
 	JProgressBar progressBar;
-	Timer progressTimeout = new Timer();
+	Timer progressTimeout = new Timer( 0, null );
 	ArrayList<JFrame> displayFrames = new ArrayList<JFrame>();
 	LinkedList<UserSearchTerms> searchHistory = new LinkedList<UserSearchTerms>();
 	HashMap<DisplayPanel, AbstractAction> conflictedActions = new HashMap<DisplayPanel, AbstractAction>();
@@ -964,7 +963,7 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 	 * @param p Current progress value
 	 */
 	public void setProgress( String working, String complete, int percent ) {
-		progressTimeout.cancel();
+		progressTimeout.stop();
 		
 		progressCompleteMessage = complete;
 		progressLabel.setText( working );
@@ -977,14 +976,15 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 		if ( percent == 100 ) {
 			progressLabel.setText( progressCompleteMessage );
 			
-			progressTimeout = new Timer();
-			TimerTask task = new TimerTask() {
-				public void run() {
+			ActionListener task = new ActionListener() {
+				public void actionPerformed( ActionEvent e ) {
 					progressLabel.setText( "Idle" );
 					progressBar.setValue( 0 );
 				}
 			};
-			progressTimeout.schedule( task, 5000 );
+			progressTimeout = new Timer( 5000, task );
+			progressTimeout.setRepeats( false );
+			progressTimeout.start();
 		}
 	}
 	
