@@ -1606,19 +1606,23 @@ public class Model {
 			synonyms.setActors( primary, active );
 			synonyms.setLevels( -1, -1 );
 			
-			// Create a new StageMap with only one label randomly selected from the original map
-			StageMap selectedMap = new StageMap();
-			for ( AproposLabel stage : stageMap.keySet() ) {
-				PerspectiveMap persMap = stageMap.get( stage );
-				PerspectiveMap selPersMap = new PerspectiveMap();
-				selectedMap.put( stage, selPersMap );
-				for ( AproposLabel perspec : persMap.keySet() ) {
-					LabelList list = persMap.get( perspec );
-					if ( list.size() == 0 ) continue;
-					LabelList selList = new LabelList();
-					selPersMap.put( perspec, selList );
-					// Select one element at random and add it to the selectedMap
-					selList.add( list.get( list.size() == 1 ? 0 : r.nextInt( list.size() - 1 ) ) );
+			// Don't bother picking out 'played' lines if the map is being used in a seach
+			StageMap selectedMap = null;
+			if ( !stageMap.hasMatches() ) {
+				// Create a new StageMap with only one label randomly selected from the original map
+				selectedMap = new StageMap();
+				for ( AproposLabel stage : stageMap.keySet() ) {
+					PerspectiveMap persMap = stageMap.get( stage );
+					PerspectiveMap selPersMap = new PerspectiveMap();
+					selectedMap.put( stage, selPersMap );
+					for ( AproposLabel perspec : persMap.keySet() ) {
+						LabelList list = persMap.get( perspec );
+						if ( list.size() == 0 ) continue;
+						LabelList selList = new LabelList();
+						selPersMap.put( perspec, selList );
+						// Select one element at random and add it to the selectedMap
+						selList.add( list.get( list.size() == 1 ? 0 : r.nextInt( list.size() - 1 ) ) );
+					}
 				}
 			}
 			
@@ -1633,9 +1637,16 @@ public class Model {
 				PerspectiveMap persMap = stageMap.get( stage );
 				for ( AproposLabel perspec : persMap.keySet() ) {
 					LabelList list = persMap.get( perspec );
-					LabelList selList = selectedMap.get( stage ).get( perspec );
-					AproposLabel selected = selList.size() == 0 ? null : selList.get( 0 );
+					if ( stageMap.hasMatches() & !list.hasMatches() ) continue;
+					AproposLabel selected;
+					if ( selectedMap != null ) {
+						LabelList selList = selectedMap.get( stage ).get( perspec );
+						selected = selList.size() == 0 ? null : selList.get( 0 );
+					}
+					else
+						selected = null;
 					for ( AproposLabel label : list ) {
+						if ( stageMap.hasMatches() & !label.isMatch() ) continue;
 						if ( label.getText().equals( "" ) ) continue;
 						if ( label == selected ) label.setHighlighted( true );
 						label.setSimulateString( insert( label.getText() ) );
