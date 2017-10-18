@@ -198,6 +198,12 @@ public class MainTabView extends JTabbedPane implements DisplayPanelContainer {
 		setSelectedIndex( ind );
 	}
 	
+	public void closeTab() {
+		String title = getTitleAt( getSelectedIndex() );
+		if ( title.startsWith( "Search:" ) ) ( (SearchView) getSelectedComponent() ).search.stop();
+		remove( getSelectedIndex() );
+	}
+	
 }
 
 class ScrollSavvyPanel extends JPanel implements Scrollable {

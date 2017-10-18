@@ -1190,12 +1190,17 @@ public class Model {
 			t.start();
 		}
 		
+		public void stop() {
+			t.interrupt();
+		}
+		
 		public FileVisitResult preVisitDirectory( Path dir, BasicFileAttributes attrs ) throws IOException {
 			if ( terms.matchesDirectory( dir.getFileName().toString() ) ) { return FileVisitResult.CONTINUE; }
 			return FileVisitResult.SKIP_SUBTREE;
 		}
 		
 		public FileVisitResult visitFile( Path path, BasicFileAttributes attrs ) throws IOException {
+			if ( t.isInterrupted() ) return FileVisitResult.TERMINATE;
 			File file = path.toFile();
 			if ( !file.getName().endsWith( ".txt" ) ) return FileVisitResult.CONTINUE;
 			for ( String str : skip )
@@ -1206,7 +1211,8 @@ public class Model {
 				if ( positionlabel.toString().equals( stagelabel.getParentLabel().toString() ) ) {}
 				else {
 					// New animation! Time to publish the last one!
-					publishStageMap();
+					FileVisitResult ret = publishStageMap();
+					if ( ret != FileVisitResult.CONTINUE ) return ret;
 				}
 			}
 			if ( terms.matchesStage( stagelabel ) ) {
@@ -1230,7 +1236,7 @@ public class Model {
 			return FileVisitResult.CONTINUE;
 		}
 		
-		public void publishStageMap() {
+		public FileVisitResult publishStageMap() {
 			if ( positionlabel != null ) {
 				hitAnimations++ ;
 				int pAnims = ( hitAnimations * 100 ) / ( terms.maxAnimations * page );
@@ -1249,19 +1255,23 @@ public class Model {
 						page++ ;
 					}
 					catch ( InterruptedException e ) {
-						view.handleException( e );
-						e.printStackTrace();
+						return FileVisitResult.TERMINATE;
 					}
 				}
 			}
+			return FileVisitResult.CONTINUE;
 		}
 		
 		private class Start implements Runnable {
 			public void run() {
 				try {
 					Files.walkFileTree( Paths.get( db ), DatabaseSearch.this );
-					publishStageMap();
-					SwingUtilities.invokeLater( new PublishPage( true ) );
+					if ( !t.isInterrupted() ) {
+						publishStageMap();
+						SwingUtilities.invokeLater( new PublishPage( true ) );
+					}
+					else
+						SwingUtilities.invokeLater( new UpdateAbort() );
 				}
 				catch ( IOException e ) {
 					view.handleException( e );
@@ -1278,6 +1288,12 @@ public class Model {
 			}
 			public void run() {
 				view.updateProgress( p );
+			}
+		}
+		
+		private class UpdateAbort implements Runnable {
+			public void run() {
+				view.setProgress( "", "Search cancelled", 100 );
 			}
 		}
 		

@@ -254,7 +254,7 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 				if ( mainview.getTabCount() == 0 )
 				dispatchEvent( new WindowEvent( frame, WindowEvent.WINDOW_CLOSING ) );
 				else {
-					mainview.remove( mainview.getSelectedComponent() );
+					mainview.closeTab();
 				}
 			}
 		} );
