@@ -1,6 +1,7 @@
 package com.loverslab.apropos.edit;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -11,9 +12,12 @@ import java.awt.event.InputEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
+import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
@@ -30,6 +34,9 @@ import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.Timer;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import com.loverslab.apropos.edit.Model.RegexUserSearchTerms;
 import com.loverslab.apropos.edit.Model.SimpleUserSearchTerms;
@@ -721,12 +728,13 @@ public class SidePanel extends JPanel {
 	
 }
 
-class SearchDialog implements ActionListener {
+class SearchDialog implements ActionListener, ItemListener, DocumentListener {
 	
 	private View parent;
 	private UserSearchTerms lastTerms, newTerms;
 	private JFrame frame;
 	private JTextField searchField;
+	private JLabel regexError;
 	private JRadioButton searchModeSimple, searchModeWWord, searchModeRegex;
 	private JCheckBox caseSens;
 	private JCheckBox filterPersp1, filterPersp2, filterPersp3;
@@ -739,12 +747,20 @@ class SearchDialog implements ActionListener {
 		
 		JPanel panel = new JPanel( new BorderLayout() ), termsPanel = new JPanel( new GridBagLayout() ),
 				filterPanel = new JPanel( new GridBagLayout() );
+		termsPanel.setBorder( BorderFactory.createCompoundBorder( BorderFactory.createEmptyBorder( 10, 5, 2, 5 ),
+				BorderFactory.createRaisedBevelBorder() ) );
+		filterPanel.setBorder( BorderFactory.createEmptyBorder( 0, 5, 20, 5 ) );
+		
 		GridBagConstraints c = new GridBagConstraints();
 		
 		searchField = new JTextField();
+		regexError = new JLabel();
+		regexError.setForeground( Color.RED );
+		regexError.setBorder( BorderFactory.createEmptyBorder( 1, 1, 1, 1 ) );
 		searchModeSimple = new JRadioButton( "Simple" );
 		searchModeWWord = new JRadioButton( "Whole Word" );
 		searchModeRegex = new JRadioButton( "Regex" );
+		searchModeRegex.addItemListener( this );
 		ButtonGroup searchBG = new ButtonGroup();
 		searchBG.add( searchModeSimple );
 		searchBG.add( searchModeWWord );
@@ -774,6 +790,8 @@ class SearchDialog implements ActionListener {
 		c.gridy = 0;
 		c.gridx = 0;
 		termsPanel.add( searchField, c );
+		c.gridy++ ;
+		termsPanel.add( regexError, c );
 		c.gridy++ ;
 		c.gridwidth = 1;
 		termsPanel.add( searchModeSimple, c );
@@ -819,12 +837,65 @@ class SearchDialog implements ActionListener {
 	}
 	
 	public void actionPerformed( ActionEvent e ) {
+		if ( searchModeRegex.isSelected() & !regexError.getText().equals( "" ) ) {
+			final Timer timer = new Timer( 70, null );
+			timer.addActionListener( new ActionListener() {
+				int flashed = 0;
+				
+				public void actionPerformed( ActionEvent e ) {
+					flashed++ ;
+					if ( flashed % 2 == 1 )
+						regexError.setBorder( BorderFactory.createMatteBorder( 1, 1, 1, 1, Color.RED ) );
+					else
+						regexError.setBorder( BorderFactory.createEmptyBorder( 1, 1, 1, 1 ) );
+					if ( flashed == 6 ) timer.stop();
+				}
+			} );
+			timer.start();
+			return;
+		}
 		frame.setVisible( false );
 		newTerms = getTerms();
 		parent.searchHistory.addFirst( newTerms );
 		parent.startSearch( newTerms );
 		frame.dispose();
 	}
+	
+	/**
+	 * Regex Selected Listener
+	 */
+	public void itemStateChanged( ItemEvent e ) {
+		switch ( e.getStateChange() ) {
+			case ItemEvent.SELECTED:
+				searchField.getDocument().addDocumentListener( this );
+				fieldChanged();
+				break;
+			case ItemEvent.DESELECTED:
+				searchField.getDocument().removeDocumentListener( this );
+				regexError.setText( "" );
+				break;
+		}
+	}
+	
+	public void fieldChanged() {
+		String regex = searchField.getText();
+		try {
+			Pattern.compile( regex );
+			regexError.setText( "" );
+		}
+		catch ( PatternSyntaxException e ) {
+			String error = e.getLocalizedMessage();
+			regexError.setText( error );
+		}
+	}
+	
+	public void insertUpdate( DocumentEvent e ) {
+		fieldChanged();
+	}
+	public void removeUpdate( DocumentEvent e ) {
+		fieldChanged();
+	}
+	public void changedUpdate( DocumentEvent e ) {}
 	
 	private void setState( UserSearchTerms terms ) {
 		searchField.setText( terms.search );

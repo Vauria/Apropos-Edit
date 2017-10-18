@@ -1546,11 +1546,8 @@ public class Model {
 			searchMode = 2;
 		}
 		public boolean matches( String text ) {
-			if ( !caseSens ) {
-				text = text.toLowerCase();
-				search = search.toLowerCase();
-			}
-			return text.matches( "^.*" + search + ".*$" );
+			Pattern p = Pattern.compile( search, caseSens ? 0 : Pattern.CASE_INSENSITIVE );
+			return p.matcher( text ).find();
 		}
 	}
 	
