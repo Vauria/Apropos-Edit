@@ -250,7 +250,9 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	 * Returns a new label with equal reference to this label's parent and copied text
 	 */
 	public AproposLabel clone() {
-		return new AproposLabel( getText(), getParentLabel() );
+		AproposLabel clone = new AproposLabel( getText(), getParentLabel() );
+		clone.setMatch( isMatch() );
+		return clone;
 	}
 	
 	public AproposLabel getParentLabel() {

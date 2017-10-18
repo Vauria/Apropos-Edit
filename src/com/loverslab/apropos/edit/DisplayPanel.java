@@ -173,7 +173,6 @@ public class DisplayPanel extends JPanel
 		fireClicked();
 	}
 	
-	
 	public void sectionRemoved( AproposLabel section ) {
 		switch ( section.getDepth() ) {
 			case 3:
@@ -410,16 +409,20 @@ public class DisplayPanel extends JPanel
 					case 2: // Position Level
 						break;
 					case 3: // Stage Level
-						popup.add( getRemoveStageItem() );
-						popup.add( getStageAboveItem() );
-						popup.add( getStageBelowItem() );
+						if ( !stageMap.hasMatches() ) {
+							popup.add( getRemoveStageItem() );
+							popup.add( getStageAboveItem() );
+							popup.add( getStageBelowItem() );
+						}
 						// Fall through
 					case 4: // Perspective Level
-						popup.add( getClearItem() );
+						if ( !stageMap.hasMatches() ) popup.add( getClearItem() );
 						popup.add( getCopyItem() );
 						popup.add( getPasteItem() );
-						popup.add( getCopyMenu( depth, copyAppend ) );
-						popup.add( getCopyMenu( depth, copyReplace ) );
+						if ( !stageMap.hasMatches() ) {
+							popup.add( getCopyMenu( depth, copyAppend ) );
+							popup.add( getCopyMenu( depth, copyReplace ) );
+						}
 						break;
 					case 5: // Line Level
 						popup.add( getRemoveItem() );
