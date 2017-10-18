@@ -12,10 +12,12 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
 import java.net.URISyntaxException;
+import java.util.regex.Pattern;
 
 import javax.swing.BorderFactory;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -50,9 +52,6 @@ public class Banner extends JPanel implements ItemListener, ActionListener {
 		c.gridx = 0;
 		add( label, c );
 		
-		// c.gridx++ ;
-		// add( new AproposLabel( "New Label!", null ).display( c, null ), c );
-		
 		String locConfig = parent.globals.getProperty( "locations" );
 		String[] locArr;
 		if ( locConfig.equals( "" ) ) {
@@ -73,6 +72,51 @@ public class Banner extends JPanel implements ItemListener, ActionListener {
 		c.gridx++ ;
 		c.fill = GridBagConstraints.HORIZONTAL;
 		add( locations, c );
+		
+		JButton refreshButton = new JButton( "Reload" );
+		refreshButton.setToolTipText( "Reloads Folders and Synonyms in this Database folder" );
+		refreshButton.addActionListener( new ActionListener() {
+			public void actionPerformed( ActionEvent e ) {
+				String selection = (String) model.getSelectedItem();
+				if ( !selection.equals( "<other>" ) ) fireActionPerformed( selection );
+			}
+		} );
+		JButton deleteButton = new JButton( "Delete" );
+		deleteButton.setToolTipText( "Removes this Database folder from the history" );
+		deleteButton.addActionListener( new ActionListener() {
+			public void actionPerformed( ActionEvent e ) {
+				String selection = (String) model.getSelectedItem();
+				if ( !selection.equals( "<other>" ) ) {
+					locations.removeItemAt( locations.getSelectedIndex() );
+					System.out.println( selection );
+					Globals globals = Banner.this.parent.globals;
+					String gLocations = globals.getProperty( "locations" );
+					System.out.println( gLocations );
+					String[] locationsArr = gLocations.split( Pattern.quote( globals.delimiter ) );
+					String newLocations = "";
+					int found = -1;
+					for ( int i = 0; i < locationsArr.length; i++ ) {
+						String loc = locationsArr[i];
+						if ( found == -1 & loc.equals( selection ) )
+							found = i;
+						else
+							newLocations = newLocations + loc + globals.delimiter;
+					}
+					// Trim the last delimiter
+					newLocations = newLocations.replaceAll( Pattern.quote( globals.delimiter ) + "$", "" );
+					System.out.println( found );
+					System.out.println( newLocations );
+					globals.setProperty( "locations", newLocations );
+				}
+			}
+		} );
+		
+		c.weightx = 0;
+		c.insets = new Insets( 5, 1, 5, 1 );
+		c.gridx++ ;
+		add( refreshButton, c );
+		c.gridx++ ;
+		add( deleteButton, c );
 	}
 	
 	public void addActionListener( ActionListener listener ) {
