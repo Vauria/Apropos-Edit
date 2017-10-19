@@ -366,19 +366,18 @@ public class Model {
 	}
 	
 	public static String extractStage( String animString ) {
-		animString = animString.replace( ".txt", "" ).replace( "_Rape", "" ).replace( extractFolder( animString ), "" ).replace( "_", "" );
+		animString = animString.replace( ".txt", "" ).replace( "_Rape", "" ).replace( extractFolder( animString ), "" );
 		for ( Position p : Position.values() )
-			animString = animString.replaceAll( p.name(), "" );
-		return animString;
+			animString = animString.replaceAll( "_" + p.name(), "" );
+		return animString.replaceFirst( "^_", "" );
 	}
 	
 	public static String befriendStage( String stage ) {
 		if ( stage == null ) return null;
 		if ( stage.equals( "" ) ) return "Intro";
-		if ( stage.equalsIgnoreCase( "Orgasm" ) )
-			return "Orgasm";
-		else
-			return "Stage " + stage.charAt( stage.length() - 1 );
+		if ( stage.equalsIgnoreCase( "Orgasm" ) ) return "Orgasm";
+		if ( stage.startsWith( "Stage" ) ) return "Stage " + stage.charAt( stage.length() - 1 );
+		throw new IllegalArgumentException( "Attempted to load unknown stage: " + stage );
 	}
 	
 	public static AproposLabel stageLabelFromFile( File f ) {
