@@ -22,6 +22,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -1177,6 +1178,20 @@ public class Model {
 		private int hitAnimations = 0, hitLines = 0;
 		private AproposLabel positionlabel;
 		private StageMap currentmap;
+		private TreeMap<Path, BasicFileAttributes> directory;
+		
+		private final Comparator<Path> fileSorter = new Comparator<Path>() {
+			public int compare( Path o1, Path o2 ) {
+				String s1 = o1.getFileName().toString(), s2 = o2.getFileName().toString();
+				boolean r1 = s1.replaceAll( "\\.txt|_Stage\\d{1,2}|_Orgasm", "" ).endsWith( "_Rape" );
+				boolean r2 = s2.replaceAll( "\\.txt|_Stage\\d{1,2}|_Orgasm", "" ).endsWith( "_Rape" );
+				if ( r1 != r2 ) {
+					if ( r1 ) return 1;
+					if ( r2 ) return -1;
+				}
+				return o1.compareTo( o2 );
+			}
+		};
 		
 		public DatabaseSearch( SearchTerms terms, SearchView searchview ) {
 			this.terms = terms;
@@ -1194,11 +1209,25 @@ public class Model {
 		}
 		
 		public FileVisitResult preVisitDirectory( Path dir, BasicFileAttributes attrs ) throws IOException {
-			if ( terms.matchesDirectory( dir.getFileName().toString() ) ) { return FileVisitResult.CONTINUE; }
-			return FileVisitResult.SKIP_SUBTREE;
+			if ( !terms.matchesDirectory( dir.getFileName().toString() ) ) return FileVisitResult.SKIP_SUBTREE;
+			directory = new TreeMap<Path, BasicFileAttributes>( fileSorter );
+			return FileVisitResult.CONTINUE;
 		}
 		
-		public FileVisitResult visitFile( Path path, BasicFileAttributes attrs ) throws IOException {
+		public FileVisitResult postVisitDirectory( Path dir, IOException exc ) throws IOException {
+			for ( Path key : directory.keySet() ) {
+				FileVisitResult ret = visitOrderedFile( key, directory.get( key ) );
+				if ( ret != FileVisitResult.CONTINUE ) return ret;
+			}
+			return FileVisitResult.CONTINUE;
+		}
+		
+		public FileVisitResult visitFile( Path file, BasicFileAttributes attrs ) throws IOException {
+			directory.put( file, attrs );
+			return FileVisitResult.CONTINUE;
+		}
+		
+		public FileVisitResult visitOrderedFile( Path path, BasicFileAttributes attrs ) throws IOException {
 			if ( t.isInterrupted() ) return FileVisitResult.TERMINATE;
 			File file = path.toFile();
 			if ( !file.getName().endsWith( ".txt" ) ) return FileVisitResult.CONTINUE;

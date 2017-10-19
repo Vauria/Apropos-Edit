@@ -27,7 +27,7 @@ import com.loverslab.apropos.edit.Model.UserSearchTerms;
 public class Tests {
 	
 	public static void main( String[] args ) throws Exception {
-		searchTest();
+		fileSorting();
 	}
 	
 	public static void wordWrap() {
@@ -257,6 +257,15 @@ public class Tests {
 		
 		DatabaseSearch search = m.new DatabaseSearch( terms, null );
 		search.execute();
+	}
+	
+	public static void fileSorting() throws Exception {
+		String[] files = new String[] { "FemaleActor_Dragon_Vaginal_Rape_Orgasm.txt", "FemaleActor_Dragon_Vaginal_Rape.txt",
+				"FemaleActor_Dragon_Vaginal_Rape_Stage2.txt" };
+		for ( String file : files ) {
+			file = file.replaceAll( "\\.txt|_Stage\\d{1,2}|_Orgasm", "" );
+			System.out.println( file );
+		}
 	}
 	
 }
