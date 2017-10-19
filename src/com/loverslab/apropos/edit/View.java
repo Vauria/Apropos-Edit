@@ -81,7 +81,7 @@ import sun.misc.BASE64Decoder;
 @SuppressWarnings("serial") // No one Serialises Swing anymore
 public class View extends JFrame implements ActionListener, DisplayPanelContainer {
 	
-	public final String version = "1.2a4";
+	public final String version = "1.2a5";
 	Globals globals;
 	Model model;
 	Banner banner;
