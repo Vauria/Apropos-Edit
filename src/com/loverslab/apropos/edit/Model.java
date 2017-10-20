@@ -1178,8 +1178,8 @@ public class Model {
 		private int hitAnimations = 0, hitLines = 0;
 		private AproposLabel positionlabel;
 		private StageMap currentmap;
-		private TreeMap<Path, BasicFileAttributes> directory;
 		
+		private TreeMap<Path, BasicFileAttributes> directory;
 		private final Comparator<Path> fileSorter = new Comparator<Path>() {
 			public int compare( Path o1, Path o2 ) {
 				String s1 = o1.getFileName().toString(), s2 = o2.getFileName().toString();
@@ -1247,12 +1247,21 @@ public class Model {
 				PerspectiveMap map = getPerspectives( stagelabel, file );
 				boolean hit = false;
 				for ( AproposLabel perslabel : map.keySet() )
-					if ( terms.matchesPerspective( perslabel ) ) for ( AproposLabel line : map.get( perslabel ) )
-						if ( terms.matches( line.getText() ) ) {
-							line.setMatch( true );
-							hit = true;
-							hitLines++ ;
+					if ( terms.matchesPerspective( perslabel ) ) {
+						LabelList labelList = map.get( perslabel );
+						for ( int i = 0; i < labelList.size(); i++ ) {
+							AproposLabel line = labelList.get( i );
+							if ( terms.matches( line.getText() ) ) {
+								line.setMatch( true );
+								hit = true;
+								hitLines++ ;
+								AproposConflictLabel con = terms.matchReplacement( line );
+								if ( con != null ) {
+									labelList.set( i, con );
+								}
+							}
 						}
+					}
 				if ( hit ) {
 					if ( positionlabel == null ) {
 						positionlabel = stagelabel.getParentLabel();
@@ -1428,6 +1437,14 @@ public class Model {
 		 */
 		public abstract boolean matches( String text );
 		
+		/**
+		 * Can be used to suggest a replacement for an matched AproposLabel
+		 * 
+		 * @param label
+		 * @return
+		 */
+		public abstract AproposConflictLabel matchReplacement( AproposLabel label );
+		
 	}
 	
 	public static abstract class UserSearchTerms extends SearchTerms implements Serializable {
@@ -1521,6 +1538,10 @@ public class Model {
 			return matchesRape( stagelabel.getParentLabel().getText().contains( "_Rape" ) );
 		}
 		
+		public AproposConflictLabel matchReplacement( AproposLabel label ) {
+			return null;
+		}
+		
 		public String serialise() {
 			try {
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -1608,6 +1629,36 @@ public class Model {
 		}
 		public boolean matchesStage( AproposLabel stagelabel ) {
 			return true;
+		}
+		
+	}
+	
+	public static class BrokenSynonymsFinder extends NoFilterSearchTerms {
+		
+		SynonymsMap synonyms;
+		AproposConflictLabel rep;
+		
+		public BrokenSynonymsFinder( SynonymsMap synonyms ) {
+			super( "Broken Synonyms" );
+			this.synonyms = synonyms;
+		}
+		
+		public boolean matches( String text ) {
+			Pattern p = Pattern.compile( "\\{|\\}" );
+			Matcher m = p.matcher( text );
+			while ( m.find() ) {
+				String match = m.group();
+				if ( !synonyms.containsKey( match ) ) {
+				return true;
+				}
+			}
+			return false;
+		}
+		
+		public AproposConflictLabel matchReplacement( AproposLabel label ) {
+			AproposConflictLabel ret = rep;
+			rep = null;
+			return ret;
 		}
 		
 	}
@@ -1727,7 +1778,8 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 		TreeSet<Integer> skip = new TreeSet<Integer>();
 		for ( int i = 0; i < size(); i++ ) {
 			if ( skip.contains( i ) ) continue;
-			AproposConflictLabel label = new AproposConflictLabel( get( i ) );
+			AproposLabel oldLabel = get( i );
+			AproposConflictLabel label = new AproposConflictLabel( oldLabel );
 			conflictList.add( label );
 			for ( int j = i + 1; j < size(); j++ ) { // Triangular Matrix iteration
 				if ( skip.contains( i ) ) continue;
@@ -2196,6 +2248,11 @@ class SynonymsMap {
 			return map.get( keyLevel );
 		}
 		return null;
+	}
+	
+	public boolean containsKey( String key ) {
+		return mapSynonyms.containsKey( key ) | mapArousal.containsKey( key ) | mapWearNTear.containsKey( key ) | key.equals( "{ACTIVE}" )
+				| key.equals( "{PRIMARY}" );
 	}
 	
 	public Set<String> keySet() {

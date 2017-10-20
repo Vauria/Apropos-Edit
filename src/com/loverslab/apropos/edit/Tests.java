@@ -27,7 +27,7 @@ import com.loverslab.apropos.edit.Model.UserSearchTerms;
 public class Tests {
 	
 	public static void main( String[] args ) throws Exception {
-		fileSorting();
+		synonymDetecting();
 	}
 	
 	public static void wordWrap() {
@@ -221,14 +221,14 @@ public class Tests {
 		System.out.println( json.trim().matches( "^\\{[\\s\\S]*\\}$" ) );
 	}
 	
-	public static void synonymsMap() throws Exception {
+	public static SynonymsMap synonymsMap() throws Exception {
 		Model m = new Model( new ViewStub() );
 		Globals globals = new Globals( new File( "apropos-edit.config" ) );
 		globals.read();
 		String db = globals.getProperty( "locations" ).split( globals.delimiter )[0];
 		m.setDataBase( db );
 		Thread.sleep( 1000 );
-		System.out.println( m.synonyms.get( "{WTVAGINAL}", 8 ) );
+		return m.synonyms;
 	}
 	
 	public static void searchTest() throws Exception {
@@ -266,6 +266,71 @@ public class Tests {
 			file = file.replaceAll( "\\.txt|_Stage\\d{1,2}|_Orgasm", "" );
 			System.out.println( file );
 		}
+	}
+	
+	private static void synonymDetecting() throws Exception {
+		SynonymsMap synonyms = synonymsMap();
+		String[] lines = new String[ 2 ];
+		lines[0] = "{PRIMARY} cries out in shock as {ACTIVE} jams its {BEAST} {COCK} inside her {WTVAGINAL} {PUSSY}.";
+		lines[1] = "{PRIMARY cries out in shock as {ACTIVE2} jams its {BEAST } COCK inside her {WTHAND} {PUSSY}.";
+		
+		for ( String line : lines ) {
+			System.out.println( line );
+			Pattern p = Pattern.compile( "\\{|\\}|([A-Z_0-9]{3,})" );
+			Matcher m = p.matcher( line );
+			String replacement = "";
+			int consumed = -1; // Up to index -1 consumed so far
+			int openTag = -1;
+			String potentialTag = "";
+			while ( m.find() ) {
+				// Collect all the characters between our last match and this one.
+				if ( consumed + 1 < m.start() - 1 ) replacement = replacement + line.substring( consumed + 1, m.start() - 1 );
+				char c = m.group().charAt( 0 );
+				System.out.println( "Match " + m.group() + " (" + c + ")" );
+				switch ( c ) {
+					case '{':
+						if ( openTag != -1 ) {
+							// We have an unclosed open tag, we need to deal with that first
+							System.out.println( "Unclosed open tag at " + openTag + " (" + potentialTag + ")" );
+							potentialTag = "";
+						}
+						openTag = m.start();
+						break;
+					case '}':
+						int closeTag = m.start();
+						if ( openTag != -1 & !potentialTag.equals( "" ) ) {
+							// We have a complete tag, lets check it
+							potentialTag = '{' + potentialTag + '}';
+							String tag = line.substring( openTag, closeTag + 1 );
+							boolean valid = synonyms.containsKey( tag );
+							System.out.println( tag + ", " + valid );
+							openTag = -1;
+							potentialTag = "";
+						}
+						else if ( openTag == -1 ) {
+							// We're missing an open tag
+							System.out.println( "Missing Open Tag at tag " + potentialTag + "}" );
+							openTag = -1;
+							potentialTag = "";
+						}
+						else {
+							// We're missing text between the tags
+							System.out.println( "Empty Tags between " + openTag + " and " + closeTag );
+							openTag = -1;
+						}
+						break;
+					default:
+						// Found a string of AllCaps/Snakecase
+						if ( !potentialTag.equals( "" ) ) {
+							// We have a possible tag missing brackets
+							System.out.println( "Tag missing brackets " + potentialTag );
+						}
+						potentialTag = m.group();
+						break;
+				}
+			}
+		}
+		
 	}
 	
 }
