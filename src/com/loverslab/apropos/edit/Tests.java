@@ -278,20 +278,28 @@ public class Tests {
 			System.out.println( line );
 			Pattern p = Pattern.compile( "\\{|\\}|([A-Z_0-9]{3,})" );
 			Matcher m = p.matcher( line );
+			boolean issues = false;
 			String replacement = "";
 			int consumed = -1; // Up to index -1 consumed so far
 			int openTag = -1;
 			String potentialTag = "";
+			int potentialStart = -1;
 			while ( m.find() ) {
-				// Collect all the characters between our last match and this one.
-				if ( consumed + 1 < m.start() - 1 ) replacement = replacement + line.substring( consumed + 1, m.start() - 1 );
 				char c = m.group().charAt( 0 );
 				System.out.println( "Match " + m.group() + " (" + c + ")" );
 				switch ( c ) {
 					case '{':
 						if ( openTag != -1 ) {
 							// We have an unclosed open tag, we need to deal with that first
+							issues = true;
 							System.out.println( "Unclosed open tag at " + openTag + " (" + potentialTag + ")" );
+							potentialTag = '{' + potentialTag + '}';
+							if ( synonyms.containsKey( potentialTag ) ) {
+								// Collect all the characters between our last match and this one.
+								if ( consumed + 1 < openTag - 1 ) replacement = replacement + line.substring( consumed + 1, openTag - 1 );
+								replacement = replacement + potentialTag;
+								consumed = openTag + potentialTag.length() - 2; // The two brackets we added
+							}
 							potentialTag = "";
 						}
 						openTag = m.start();
@@ -303,18 +311,42 @@ public class Tests {
 							potentialTag = '{' + potentialTag + '}';
 							String tag = line.substring( openTag, closeTag + 1 );
 							boolean valid = synonyms.containsKey( tag );
-							System.out.println( tag + ", " + valid );
+							if ( valid ) {
+								// All good!
+								// Collect all the characters between our last match and this one.
+								if ( consumed + 1 < openTag ) replacement = replacement + line.substring( consumed + 1, openTag );
+								replacement = replacement + tag;
+								consumed = closeTag;
+							}
+							else if ( synonyms.containsKey( potentialTag ) ) {
+								// Stray spaces most likely, lets just ignore them
+								issues = true;
+								// Collect all the characters between our last match and this one.
+								if ( consumed + 1 < openTag ) replacement = replacement + line.substring( consumed + 1, openTag );
+								replacement = replacement + potentialTag;
+								consumed = closeTag;
+							}
+							else {
+								// Attempt to correct typos... TODO: that.
+								issues = true;
+								// Collect all the characters between our last match and this one.
+								if ( consumed + 1 < openTag ) replacement = replacement + line.substring( consumed + 1, openTag );
+								replacement = replacement + "{UNKNOWN TAG}";
+								consumed = closeTag;
+							}
 							openTag = -1;
 							potentialTag = "";
 						}
 						else if ( openTag == -1 ) {
 							// We're missing an open tag
+							issues = true;
 							System.out.println( "Missing Open Tag at tag " + potentialTag + "}" );
 							openTag = -1;
 							potentialTag = "";
 						}
 						else {
 							// We're missing text between the tags
+							issues = true;
 							System.out.println( "Empty Tags between " + openTag + " and " + closeTag );
 							openTag = -1;
 						}
@@ -323,12 +355,17 @@ public class Tests {
 						// Found a string of AllCaps/Snakecase
 						if ( !potentialTag.equals( "" ) ) {
 							// We have a possible tag missing brackets
+							issues = true;
 							System.out.println( "Tag missing brackets " + potentialTag );
 						}
 						potentialTag = m.group();
 						break;
 				}
+				System.out.println( "Replacement: " + replacement );
 			}
+			if ( issues ) System.out.println( "Issues Found." );
+			System.out.println( "Final Replacement:" );
+			System.out.println( replacement );
 		}
 		
 	}
