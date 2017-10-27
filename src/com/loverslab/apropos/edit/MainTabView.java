@@ -32,6 +32,8 @@ import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
 import javax.swing.Scrollable;
 import javax.swing.SwingWorker;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
@@ -42,7 +44,8 @@ import com.loverslab.apropos.edit.Model.SearchTerms;
 import com.loverslab.apropos.edit.View.UpdateChecker.Release;
 
 @SuppressWarnings("serial")
-public class MainTabView extends JTabbedPane implements DisplayPanelContainer {
+public class MainTabView extends JTabbedPane
+		implements DisplayPanelContainer, ChangeListener, DisplayPanelChangedNotifier, DisplayPanelChangedListener {
 	
 	private static final long serialVersionUID = 7461908750515160476L;
 	private View parent;
@@ -50,6 +53,7 @@ public class MainTabView extends JTabbedPane implements DisplayPanelContainer {
 	public MainTabView( View parent ) {
 		super( TOP, SCROLL_TAB_LAYOUT );
 		this.parent = parent;
+		addChangeListener( this );
 	}
 	
 	public DisplayPanel getDisplayPanel() {
@@ -75,6 +79,7 @@ public class MainTabView extends JTabbedPane implements DisplayPanelContainer {
 		SearchView search = new SearchView( parent, terms.name );
 		addTab( "Search:" + terms.name, search );
 		setSelectedIndex( getTabCount() - 1 );
+		search.addDisplayPanelChangedListener( this );
 		
 		DatabaseSearch databaseSearch = parent.model.new DatabaseSearch( terms, search );
 		search.search = databaseSearch;
@@ -202,6 +207,35 @@ public class MainTabView extends JTabbedPane implements DisplayPanelContainer {
 		String title = getTitleAt( getSelectedIndex() );
 		if ( title.startsWith( "Search:" ) ) ( (SearchView) getSelectedComponent() ).search.stop();
 		remove( getSelectedIndex() );
+	}
+	
+	public void stateChanged( ChangeEvent e ) {
+		if ( getTabCount() != 0 ) fireDisplayPanelChanged( getDisplayPanel() );
+	}
+	
+	public void displayPanelChanged( DisplayPanelChangedNotifier parent, DisplayPanel panel ) {
+		fireDisplayPanelChanged( parent, panel );
+	}
+	
+	public void addDisplayPanelChangedListener( DisplayPanelChangedListener listener ) {
+		listenerList.add( DisplayPanelChangedListener.class, listener );
+	}
+	public void removeDisplayPanelChangedListener( DisplayPanelChangedListener listener ) {
+		listenerList.remove( DisplayPanelChangedListener.class, listener );
+	}
+	public void fireDisplayPanelChanged( DisplayPanelChangedNotifier parent, DisplayPanel displayPanel ) {
+		// Guaranteed to return a non-null array
+		Object[] listeners = listenerList.getListenerList();
+		// Process the listeners last to first, notifying
+		// those that are interested in this event
+		for ( int i = listeners.length - 2; i >= 0; i -= 2 ) {
+			if ( listeners[i] == DisplayPanelChangedListener.class ) {
+				( (DisplayPanelChangedListener) listeners[i + 1] ).displayPanelChanged( parent, displayPanel );
+			}
+		}
+	}
+	public void fireDisplayPanelChanged( DisplayPanel displayPanel ) {
+		fireDisplayPanelChanged( this, displayPanel );
 	}
 	
 }

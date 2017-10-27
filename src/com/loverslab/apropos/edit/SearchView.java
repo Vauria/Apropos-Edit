@@ -24,7 +24,7 @@ import javax.swing.SwingUtilities;
 
 import com.loverslab.apropos.edit.Model.DatabaseSearch;
 
-public class SearchView extends JPanel implements DisplayPanelContainer, MouseListener, InteractionListener {
+public class SearchView extends JPanel implements DisplayPanelContainer, MouseListener, InteractionListener, DisplayPanelChangedNotifier {
 	
 	private static final long serialVersionUID = -2550756315633568153L;
 	DatabaseSearch search;
@@ -195,6 +195,7 @@ public class SearchView extends JPanel implements DisplayPanelContainer, MouseLi
 		panel.setBorder( BorderFactory.createCompoundBorder( BorderFactory.createRaisedBevelBorder(),
 				BorderFactory.createMatteBorder( 0, 2, 0, 2, Color.RED ) ) );
 		setSelected( displayLookup.get( panel ) );
+		fireDisplayPanelChanged( currentPanel );
 	}
 	
 	public void setSelected( DisplayPanel panel ) {
@@ -210,6 +211,24 @@ public class SearchView extends JPanel implements DisplayPanelContainer, MouseLi
 	}
 	public void clicked( JComponent source ) {
 		setSelected( getJPanel( (DisplayPanel) source ) );
+	}
+	
+	public void addDisplayPanelChangedListener( DisplayPanelChangedListener listener ) {
+		listenerList.add( DisplayPanelChangedListener.class, listener );
+	}
+	public void removeDisplayPanelChangedListener( DisplayPanelChangedListener listener ) {
+		listenerList.remove( DisplayPanelChangedListener.class, listener );
+	}
+	public void fireDisplayPanelChanged( DisplayPanel displayPanel ) {
+		// Guaranteed to return a non-null array
+		Object[] listeners = listenerList.getListenerList();
+		// Process the listeners last to first, notifying
+		// those that are interested in this event
+		for ( int i = listeners.length - 2; i >= 0; i -= 2 ) {
+			if ( listeners[i] == DisplayPanelChangedListener.class ) {
+				( (DisplayPanelChangedListener) listeners[i + 1] ).displayPanelChanged( this, displayPanel );
+			}
+		}
 	}
 	
 	public void stateChanged( boolean editing, JComponent source ) {}

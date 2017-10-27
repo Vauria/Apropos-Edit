@@ -20,6 +20,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.Scrollable;
 
+import com.loverslab.apropos.edit.Model.BrokenSynonymsFinder;
 import com.loverslab.apropos.edit.Model.DatabaseSearch;
 import com.loverslab.apropos.edit.Model.SearchTerms;
 import com.loverslab.apropos.edit.Model.UserSearchTerms;
@@ -270,131 +271,18 @@ public class Tests {
 	
 	private static void synonymDetecting() throws Exception {
 		SynonymsMap synonyms = synonymsMap();
-		String[] lines = new String[ 6 ];
+		String[] lines = new String[ 7 ];
 		lines[0] = "{PRIMARY} cries out in shock as {ACTIVE} jams its {BEAST} {COCK} inside her {WTVAGINAL} {PUSSY}.";
 		lines[1] = "{PRIMARY cries out in shock as {ACTIVE2} jams its {BEAST } COCK inside her {WTHAND} {PUSSY}";
 		lines[2] = "{ACTIVE}'s {THICK} {CUM} runs from {PRIMARY}'s {ASS} down and into her {WTVAGINAL} {PUSSY}...";
 		lines[3] = "ACTIVE's THICK CUM runs from PRIMARY's ASS down and into her WTVAGINAL PUSSY...";
 		lines[4] = "{PRIMARY} and {ACTIVE} both look so beautiful, their {BOOBS} bouncing as {ACTIVE}'s {SO_ADJ} {STRAPON} reams {PRIMARY}'s {ASS}.";
 		lines[5] = "{PRIMARY and ACTIVE} both look so BEAUTIFUL, their {BOOB} bouncing as {ACTIVE's} {SO_ADJ} {StRAPON} reams {PRIMARY}'s {ASS}.";
-		
+		lines[6] = "({PRIMARY) Ooohhh yes! I want your {CUM}, I want it inside me... Hurry and cum inside me!!!";
+
 		for ( String line : lines ) {
-			Pattern p = Pattern.compile( "\\{|\\}|([A-Z_0-9]{3,})" );
-			Matcher m = p.matcher( line );
-			boolean issues = false;
-			String replacement = "";
-			int consumed = -1; // Up to index -1 consumed so far
-			int openTag = -1;
-			String potentialTag = "";
-			int potentialStart = -1;
-			while ( m.find() ) {
-				char c = m.group().charAt( 0 );
-				// System.out.println( "Match " + m.group() + " (" + c + ")" );
-				switch ( c ) {
-					case '{':
-						if ( openTag != -1 ) {
-							// We have an unclosed open tag, we need to deal with that first
-							issues = true;
-							System.out.println( "Unclosed open tag at " + openTag + " (" + potentialTag + ")" );
-							potentialTag = '{' + potentialTag + '}';
-							if ( synonyms.containsKey( potentialTag ) ) {
-								// Collect all the characters between our last match and this one.
-								if ( consumed + 1 < openTag - 1 ) replacement = replacement + line.substring( consumed + 1, openTag - 1 );
-								replacement = replacement + potentialTag;
-								consumed = openTag + potentialTag.length() - 2; // The two brackets we added
-							}
-							potentialTag = "";
-						}
-						openTag = m.start();
-						break;
-					case '}':
-						int closeTag = m.start();
-						if ( openTag != -1 & !potentialTag.equals( "" ) ) {
-							// We have a complete tag, lets check it
-							potentialTag = '{' + potentialTag + '}';
-							String tag = line.substring( openTag, closeTag + 1 );
-							// Collect all the characters between our last match and this one.
-							if ( consumed + 1 < openTag ) replacement = replacement + line.substring( consumed + 1, openTag );
-							if ( synonyms.containsKey( tag ) ) {
-								// All good!
-								replacement = replacement + tag;
-							}
-							else if ( synonyms.containsKey( potentialTag ) ) {
-								// Stray spaces most likely, lets just ignore them
-								issues = true;
-								replacement = replacement + potentialTag;
-							}
-							else {
-								issues = true;
-								// Attempt to correct typos... TODO: that.
-								replacement = replacement + "{UNKNOWN TAG}";
-							}
-							consumed = closeTag;
-						}
-						else if ( openTag == -1 ) {
-							// We're missing an open tag
-							issues = true;
-							System.out.println( "Missing Open Tag at tag " + potentialTag + "}" );
-							potentialTag = '{' + potentialTag + '}';
-							if ( synonyms.containsKey( potentialTag ) ) {
-								if ( consumed + 1 < potentialStart )
-									replacement = replacement + line.substring( consumed + 1, potentialStart );
-								replacement = replacement + potentialTag;
-								consumed = closeTag;
-							}
-						}
-						else {
-							// We're missing text between the tags
-							issues = true;
-							System.out.println( "Empty Tags between " + openTag + " and " + closeTag );
-						}
-						openTag = -1;
-						potentialTag = "";
-						break;
-					default:
-						// Found a string of AllCaps/Snakecase
-						if ( !potentialTag.equals( "" ) ) {
-							issues = true;
-							if ( openTag == -1 | potentialStart - openTag != 1 ) { // In case the open tag is unrelated
-								// We have a possible tag missing brackets
-								System.out.println( "Tag missing brackets " + potentialTag );
-								potentialTag = '{' + potentialTag + '}';
-								if ( synonyms.containsKey( potentialTag ) ) {
-									// We do have a tag missing brackets
-									if ( consumed + 1 < potentialStart )
-										replacement = replacement + line.substring( consumed + 1, potentialStart );
-									replacement = replacement + potentialTag;
-									consumed = potentialStart + potentialTag.length() - 3; // The three brackets we added. Look, don't ask
-																							 // questions, off by one errors suck.
-								}
-								else {
-									// Probably just all caps, lets move on
-								}
-							}
-							else {
-								// We had an unclosed tag and have just run into an unopened tag
-								// Edge cases for days.
-								System.out
-										.println( "Unclosed open tag at " + openTag + " (" + potentialTag + ") found before " + m.group() );
-								potentialTag = '{' + potentialTag + '}';
-								if ( synonyms.containsKey( potentialTag ) ) {
-									// Collect all the characters between our last match and this one.
-									if ( consumed + 1 < openTag - 1 )
-										replacement = replacement + line.substring( consumed + 1, openTag - 1 );
-									replacement = replacement + potentialTag;
-									consumed = openTag + potentialTag.length() - 2; // The two brackets we added
-								}
-								openTag = -1;
-							}
-						}
-						potentialTag = m.group();
-						potentialStart = m.start();
-						break;
-				}
-				// System.out.println( "Replacement: " + replacement );
-			}
-			replacement = replacement + line.substring( consumed + 1 );
-			if ( issues ) System.out.println( "Issues Found." );
+			BrokenSynonymsFinder bsf = new Model.BrokenSynonymsFinder( synonyms );
+			String replacement = bsf.fixSynonyms( line );
 			System.out.println( "Original lineeeee: " + line );
 			System.out.println( "Final Replacement: " + replacement );
 		}

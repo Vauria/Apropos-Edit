@@ -47,7 +47,7 @@ import com.loverslab.apropos.edit.Model.WWordUserSearchTerms;
  * Left Side Panel to hold all buttons and options for interacting with the database or an animation.
  */
 @SuppressWarnings("serial")
-public class SidePanel extends JPanel {
+public class SidePanel extends JPanel implements DisplayPanelChangedListener {
 	
 	private View parent;
 	private JComboBox<String> animations;
@@ -126,6 +126,20 @@ public class SidePanel extends JPanel {
 		conflicts = b;
 		parent.deSimLabels();
 		if ( b ) duplicatesButton.setText( "Resolve Conflicts" );
+	}
+	
+	public void displayPanelChanged( DisplayPanelChangedNotifier parent, DisplayPanel panel ) {
+		resetButtons();
+		if ( panel != null && panel.stageMap != null && panel.stageMap.size() != 0 ) {
+			if ( panel.stageMap.isConflicted() ) {
+				conflicts = true;
+				duplicatesButton.setText( "Resolve Conflicts" );
+			}
+			if ( panel.stageMap.firstLine().getSimulateState() == true ) {
+				simulating = true;
+				simulateButton.setText( "Reset" );
+			}
+		}
 	}
 	
 	@SuppressWarnings("rawtypes")

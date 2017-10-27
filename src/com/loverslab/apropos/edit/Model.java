@@ -1258,6 +1258,7 @@ public class Model {
 								AproposConflictLabel con = terms.matchReplacement( line );
 								if ( con != null ) {
 									labelList.set( i, con );
+									labelList.setConflicted( true );
 								}
 							}
 						}
@@ -1645,6 +1646,7 @@ public class Model {
 		int openTag;
 		String potentialTag;
 		int potentialStart;
+		boolean confident;
 		
 		public BrokenSynonymsFinder( SynonymsMap synonyms ) {
 			super( "Broken Synonyms" );
@@ -1661,6 +1663,7 @@ public class Model {
 			openTag = -1;
 			potentialTag = "";
 			potentialStart = -1;
+			confident = true;
 			
 			Matcher m = p.matcher( line );
 			
@@ -1681,7 +1684,7 @@ public class Model {
 							potentialTag = '{' + potentialTag + '}';
 							String tag = line.substring( openTag, closeTag + 1 );
 							// Collect all the characters between our last match and this one.
-							if ( consumed + 1 < openTag ) replacement = replacement + line.substring( consumed + 1, openTag );
+							if ( consumed + 1 <= openTag ) replacement = replacement + line.substring( consumed + 1, openTag );
 							if ( synonyms.containsKey( tag ) ) {
 								// All good!
 								replacement = replacement + tag;
@@ -1692,6 +1695,7 @@ public class Model {
 							}
 							else {
 								// Attempt to correct typos... TODO: that.
+								confident = false;
 								replacement = replacement + "{UNKNOWN TAG}";
 							}
 							consumed = closeTag;
@@ -1700,7 +1704,7 @@ public class Model {
 							// We're missing an open tag
 							potentialTag = '{' + potentialTag + '}';
 							if ( synonyms.containsKey( potentialTag ) ) {
-								if ( consumed + 1 < potentialStart )
+								if ( consumed + 1 <= potentialStart )
 									replacement = replacement + line.substring( consumed + 1, potentialStart );
 								replacement = replacement + potentialTag;
 								consumed = closeTag;
@@ -1717,7 +1721,6 @@ public class Model {
 						if ( !potentialTag.equals( "" ) ) {
 							if ( openTag == -1 | potentialStart - openTag != 1 ) { // In case the open tag is unrelated
 								// We have a possible tag missing brackets
-								System.out.println( "Tag missing brackets " + potentialTag );
 								fixUnTagged();
 							}
 							else {
@@ -1746,10 +1749,9 @@ public class Model {
 		
 		private void fixUnTagged() {
 			potentialTag = '{' + potentialTag + '}';
-			potentialTag = '{' + potentialTag + '}';
 			if ( synonyms.containsKey( potentialTag ) ) {
 				// We do have a tag missing brackets
-				if ( consumed + 1 < potentialStart ) replacement = replacement + line.substring( consumed + 1, potentialStart );
+				if ( consumed + 1 <= potentialStart ) replacement = replacement + line.substring( consumed + 1, potentialStart );
 				replacement = replacement + potentialTag;
 				consumed = potentialStart + potentialTag.length() - 3; // The three brackets we added. Look, don't ask
 																		 // questions, off by one errors suck.
@@ -1762,7 +1764,7 @@ public class Model {
 		private void fixUnclosedOpen() {
 			potentialTag = '{' + potentialTag + '}';
 			if ( synonyms.containsKey( potentialTag ) ) {
-				if ( consumed + 1 < openTag - 1 ) replacement = replacement + line.substring( consumed + 1, openTag - 1 );
+				if ( consumed + 1 <= openTag - 1 ) replacement = replacement + line.substring( consumed + 1, openTag );
 				replacement = replacement + potentialTag;
 				consumed = openTag + potentialTag.length() - 2; // The two brackets we added
 			}
@@ -1776,8 +1778,10 @@ public class Model {
 		
 		public AproposConflictLabel matchReplacement( AproposLabel label ) {
 			AproposConflictLabel ret = new AproposConflictLabel( label );
-			ret.addConflict( new AproposLabel( replacement, label.getParentLabel() ), true );
-			ret.setMatch( true );
+			ret.markAll( !confident );
+			AproposLabel rep = new AproposLabel( replacement, label.getParentLabel() );
+			rep.setMatch( true );
+			ret.addConflict( rep, true );
 			return ret;
 		}
 		
@@ -1891,6 +1895,10 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 		super( list );
 	}
 	
+	public AproposLabel firstLine() {
+		return get( 0 );
+	}
+	
 	public boolean checkDuplicates() {
 		if ( hasConflicts ) return true;
 		int match = 0;
@@ -1922,8 +1930,12 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 	public void resolveConflicts() {
 		if ( !hasConflicts ) return;
 		LabelList newList = new LabelList( size() * 3 ); // Assume up to three duplicates per line, to avoid needing to expand the array
-		for ( int i = 0; i < size(); i++ ) {
-			AproposConflictLabel label = (AproposConflictLabel) get( i );
+		for ( AproposLabel apLabel : this ) {
+			if ( ! ( apLabel instanceof AproposConflictLabel ) ) {
+				newList.add( apLabel ); // Thanks to searches, not every entry has to be a conflict
+				continue;
+			}
+			AproposConflictLabel label = (AproposConflictLabel) apLabel;
 			newList.addAll( label.resolveConficts() );
 		}
 		clear();
@@ -1933,6 +1945,10 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 	
 	public boolean isConflicted() {
 		return hasConflicts;
+	}
+	
+	public void setConflicted( boolean hasConflicts ) {
+		this.hasConflicts = hasConflicts;
 	}
 	
 	public boolean hasMatches() {
@@ -2069,6 +2085,10 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 		return null;
 	}
 	
+	public AproposLabel firstLine() {
+		return firstEntry().getValue().firstLine();
+	}
+	
 	public boolean checkDuplicates() {
 		boolean bool = false;
 		for ( AproposLabel key : keySet() ) {
@@ -2148,32 +2168,6 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 	}
 }
 
-class Result {
-	public boolean found = false;
-	public AproposMap map;
-	public LabelList labelList;
-	public PerspectiveMap perspecMap;
-	public StageMap stageMap;
-	public PositionMap posMap;
-	
-	public <T extends AproposMap> Result( T map ) {
-		this.map = map;
-		if ( map instanceof LabelList )
-			labelList = (LabelList) map;
-		else if ( map instanceof PerspectiveMap )
-			perspecMap = (PerspectiveMap) map;
-		else if ( map instanceof StageMap )
-			stageMap = (StageMap) map;
-		else if ( map instanceof PositionMap ) posMap = (PositionMap) map;
-		this.found = true;
-	}
-	
-	public String toString() {
-		return Result.class + "@" + hashCode() + " [found=" + found + ",LabelList=" + labelList + ",PerspectiveMap=" + perspecMap
-				+ ",StageMap=" + stageMap + ",PositionMap=" + posMap + "]";
-	}
-}
-
 interface AproposMap {
 	/**
 	 * @return Total Number of lines in the Map.
@@ -2186,6 +2180,10 @@ interface AproposMap {
 	 * @return The Map/List associated with that key wrapped in a <code>Result</code> object
 	 */
 	public Result query( AproposLabel key );
+	/**
+	 * @return The first line label in this map;
+	 */
+	public AproposLabel firstLine();
 	/**
 	 * Checks the entire map for duplicate lines within the individual perspectives, and transforms Labels into ConflictLabels if conflicts
 	 * are found
@@ -2218,6 +2216,32 @@ interface AproposMap {
 	 * @throws IOException
 	 */
 	public JsonWriter toJSON( JsonWriter writer ) throws IOException;
+}
+
+class Result {
+	public boolean found = false;
+	public AproposMap map;
+	public LabelList labelList;
+	public PerspectiveMap perspecMap;
+	public StageMap stageMap;
+	public PositionMap posMap;
+	
+	public <T extends AproposMap> Result( T map ) {
+		this.map = map;
+		if ( map instanceof LabelList )
+			labelList = (LabelList) map;
+		else if ( map instanceof PerspectiveMap )
+			perspecMap = (PerspectiveMap) map;
+		else if ( map instanceof StageMap )
+			stageMap = (StageMap) map;
+		else if ( map instanceof PositionMap ) posMap = (PositionMap) map;
+		this.found = true;
+	}
+	
+	public String toString() {
+		return Result.class + "@" + hashCode() + " [found=" + found + ",LabelList=" + labelList + ",PerspectiveMap=" + perspecMap
+				+ ",StageMap=" + stageMap + ",PositionMap=" + posMap + "]";
+	}
 }
 
 class BytePair {

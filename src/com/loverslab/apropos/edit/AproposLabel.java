@@ -824,6 +824,15 @@ class AproposConflictLabel extends AproposLabel {
 		return;
 	}
 	
+	public boolean isMatch() {
+		boolean match = false;
+		for ( AproposLabel l : matches ) {
+			match = l.isMatch();
+			if ( match ) break;
+		}
+		return match;
+	}
+	
 	public String toString() {
 		StringBuilder builder = new StringBuilder( getParentLabel().toString() + " [" );
 		Iterator<AproposLabel> it = matches.iterator();

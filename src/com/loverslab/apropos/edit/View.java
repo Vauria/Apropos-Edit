@@ -173,6 +173,8 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 				getRootPane() );
 		main.add( mainview, BorderLayout.CENTER );
 		
+		mainview.addDisplayPanelChangedListener( side );
+		
 		JPanel infoPanel = new JPanel( new GridBagLayout() );
 		progressLabel = new JLabel( "Idle" );
 		progressBar = new JProgressBar();

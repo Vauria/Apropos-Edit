@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.util.Arrays;
+import java.util.EventListener;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.JComponent;
@@ -647,4 +648,14 @@ class ResetScroll implements Runnable {
 	public void run() {
 		scrollpane.getVerticalScrollBar().setValue( 0 );
 	}
+}
+
+interface DisplayPanelChangedListener extends EventListener {
+	public void displayPanelChanged( DisplayPanelChangedNotifier parent, DisplayPanel panel );
+}
+
+interface DisplayPanelChangedNotifier {
+	public void addDisplayPanelChangedListener( DisplayPanelChangedListener listener );
+	public void removeDisplayPanelChangedListener( DisplayPanelChangedListener listener );
+	public void fireDisplayPanelChanged( DisplayPanel displayPanel );
 }
