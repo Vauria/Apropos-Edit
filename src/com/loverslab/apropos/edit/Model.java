@@ -1910,7 +1910,7 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 			AproposConflictLabel label = new AproposConflictLabel( oldLabel );
 			conflictList.add( label );
 			for ( int j = i + 1; j < size(); j++ ) { // Triangular Matrix iteration
-				if ( skip.contains( i ) ) continue;
+				if ( skip.contains( j ) ) continue;
 				AproposLabel checking = get( j );
 				match = Model.fuzzyMatches( label, checking );
 				if ( match < 5 ) {
@@ -1923,6 +1923,47 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 		if ( hasConflicts ) {
 			clear();
 			addAll( conflictList );
+		}
+		return hasConflicts;
+	}
+	
+	public boolean checkDuplicatesInPlace() {
+		if ( hasConflicts ) return true;
+		if ( !hasMatches() ) return false;
+		TreeSet<Integer> skip = new TreeSet<Integer>();
+		for ( int i = 0; i < size(); i++ ) {
+			AproposLabel current = get( i );
+			if ( !current.isMatch() ) continue;
+			if ( skip.contains( i ) ) continue;
+			AproposConflictLabel label = null;
+			for ( int j = i + 1; j < size(); j++ ) {
+				AproposLabel checking = get( j );
+				if ( !checking.isMatch() ) continue;
+				if ( skip.contains( j ) ) continue;
+				if ( label != null ) {
+					int match = Model.fuzzyMatches( label, checking );
+					if ( match < 5 ) {
+						label.addConflict( checking, match );
+						skip.add( j );
+					}
+				}
+				else {
+					int match = Model.fuzzyMatches( current, checking );
+					if ( match < 5 ) {
+						label = new AproposConflictLabel( current );
+						label.addConflict( checking, match );
+						skip.add( j );
+					}
+				}
+			}
+			if ( label != null ) {
+				set( i, label );
+				hasConflicts = true;
+			}
+		}
+		Integer i;
+		while ( ( i = skip.pollLast() ) != null ) {
+			remove( i.intValue() );
 		}
 		return hasConflicts;
 	}
@@ -2090,9 +2131,18 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 	}
 	
 	public boolean checkDuplicates() {
+		if ( hasMatches() ) return checkDuplicatesInPlace();
 		boolean bool = false;
 		for ( AproposLabel key : keySet() ) {
 			bool = get( key ).checkDuplicates() | bool;
+		}
+		return bool;
+	}
+	
+	public boolean checkDuplicatesInPlace() {
+		boolean bool = false;
+		for ( AproposLabel key : keySet() ) {
+			bool = get( key ).checkDuplicatesInPlace() | bool;
 		}
 		return bool;
 	}
@@ -2191,6 +2241,12 @@ interface AproposMap {
 	 * @return true if the map has been modified
 	 */
 	public boolean checkDuplicates();
+	/**
+	 * More memory efficient version of {@link #checkDuplicates()} for use in searches
+	 * 
+	 * @return true if there are conflicts among the matched lines
+	 */
+	public boolean checkDuplicatesInPlace();
 	/**
 	 * Rebuilds the map by deleting any lines marked un-needed and re-merging suspected duplicates back in
 	 */
