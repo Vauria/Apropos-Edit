@@ -57,7 +57,7 @@ public class SidePanel extends JPanel {
 	private JCheckBox rapeCheck;
 	private JButton simulateButton, duplicatesButton;
 	private boolean simulating = false, conflicts = false;
-	private AbstractAction listenVerify, listenSynonyms, listenSearch, listenLoad, listenNWLoad, listenSimulate, listenWrite,
+	private AbstractAction listenVerify, listenSynonyms, listenSearch, listenFixSyns, listenLoad, listenNWLoad, listenSimulate, listenWrite,
 			listenDuplicates, listenCopyNew, listenCopyAppend;
 	private ItemListener listenFolder, listenPosition;
 	
@@ -226,10 +226,10 @@ public class SidePanel extends JPanel {
 		add( fixInfo, c );
 		
 		JButton brokenSynsButton = new JButton( "List Broken Synonyms" );
-		brokenSynsButton.setEnabled( false );
+		brokenSynsButton.addActionListener( listenFixSyns );
 		JLabel brokenSynsInfo = new JLabel( "(?)" );
-		brokenSynsInfo.setToolTipText( "<html>Displays a list of lines which contain a synonym tag (denoted by <br>"
-				+ "a word in all-caps between { and }) that do not have an entry in the <br>" + "synonyms.txt file.</html>" );
+		brokenSynsInfo.setToolTipText( "<html>Displays every line determined to have some issue with its synonyms tags,<br>"
+				+ "along with a suggested replacement.</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.weightx = 1.0;
@@ -483,6 +483,11 @@ public class SidePanel extends JPanel {
 			public void actionPerformed( ActionEvent e ) {
 				SearchDialog dialog = new SearchDialog( parent );
 				dialog.show();
+			}
+		};
+		listenFixSyns = new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				parent.startSearch( new Model.BrokenSynonymsFinder( parent.model.synonyms ) );
 			}
 		};
 		listenLoad = new AbstractAction() {

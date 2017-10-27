@@ -1636,28 +1636,148 @@ public class Model {
 	public static class BrokenSynonymsFinder extends NoFilterSearchTerms {
 		
 		SynonymsMap synonyms;
-		AproposConflictLabel rep;
+		
+		Pattern p = Pattern.compile( "\\{|\\}|([A-Z_0-9]{3,})" );
+		
+		String line;
+		String replacement;
+		int consumed;
+		int openTag;
+		String potentialTag;
+		int potentialStart;
 		
 		public BrokenSynonymsFinder( SynonymsMap synonyms ) {
 			super( "Broken Synonyms" );
 			this.synonyms = synonyms;
+			setLimits( maxAnimations, maxLines / 2 );
+		}
+		
+		public String fixSynonyms( String lineP ) {
+			line = lineP;
+			
+			// Reset Fields
+			replacement = "";
+			consumed = -1;
+			openTag = -1;
+			potentialTag = "";
+			potentialStart = -1;
+			
+			Matcher m = p.matcher( line );
+			
+			while ( m.find() ) {
+				char c = m.group().charAt( 0 );
+				switch ( c ) {
+					case '{':
+						if ( openTag != -1 ) {
+							fixUnclosedOpen();
+							potentialTag = "";
+						}
+						openTag = m.start();
+						break;
+					case '}':
+						int closeTag = m.start();
+						if ( openTag != -1 & !potentialTag.equals( "" ) ) {
+							// We have a complete tag, lets check it
+							potentialTag = '{' + potentialTag + '}';
+							String tag = line.substring( openTag, closeTag + 1 );
+							// Collect all the characters between our last match and this one.
+							if ( consumed + 1 < openTag ) replacement = replacement + line.substring( consumed + 1, openTag );
+							if ( synonyms.containsKey( tag ) ) {
+								// All good!
+								replacement = replacement + tag;
+							}
+							else if ( synonyms.containsKey( potentialTag ) ) {
+								// Stray spaces most likely, lets just ignore them
+								replacement = replacement + potentialTag;
+							}
+							else {
+								// Attempt to correct typos... TODO: that.
+								replacement = replacement + "{UNKNOWN TAG}";
+							}
+							consumed = closeTag;
+						}
+						else if ( openTag == -1 ) {
+							// We're missing an open tag
+							potentialTag = '{' + potentialTag + '}';
+							if ( synonyms.containsKey( potentialTag ) ) {
+								if ( consumed + 1 < potentialStart )
+									replacement = replacement + line.substring( consumed + 1, potentialStart );
+								replacement = replacement + potentialTag;
+								consumed = closeTag;
+							}
+						}
+						else {
+							// We're missing text between the tags
+						}
+						openTag = -1;
+						potentialTag = "";
+						break;
+					default:
+						// Found a string of AllCaps/Snakecase
+						if ( !potentialTag.equals( "" ) ) {
+							if ( openTag == -1 | potentialStart - openTag != 1 ) { // In case the open tag is unrelated
+								// We have a possible tag missing brackets
+								System.out.println( "Tag missing brackets " + potentialTag );
+								fixUnTagged();
+							}
+							else {
+								// We had an unclosed tag and have just run into an unopened tag
+								// Edge cases for days.
+								fixUnclosedOpen();
+								openTag = -1;
+							}
+						}
+						potentialTag = m.group();
+						potentialStart = m.start();
+						break;
+				}
+			}
+			if ( potentialTag.equals( "" ) & openTag != -1 ) {
+				fixUnclosedOpen();
+			}
+			else if ( openTag == -1 ) {
+				fixUnTagged();
+			}
+			
+			replacement = replacement + line.substring( consumed + 1 );
+			
+			return replacement;
+		}
+		
+		private void fixUnTagged() {
+			potentialTag = '{' + potentialTag + '}';
+			potentialTag = '{' + potentialTag + '}';
+			if ( synonyms.containsKey( potentialTag ) ) {
+				// We do have a tag missing brackets
+				if ( consumed + 1 < potentialStart ) replacement = replacement + line.substring( consumed + 1, potentialStart );
+				replacement = replacement + potentialTag;
+				consumed = potentialStart + potentialTag.length() - 3; // The three brackets we added. Look, don't ask
+																		 // questions, off by one errors suck.
+			}
+			else {
+				// Probably just all caps, lets move on
+			}
+		}
+		
+		private void fixUnclosedOpen() {
+			potentialTag = '{' + potentialTag + '}';
+			if ( synonyms.containsKey( potentialTag ) ) {
+				if ( consumed + 1 < openTag - 1 ) replacement = replacement + line.substring( consumed + 1, openTag - 1 );
+				replacement = replacement + potentialTag;
+				consumed = openTag + potentialTag.length() - 2; // The two brackets we added
+			}
 		}
 		
 		public boolean matches( String text ) {
-			Pattern p = Pattern.compile( "\\{|\\}" );
-			Matcher m = p.matcher( text );
-			while ( m.find() ) {
-				String match = m.group();
-				if ( !synonyms.containsKey( match ) ) {
-				return true;
-				}
-			}
-			return false;
+			String replacement = fixSynonyms( text );
+			if ( replacement.equals( text ) ) return false;
+			return true;
 		}
 		
 		public AproposConflictLabel matchReplacement( AproposLabel label ) {
-			AproposConflictLabel ret = rep;
-			rep = null;
+			AproposConflictLabel ret = new AproposConflictLabel( label );
+			ret.addConflict( new AproposLabel( replacement, label.getParentLabel() ), true );
+			ret.setMatch( true );
 			return ret;
 		}
 		
