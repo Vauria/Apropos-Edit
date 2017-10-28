@@ -3,6 +3,7 @@ package com.loverslab.apropos.edit;
 import java.awt.FontMetrics;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -191,7 +192,7 @@ public class Model {
 		try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
 			data = getPerspectives( parent, reader );
 		}
-		catch ( IllegalStateException | MalformedJsonException e ) {
+		catch ( IllegalStateException | MalformedJsonException | EOFException e ) {
 			String message = "Error parsing " + file.getAbsolutePath().replace( db, fs + "db" + fs ) + " (" + e.getMessage() + ")";
 			view.handleException( new IllegalStateException( message, e ) );
 		}

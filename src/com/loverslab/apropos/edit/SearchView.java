@@ -140,10 +140,17 @@ public class SearchView extends JPanel implements DisplayPanelContainer, MouseLi
 	 * @param searchComplete true if there are no futher pages to be loaded
 	 */
 	public void pageComplete( boolean searchComplete ) {
+		boolean noResults = false;
 		synchronized ( currentPage.getTreeLock() ) {
-			setSelected( (JPanel) currentPage.getComponent( 0 ) );
+			if ( currentPage.getComponentCount() == 0 )
+				noResults = true;
+			else
+				setSelected( (JPanel) currentPage.getComponent( 0 ) );
 		}
-		SwingUtilities.invokeLater( new ResetScroll( currentPage.getScrollPane() ) );
+		if ( noResults )
+			view.handleException( new Information( "No Results Found" ) );
+		else
+			SwingUtilities.invokeLater( new ResetScroll( currentPage.getScrollPane() ) );
 		
 		if ( !searchComplete ) {
 			if ( page == pages.size() ) {

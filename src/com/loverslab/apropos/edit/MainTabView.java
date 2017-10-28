@@ -64,7 +64,9 @@ public class MainTabView extends JTabbedPane
 		if ( getTabCount() == 0 ) return false;
 		String title = getTitleAt( getSelectedIndex() );
 		if ( title.contains( "Update Available" ) ) return false;
-		StageMap map = getDisplayPanel().stageMap;
+		DisplayPanel displayPanel = getDisplayPanel();
+		if ( displayPanel == null ) return false;
+		StageMap map = displayPanel.stageMap;
 		return map.size() != 0;
 	}
 	

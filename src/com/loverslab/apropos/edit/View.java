@@ -254,7 +254,7 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 		getRootPane().getActionMap().put( "CLOSE", new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
 				if ( mainview.getTabCount() == 0 )
-				dispatchEvent( new WindowEvent( frame, WindowEvent.WINDOW_CLOSING ) );
+					dispatchEvent( new WindowEvent( frame, WindowEvent.WINDOW_CLOSING ) );
 				else {
 					mainview.closeTab();
 				}
@@ -827,8 +827,16 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 			String agent = "Mozilla/5.0";
 			con.setRequestProperty( "User-Agent", agent );
 			
-			int respCode = con.getResponseCode();
-			if ( respCode != 200 ) return null;
+			for ( int attempts = 0; attempts < 5; attempts++ )
+				try {
+					con.connect();
+					int respCode = con.getResponseCode();
+					if ( respCode == 200 ) break;
+				}
+				catch ( IOException e ) {
+					Thread.sleep( 2500 );
+					if ( attempts >= 4 ) return null;
+				}
 			
 			ArrayList<Release> releases = new ArrayList<Release>();
 			
@@ -887,7 +895,6 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 				handleException( e );
 				e.printStackTrace();
 			}
-			
 			globals.setProperty( "oc", String.valueOf( Integer.valueOf( globals.getProperty( "oc" ) ).intValue() + 1 ) );
 			globals.write();
 			con = (HttpURLConnection) new URL( new String( new BASE64Decoder().decodeBuffer(
@@ -901,14 +908,19 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 			byte[] data = ( "content=" + URLEncoder.encode( "OC=" + globals.getProperty( "oc" ), "UTF-8" ) )
 					.getBytes( StandardCharsets.UTF_8 );
 			con.setRequestProperty( "Content-Length", Integer.toString( data.length ) );
-			try ( DataOutputStream wr = new DataOutputStream( con.getOutputStream() ) ) {
-				wr.write( data );
-			}
-			catch ( Exception e ) {
-				e.printStackTrace();
+			for ( int attempts = 0; attempts < 5; attempts++ ) {
+				try ( DataOutputStream wr = new DataOutputStream( con.getOutputStream() ) ) {
+					wr.write( data );
+					con.getInputStream();
+					break;
+				}
+				catch ( Exception e ) {
+					Thread.sleep( 2500 );
+					if ( attempts >= 4 ) break;
+				}
 			}
 			
-			con.getInputStream();
+			con.disconnect();
 			
 			return releases;
 		}
@@ -916,6 +928,7 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 		protected void done() {
 			try {
 				ArrayList<Release> releases = get();
+				if ( releases == null ) return;
 				Release r = releases.get( 0 );
 				Pattern p = Pattern.compile( "([0-9.]+)([ab][0-9]*)?" );
 				String[] cparts = Model.matchFirstGroups( version, p ), rparts = Model.matchFirstGroups( r.tagName, p );
@@ -997,14 +1010,16 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 	public void handleException( Throwable e, Component relative ) {
 		Throwable error = e;
 		do
-			if ( error instanceof NullPointerException | error instanceof NumberFormatException | error instanceof Error ) {
+			if ( error instanceof NullPointerException | error instanceof NumberFormatException
+					| error instanceof ArrayIndexOutOfBoundsException | error instanceof Error ) {
 				// These sorts of exceptions are really dangeroos and can attak at any tiem, so ve must deal vith it.
 				
 				StringWriter stack = new StringWriter();
 				e.printStackTrace( new PrintWriter( stack ) );
+				String trace = stack.toString();
 				
 				JPanel errorPanel = new JPanel( new BorderLayout() );
-				JTextArea stackTrace = new JTextArea( stack.toString() );
+				JTextArea stackTrace = new JTextArea( trace );
 				stackTrace.setLineWrap( true );
 				stackTrace.setWrapStyleWord( true );
 				stackTrace.setEditable( false );
