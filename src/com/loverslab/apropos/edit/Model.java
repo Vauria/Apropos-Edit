@@ -1696,7 +1696,7 @@ public class Model {
 							else {
 								// Attempt to correct typos... TODO: that.
 								confident = false;
-								replacement = replacement + "{UNKNOWN TAG}";
+								replacement = replacement + "{UNKNOWN_TAG}";
 							}
 							consumed = closeTag;
 						}
