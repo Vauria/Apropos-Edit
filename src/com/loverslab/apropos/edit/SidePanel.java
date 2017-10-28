@@ -12,6 +12,7 @@ import java.awt.event.InputEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -747,7 +748,8 @@ public class SidePanel extends JPanel implements DisplayPanelChangedListener {
 	
 }
 
-class SearchDialog implements ActionListener, ItemListener, DocumentListener {
+@SuppressWarnings("serial")
+class SearchDialog extends AbstractAction implements ItemListener, DocumentListener {
 	
 	private View parent;
 	private UserSearchTerms lastTerms, newTerms;
@@ -845,6 +847,19 @@ class SearchDialog implements ActionListener, ItemListener, DocumentListener {
 		
 		lastTerms = parent.searchHistory.peekFirst();
 		if ( lastTerms != null ) setState( lastTerms );
+		
+		frame.getRootPane().getInputMap( JComponent.WHEN_IN_FOCUSED_WINDOW )
+				.put( KeyStroke.getKeyStroke( KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK, true ), "CLOSE" );
+		frame.getRootPane().getInputMap( JComponent.WHEN_IN_FOCUSED_WINDOW ).put( KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0, true ),
+				"CLOSE" );
+		frame.getRootPane().getActionMap().put( "CLOSE", new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				frame.dispatchEvent( new WindowEvent( frame, WindowEvent.WINDOW_CLOSING ) );
+			}
+		} );
+		frame.getRootPane().getInputMap( JComponent.WHEN_IN_FOCUSED_WINDOW ).put( KeyStroke.getKeyStroke( KeyEvent.VK_ENTER, 0, true ),
+				"CONFIRM" );
+		frame.getRootPane().getActionMap().put( "CONFIRM", this );
 		
 		frame.setContentPane( panel );
 		frame.pack();
