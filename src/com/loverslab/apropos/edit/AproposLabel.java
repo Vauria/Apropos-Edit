@@ -833,6 +833,12 @@ class AproposConflictLabel extends AproposLabel {
 		return match;
 	}
 	
+	public void addInteractionListener( InteractionListener listener ) {
+		super.addInteractionListener( listener );
+		for ( AproposLabel match : matches )
+			match.addInteractionListener( listener );
+	}
+	
 	public String toString() {
 		StringBuilder builder = new StringBuilder( getParentLabel().toString() + " [" );
 		Iterator<AproposLabel> it = matches.iterator();
