@@ -21,11 +21,14 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
@@ -35,8 +38,8 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
-import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
@@ -60,6 +63,8 @@ public class Model {
 	private String[] skip = new String[] { "AnimationPatchups.txt", "Arousal_Descriptors.txt", "Themes.txt", "UniqueAnimations.txt",
 			"WearAndTear_Damage.txt", "WearAndTear_Descriptors.txt", "WearAndTear_Effects.txt", "WearAndTear_Map.txt",
 			"file_layout_scheme.txt" };
+	private String[] searchSkip = Stream.concat( Arrays.stream( skip ), Arrays.stream( new String[] { "Synonyms.txt" } ) )
+			.toArray( String[]::new );
 	//@formatter:off
 	static HashMap<BytePair, String[][]> shiftTable = new HashMap<BytePair, String[][]>() { private static final long serialVersionUID = -7986832642422472332L; {
 		put( new BytePair( 1, 2 ), new String[][] {
@@ -1210,7 +1215,8 @@ public class Model {
 		}
 		
 		public FileVisitResult preVisitDirectory( Path dir, BasicFileAttributes attrs ) throws IOException {
-			if ( !terms.matchesDirectory( dir.getFileName().toString() ) ) return FileVisitResult.SKIP_SUBTREE;
+			String path = dir.toString().replace( db, "" );
+			if ( ! ( dir + fs ).equals( db ) && !terms.matchesDirectory( path ) ) return FileVisitResult.SKIP_SUBTREE;
 			directory = new TreeMap<Path, BasicFileAttributes>( fileSorter );
 			return FileVisitResult.CONTINUE;
 		}
@@ -1220,6 +1226,7 @@ public class Model {
 				FileVisitResult ret = visitOrderedFile( key, directory.get( key ) );
 				if ( ret != FileVisitResult.CONTINUE ) return ret;
 			}
+			directory.clear();
 			return FileVisitResult.CONTINUE;
 		}
 		
@@ -1232,7 +1239,7 @@ public class Model {
 			if ( t.isInterrupted() ) return FileVisitResult.TERMINATE;
 			File file = path.toFile();
 			if ( !file.getName().endsWith( ".txt" ) ) return FileVisitResult.CONTINUE;
-			for ( String str : skip )
+			for ( String str : searchSkip )
 				if ( str.equals( file.getName() ) ) return FileVisitResult.CONTINUE;
 			AproposLabel stagelabel = stageLabelFromFile( file );
 			if ( positionlabel != null ) {
@@ -1277,25 +1284,32 @@ public class Model {
 		
 		public FileVisitResult publishStageMap() {
 			if ( positionlabel != null ) {
-				hitAnimations++ ;
-				int pAnims = ( hitAnimations * 100 ) / ( terms.maxAnimations * page );
-				int pLines = ( hitLines * 100 ) / ( terms.maxLines * page );
-				int progress = Math.max( pAnims, pLines );
-				SwingUtilities.invokeLater( new UpdateProgress( Math.min( progress, 100 ) ) );
-				SwingUtilities.invokeLater( new PublishStageMap( currentmap ) );
-				positionlabel = null;
-				currentmap = null;
-				if ( progress >= 100 ) {
-					SwingUtilities.invokeLater( new PublishPage( false ) );
-					try {
-						synchronized ( this ) {
-							this.wait();
+				if ( terms.prePublishCheck( currentmap ) ) {
+					hitAnimations++ ;
+					int pAnims = ( hitAnimations * 100 ) / ( terms.maxAnimations * page );
+					int pLines = ( hitLines * 100 ) / ( terms.maxLines * page );
+					int progress = Math.max( pAnims, pLines );
+					SwingUtilities.invokeLater( new UpdateProgress( Math.min( progress, 100 ) ) );
+					SwingUtilities.invokeLater( new PublishStageMap( currentmap ) );
+					positionlabel = null;
+					currentmap = null;
+					if ( progress >= 100 ) {
+						SwingUtilities.invokeLater( new PublishPage( false ) );
+						try {
+							synchronized ( this ) {
+								this.wait();
+							}
+							page++ ;
 						}
-						page++ ;
+						catch ( InterruptedException e ) {
+							return FileVisitResult.TERMINATE;
+						}
 					}
-					catch ( InterruptedException e ) {
-						return FileVisitResult.TERMINATE;
-					}
+				}
+				else {
+					hitLines -= currentmap.size();
+					positionlabel = null;
+					currentmap = null;
 				}
 			}
 			return FileVisitResult.CONTINUE;
@@ -1447,18 +1461,56 @@ public class Model {
 		 */
 		public abstract AproposConflictLabel matchReplacement( AproposLabel label );
 		
+		/**
+		 * Optional method that allows manipulation and verification of the stagemap of matches before it is published
+		 * 
+		 * @param map
+		 * @return
+		 */
+		public boolean prePublishCheck( StageMap map ) {
+			return true;
+		}
+		
 	}
 	
-	public static abstract class UserSearchTerms extends SearchTerms implements Serializable {
+	public static abstract class FileFilterSearchTerms extends SearchTerms {
+		
+		String pathSub = "";
+		
+		public FileFilterSearchTerms() {
+			super();
+		}
+		public FileFilterSearchTerms( String name ) {
+			super( name );
+		}
+		public void setPathSub( String pathSub ) {
+			this.pathSub = pathSub;
+		}
+		public boolean matchesPerspective( AproposLabel perslabel ) {
+			return true;
+		}
+		public boolean matchesDirectory( String dirname ) {
+			return pathSub == null || dirname.contains( pathSub );
+		}
+		public boolean matchesStage( AproposLabel stagelabel ) {
+			return true;
+		}
+		
+	}
+	
+	public static abstract class UserSearchTerms extends FileFilterSearchTerms implements Serializable {
 		
 		private static final long serialVersionUID = -4581630134768413310L;
+		transient AproposLabel lowerBound, upperBound;
 		boolean first = true, second = true, third = true;
-		int searchMode = 0, rapeMode = 2;
+		int searchMode = 0, rapeMode = 2, lowerBoundInt = 0, upperBoundInt = 6;
 		String search;
 		boolean caseSens;
-		private String[] searchModes = new String[] { "Simple", "Whole Word", "Regex" };
-		private String[] rapeModes = new String[] { "No Rape", "Rape Only", "" };
-		private String[] perModes = new String[] { "", "1st Only", "2nd Only", "No 3rd", "3rd Only", "No 2nd", "No 1st", "" };
+		private static final String[] searchModes = new String[] { "Simple", "Whole Word", "Regex" };
+		private static final String[] rapeModes = new String[] { "No Rape", "Rape Only", "" };
+		private static final String[] perModes = new String[] { "", "1st Only", "2nd Only", "No 3rd", "3rd Only", "No 2nd", "No 1st", "" };
+		public static final String[] stageValues = new String[] { "Intro", "Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5+",
+				"Orgasm" };
 		
 		/**
 		 * An extension of SearchTerms to provide more methods for constructing and deconstructing SearchTerm objects
@@ -1467,6 +1519,18 @@ public class Model {
 		 */
 		public UserSearchTerms() {
 			super();
+		}
+		
+		public void setStages( int lower, int upper ) {
+			AproposLabel parent = new AproposLabel( "Position", new AproposLabel( "Folder", new AproposLabel( "Database", null ) ) );
+			lowerBoundInt = lower;
+			upperBoundInt = upper;
+			String lowerBound = stageValues[lower];
+			String upperBound = stageValues[upper];
+			if ( lowerBound.equals( "Stage 5+" ) ) lowerBound = "Stage 5";
+			if ( upperBound.equals( "Stage 5+" ) ) upperBound = "Stage 999";
+			this.lowerBound = new AproposLabel( lowerBound, parent );
+			this.upperBound = new AproposLabel( upperBound, parent );
 		}
 		
 		/**
@@ -1533,11 +1597,13 @@ public class Model {
 		
 		public boolean matchesDirectory( String dirname ) {
 			// TODO: Add Support for Themes/Uniques/Stuff
-			return true;
+			return super.matchesDirectory( dirname );
 		}
 		
 		public boolean matchesStage( AproposLabel stagelabel ) {
-			return matchesRape( stagelabel.getParentLabel().getText().contains( "_Rape" ) );
+			boolean matchesStage = stagelabel.compareEquals( lowerBound ) >= 0 && stagelabel.compareEquals( upperBound ) <= 0;
+			boolean matchesRape = matchesRape( stagelabel.getParentLabel().getText().contains( "_Rape" ) );
+			return matchesStage && matchesRape;
 		}
 		
 		public AproposConflictLabel matchReplacement( AproposLabel label ) {
@@ -1575,31 +1641,48 @@ public class Model {
 	
 	public static class SimpleUserSearchTerms extends UserSearchTerms {
 		private static final long serialVersionUID = 7921686259569421410L;
+		private String realSearch;
 		
 		public SimpleUserSearchTerms() {
 			super();
 			searchMode = 0;
 		}
+		public void setSearchString( String str ) {
+			super.setSearchString( str );
+			if ( !caseSens )
+				realSearch = search.toLowerCase();
+			else
+				realSearch = search;
+		}
 		public boolean matches( String text ) {
-			if ( !caseSens ) {
-				text = text.toLowerCase();
-				search = search.toLowerCase();
-			}
-			return text.matches( "^.*" + Pattern.quote( search ) + ".*$" );
+			if ( !caseSens ) text = text.toLowerCase();
+			return text.matches( "^.*" + Pattern.quote( realSearch ) + ".*$" );
 		}
 	}
 	
 	public static class WWordUserSearchTerms extends UserSearchTerms {
 		private static final long serialVersionUID = -6481315721704786126L;
+		private String[] words;
+		private String bound = "( |\\p{Punct})";
 		
 		public WWordUserSearchTerms() {
 			super();
 			searchMode = 1;
 		}
+		public void setSearchString( String str ) {
+			if ( !caseSens ) str = str.toLowerCase();
+			words = str.split( "\\|" );
+			for ( int i = 0; i < words.length; i++ ) {
+				words[i] = Pattern.quote( words[i] ).replaceAll( "\\*", "\\\\E.\\\\Q" );
+			}
+			search = str;
+		}
 		public boolean matches( String text ) {
-			if ( !caseSens ) {
-				text = text.toLowerCase();
-				search = search.toLowerCase();
+			if ( !caseSens ) text = text.toLowerCase();
+			for ( int i = 0; i < words.length; i++ ) {
+				if ( text.matches( "^" + words[i] + bound + ".*$" ) | text.matches( "^.*" + bound + words[i] + bound + ".*$" )
+						| text.matches( "^.*" + bound + words[i] + "$" ) )
+					return true;
 			}
 			return false;
 		}
@@ -1618,24 +1701,7 @@ public class Model {
 		}
 	}
 	
-	public static abstract class NoFilterSearchTerms extends SearchTerms {
-		
-		public NoFilterSearchTerms( String name ) {
-			super( name );
-		}
-		public boolean matchesPerspective( AproposLabel perslabel ) {
-			return true;
-		}
-		public boolean matchesDirectory( String dirname ) {
-			return true;
-		}
-		public boolean matchesStage( AproposLabel stagelabel ) {
-			return true;
-		}
-		
-	}
-	
-	public static class BrokenSynonymsFinder extends NoFilterSearchTerms {
+	public static class BrokenSynonymsFinder extends FileFilterSearchTerms {
 		
 		SynonymsMap synonyms;
 		
@@ -1784,6 +1850,110 @@ public class Model {
 			rep.setMatch( true );
 			ret.addConflict( rep, true );
 			return ret;
+		}
+		
+	}
+	
+	public static class SynonymsSuggester extends FileFilterSearchTerms {
+		
+		SynonymsMap synonyms;
+		String replacement;
+		
+		public SynonymsSuggester( SynonymsMap synonyms ) {
+			super( "Synonyms Suggestions" );
+			setLimits( maxAnimations, maxLines / 2 );
+			this.synonyms = synonyms;
+		}
+		
+		public boolean matches( String text ) {
+			replacement = " " + text + " ";
+			for ( String key : synonyms.keySet() ) {
+				for ( String synonym : synonyms.get( key ) ) {
+					replacement = replacement.replaceAll( "( |\\p{Punct})" + Pattern.quote( synonym ) + "( |\\p{Punct})",
+							"$1" + key + "$2" );
+				}
+			}
+			replacement = replacement.replaceAll( "^ (.*) $", "$1" );
+			if ( text.equals( replacement ) ) return false;
+			return true;
+		}
+		
+		public AproposConflictLabel matchReplacement( AproposLabel label ) {
+			AproposConflictLabel ret = new AproposConflictLabel( label );
+			AproposLabel rep = new AproposLabel( replacement, label.getParentLabel() );
+			rep.setMatch( true );
+			ret.addConflict( rep, true );
+			return ret;
+		}
+		
+	}
+	
+	public static class DupeFinder extends FileFilterSearchTerms {
+		
+		public DupeFinder() {
+			super( "Duplicate Lines" );
+			setLimits( maxAnimations / 2, maxLines * 16 );
+		}
+		
+		public boolean matches( String text ) {
+			return true;
+		}
+		
+		public AproposConflictLabel matchReplacement( AproposLabel label ) {
+			return null;
+		}
+		
+		public boolean prePublishCheck( StageMap map ) {
+			for ( AproposLabel line : map ) {
+				line.setMatch( false );
+			}
+			map.resetMatches();
+			boolean dupes = map.checkDuplicates();
+			if ( dupes ) {
+				LinkedList<AproposLabel> remove = new LinkedList<AproposLabel>();
+				for ( AproposLabel stage : map.keySet() ) {
+					PerspectiveMap perspectiveMap = map.get( stage );
+					if ( perspectiveMap.isConflicted() )
+						for ( AproposLabel perspec : perspectiveMap.keySet() ) {
+							LabelList labelList = perspectiveMap.get( perspec );
+							if ( labelList.isConflicted() ) for ( AproposLabel line : labelList ) {
+								AproposConflictLabel conLab = (AproposConflictLabel) line;
+								if ( conLab.matches() > 1 ) {
+									conLab.setMatch( true );
+								}
+							}
+						}
+					else {
+						remove.add( stage );
+					}
+				}
+				for ( AproposLabel key : remove )
+					map.remove( key );
+				map.resetMatches();
+			}
+			return dupes;
+		}
+		
+	}
+	
+	public static class LongLineFinder extends FileFilterSearchTerms {
+		
+		private SynonymsLengthMap synonymsLength;
+		private float cutoff;
+		
+		public LongLineFinder( SynonymsLengthMap synonymsLength, float per ) {
+			super( "Long Lines" );
+			this.synonymsLength = synonymsLength;
+			this.cutoff = per;
+		}
+		
+		public boolean matches( String text ) {
+			float per = AproposLabel.getWarningPer( synonymsLength, text );
+			return per >= cutoff;
+		}
+		
+		public AproposConflictLabel matchReplacement( AproposLabel label ) {
+			return null;
 		}
 		
 	}
@@ -1993,6 +2163,10 @@ class LabelList extends ArrayList<AproposLabel> implements AproposMap {
 		this.hasConflicts = hasConflicts;
 	}
 	
+	public void resetMatches() {
+		hasMatches = null;
+	}
+	
 	public boolean hasMatches() {
 		if ( hasMatches != null ) return hasMatches;
 		boolean bool = false;
@@ -2131,6 +2305,40 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 		return firstEntry().getValue().firstLine();
 	}
 	
+	public Iterator<AproposLabel> iterator() {
+		return new Linerator();
+	}
+	
+	private class Linerator implements Iterator<AproposLabel> {
+		
+		Iterator<AproposLabel> keys;
+		Iterator<AproposLabel> next;
+		
+		public boolean hasNext() {
+			if ( keys == null ) {
+				keys = keySet().iterator();
+				if ( hasNext() ) {
+					next = get( keys.next() ).iterator();
+					return true;
+				}
+				else
+					return false;
+			}
+			return keys.hasNext() || next.hasNext();
+		}
+		
+		public AproposLabel next() {
+			boolean hasNext = next.hasNext();
+			if ( !hasNext ) {
+				next = get( keys.next() ).iterator();
+				return next();
+			}
+			AproposLabel next2 = next.next();
+			return next2;
+		}
+		
+	}
+	
 	public boolean checkDuplicates() {
 		if ( hasMatches() ) return checkDuplicatesInPlace();
 		boolean bool = false;
@@ -2161,6 +2369,12 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 			if ( bool ) break;
 		}
 		return bool;
+	}
+	
+	public void resetMatches() {
+		hasMatches = null;
+		for ( AproposLabel key : keySet() )
+			get( key ).resetMatches();
 	}
 	
 	public boolean hasMatches() {
@@ -2219,7 +2433,7 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 	}
 }
 
-interface AproposMap {
+interface AproposMap extends Iterable<AproposLabel> {
 	/**
 	 * @return Total Number of lines in the Map.
 	 */
@@ -2260,6 +2474,10 @@ interface AproposMap {
 	 * @return true if any of the submaps have matches
 	 */
 	public boolean hasMatches();
+	/**
+	 * To be used if lines have manually had their match state adjusted, allows the entire match to be rechecked
+	 */
+	public void resetMatches();
 	/**
 	 * @return This map represented in JSON
 	 * @throws IOException
@@ -2539,8 +2757,7 @@ class SynonymsLengthMap implements Serializable {
 	public final int max;
 	
 	public SynonymsLengthMap( SynonymsMap synonyms ) {
-		JLabel swingFont = new JLabel();
-		FontMetrics metrics = swingFont.getFontMetrics( swingFont.getFont() );
+		FontMetrics metrics = AproposLabel.metrics;
 		max = metrics.stringWidth( "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM" ); // The Holy String of
 																														 // 78 M's
 		for ( String key : synonyms.keySet() ) {

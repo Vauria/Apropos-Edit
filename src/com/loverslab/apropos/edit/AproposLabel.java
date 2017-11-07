@@ -59,6 +59,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	JTextArea textField;
 	SynonymsLengthMap synonymsLength;
 	private boolean displayed, hoverState, simulateState, highlighted, matched = false;
+	static FontMetrics metrics = new JLabel().getFontMetrics( new JLabel().getFont() );
 	
 	/**
 	 * Creates a non-displayable AproposLabel with the given parent and given text
@@ -521,7 +522,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		}
 	}
 	
-	public Color getWarningColor( String text ) {
+	public static float getWarningPer( SynonymsLengthMap synonymsLength, String text ) {
 		int min = 0, max = 0, ub = synonymsLength.max;
 		for ( String key : synonymsLength.keySet() ) {
 			int l = text.length();
@@ -533,12 +534,18 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 				max += mm.max * diff;
 			}
 		}
-		int remaining = label.getFontMetrics( label.getFont() ).stringWidth( text );
+		int remaining = metrics.stringWidth( text );
 		min += remaining;
 		max += remaining;
-		if ( max < ub ) return null;
-		if ( min > ub ) return Color.RED;
+		if ( max < ub ) return Float.NaN;
+		if ( min > ub ) return 1f;
 		float per = ( 1f + (float) ( ( max - ub ) - ( ub - min ) ) / (float) ( max - min ) ) / 2f;
+		return per;
+	}
+	
+	public Color getWarningColor( String text ) {
+		float per = getWarningPer( synonymsLength, text );
+		if ( per != per ) return null;
 		Color c = new Color( 1f, 1 - per, 0f );
 		return c;
 	}
@@ -713,6 +720,15 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 			return (int) Math.signum( odepth - ldepth );
 	}
 	
+	public int compareEquals( AproposLabel o ) {
+		if ( o == null ) return 1;
+		String lstr = getText(), ostr = o.getText();
+		if ( lstr.equals( ostr ) )
+			return 0;
+		else
+			return compareTo( o );
+	}
+	
 }
 
 @SuppressWarnings("serial")
@@ -824,6 +840,11 @@ class AproposConflictLabel extends AproposLabel {
 		return;
 	}
 	
+	public void setMatch( boolean b ) {
+		for ( AproposLabel l : matches )
+			l.setMatch( b );
+	}
+	
 	public boolean isMatch() {
 		boolean match = false;
 		for ( AproposLabel l : matches ) {
@@ -831,6 +852,10 @@ class AproposConflictLabel extends AproposLabel {
 			if ( match ) break;
 		}
 		return match;
+	}
+	
+	public int matches() {
+		return matches.size();
 	}
 	
 	public void addInteractionListener( InteractionListener listener ) {

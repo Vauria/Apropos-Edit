@@ -1011,7 +1011,7 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 		Throwable error = e;
 		do
 			if ( error instanceof NullPointerException | error instanceof NumberFormatException
-					| error instanceof ArrayIndexOutOfBoundsException | error instanceof Error ) {
+					| error instanceof ArrayIndexOutOfBoundsException | error instanceof ClassCastException | error instanceof Error ) {
 				// These sorts of exceptions are really dangeroos and can attak at any tiem, so ve must deal vith it.
 				
 				StringWriter stack = new StringWriter();

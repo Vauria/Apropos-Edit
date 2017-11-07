@@ -1,11 +1,14 @@
 package com.loverslab.apropos.edit;
 
+import java.awt.AWTKeyStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
@@ -13,6 +16,8 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -32,17 +37,26 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JRootPane;
 import javax.swing.JSeparator;
+import javax.swing.JSlider;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.Timer;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import com.loverslab.apropos.edit.Model.FileFilterSearchTerms;
 import com.loverslab.apropos.edit.Model.RegexUserSearchTerms;
 import com.loverslab.apropos.edit.Model.SimpleUserSearchTerms;
 import com.loverslab.apropos.edit.Model.UserSearchTerms;
 import com.loverslab.apropos.edit.Model.WWordUserSearchTerms;
+
+import ernieyu.slider.RangeSlider;
 
 /**
  * Left Side Panel to hold all buttons and options for interacting with the database or an animation.
@@ -58,8 +72,8 @@ public class SidePanel extends JPanel implements DisplayPanelChangedListener {
 	private JCheckBox rapeCheck;
 	private JButton simulateButton, duplicatesButton;
 	private boolean simulating = false, conflicts = false;
-	private AbstractAction listenVerify, listenSynonyms, listenSearch, listenFixSyns, listenLoad, listenNWLoad, listenSimulate, listenWrite,
-			listenDuplicates, listenCopyNew, listenCopyAppend;
+	private AbstractAction listenVerify, listenSynonyms, listenSearch, listenSpecialSearch, listenLoad, listenNWLoad, listenSimulate,
+			listenWrite, listenDuplicates, listenCopyNew, listenCopyAppend;
 	private ItemListener listenFolder, listenPosition;
 	
 	public SidePanel( View parent ) {
@@ -222,29 +236,11 @@ public class SidePanel extends JPanel implements DisplayPanelChangedListener {
 		c.gridx++ ;
 		add( searchInfo, c );
 		
-		JButton fixButton = new JButton( "Fix Comma Errors" );
-		fixButton.setEnabled( false );
-		JLabel fixInfo = new JLabel( "(?)" );
-		fixInfo.setToolTipText( "<html>Reads the entire database and attempts to fix simple missing or extra<br>"
-				+ "comma errors. Will report any files that could not be automatically fixed, which<br>"
-				+ "will need to be repaired manually outside the Apropos Editor</html>" );
-		c.anchor = GridBagConstraints.FIRST_LINE_START;
-		c.insets = insButton;
-		c.weightx = 1.0;
-		c.gridy++ ;
-		c.gridx = 0;
-		add( fixButton, c );
-		c.anchor = GridBagConstraints.LINE_START;
-		c.insets = insHelp;
-		c.weightx = 0;
-		c.gridx++ ;
-		add( fixInfo, c );
-		
-		JButton brokenSynsButton = new JButton( "List Broken Synonyms" );
-		brokenSynsButton.addActionListener( listenFixSyns );
+		JButton brokenSynsButton = new JButton( "Special Searches" );
+		brokenSynsButton.addActionListener( listenSpecialSearch );
 		JLabel brokenSynsInfo = new JLabel( "(?)" );
-		brokenSynsInfo.setToolTipText( "<html>Displays every line determined to have some issue with its synonyms tags,<br>"
-				+ "along with a suggested replacement.</html>" );
+		brokenSynsInfo.setToolTipText( "<html>Provides access to a number of custom searches, designed to<br>"
+				+ "aid in maintaining and cleaning up your database.</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.weightx = 1.0;
@@ -265,17 +261,24 @@ public class SidePanel extends JPanel implements DisplayPanelChangedListener {
 				+ "to add new tags to an existing database's synonyms file and want existing<br>"
 				+ "animation files to take advantage of the new tags. Will take a long time to<br>"
 				+ "search the entire database, but will return editable lines as they are found.</html>" );
+		
+		JButton fixButton = new JButton( "Fix Comma Errors" );
+		fixButton.setEnabled( false );
+		JLabel fixInfo = new JLabel( "(?)" );
+		fixInfo.setToolTipText( "<html>Reads the entire database and attempts to fix simple missing or extra<br>"
+				+ "comma errors. Will report any files that could not be automatically fixed, which<br>"
+				+ "will need to be repaired manually outside the Apropos Editor</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.weightx = 1.0;
 		c.gridy++ ;
 		c.gridx = 0;
-		add( suggestSynsButton, c );
+		add( fixButton, c );
 		c.anchor = GridBagConstraints.LINE_START;
 		c.insets = insHelp;
 		c.weightx = 0;
 		c.gridx++ ;
-		add( suggestSynsInfo, c );
+		add( fixInfo, c );
 	}
 	
 	/**
@@ -500,9 +503,10 @@ public class SidePanel extends JPanel implements DisplayPanelChangedListener {
 				dialog.show();
 			}
 		};
-		listenFixSyns = new AbstractAction() {
+		listenSpecialSearch = new AbstractAction() {
 			public void actionPerformed( ActionEvent e ) {
-				parent.startSearch( new Model.BrokenSynonymsFinder( parent.model.synonyms ) );
+				SpecialSearchDialog dialog = new SpecialSearchDialog( parent );
+				dialog.show();
 			}
 		};
 		listenLoad = new AbstractAction() {
@@ -749,17 +753,21 @@ public class SidePanel extends JPanel implements DisplayPanelChangedListener {
 }
 
 @SuppressWarnings("serial")
-class SearchDialog extends AbstractAction implements ItemListener, DocumentListener {
+class SearchDialog extends AbstractAction implements ItemListener, DocumentListener, ChangeListener {
 	
 	private View parent;
 	private UserSearchTerms lastTerms, newTerms;
 	private JFrame frame;
-	private JTextField searchField;
-	private JLabel regexError;
+	private JTextField searchField, filterPath;
+	private JLabel searchDescription, filterStageLabel;
 	private JRadioButton searchModeSimple, searchModeWWord, searchModeRegex;
 	private JCheckBox caseSens;
 	private JCheckBox filterPersp1, filterPersp2, filterPersp3;
 	private JRadioButton filterNoRape, filterOnlyRape, filterRapeBoth;
+	private RangeSlider filterStageLimits;
+	private static String[] filterStageValues = Model.UserSearchTerms.stageValues;
+	private static String[] searchDescriptions = new String[] { "Searches for the literal string given",
+			"Searches for words, | seperating them and * as wildcard", "Provides the full power of Java's Pattern engine" };
 	
 	public SearchDialog( View parent ) {
 		this.parent = parent;
@@ -775,11 +783,13 @@ class SearchDialog extends AbstractAction implements ItemListener, DocumentListe
 		GridBagConstraints c = new GridBagConstraints();
 		
 		searchField = new JTextField();
-		regexError = new JLabel();
-		regexError.setForeground( Color.RED );
-		regexError.setBorder( BorderFactory.createEmptyBorder( 1, 1, 1, 1 ) );
+		searchField.addActionListener( this );
+		searchDescription = new JLabel();
+		searchDescription.setBorder( BorderFactory.createEmptyBorder( 1, 1, 1, 1 ) );
 		searchModeSimple = new JRadioButton( "Simple" );
+		searchModeSimple.addItemListener( this );
 		searchModeWWord = new JRadioButton( "Whole Word" );
+		searchModeWWord.addItemListener( this );
 		searchModeRegex = new JRadioButton( "Regex" );
 		searchModeRegex.addItemListener( this );
 		ButtonGroup searchBG = new ButtonGroup();
@@ -789,8 +799,18 @@ class SearchDialog extends AbstractAction implements ItemListener, DocumentListe
 		caseSens = new JCheckBox( "Case Sensitive", true );
 		searchModeSimple.setSelected( true );
 		
-		searchField.addActionListener( this );
-		
+		filterPath = new JTextField();
+		filterPath.addActionListener( this );
+		JTextArea pathFilterDesc = new JTextArea();
+		pathFilterDesc.setText( "If text is entered here, animation names and folders will be checked before"
+				+ " opening, allowing you to limit the search to a subset of files, like a new unique animation"
+				+ " or just FemaleActor_Male, for example." );
+		pathFilterDesc.setEditable( false );
+		pathFilterDesc.setFont( searchDescription.getFont() );
+		pathFilterDesc.setBackground( searchDescription.getBackground() );
+		pathFilterDesc.setWrapStyleWord( true );
+		pathFilterDesc.setLineWrap( true );
+		pathFilterDesc.setRows( 4 );
 		filterPersp1 = new JCheckBox( "1st Person", true );
 		filterPersp2 = new JCheckBox( "2nd Person", true );
 		filterPersp3 = new JCheckBox( "3rd Person", true );
@@ -802,17 +822,23 @@ class SearchDialog extends AbstractAction implements ItemListener, DocumentListe
 		rapeBG.add( filterOnlyRape );
 		rapeBG.add( filterRapeBoth );
 		filterRapeBoth.setSelected( true );
+		filterStageLabel = new JLabel();
+		filterStageLabel.setHorizontalAlignment( JLabel.CENTER );
+		filterStageLimits = new RangeSlider( 0, 6 );
+		filterStageLimits.setValue( 0 );
+		filterStageLimits.addChangeListener( this ); // Add the listener between set events so it only fires once c:
+		filterStageLimits.setUpperValue( 6 );
 		
 		c.anchor = GridBagConstraints.NORTH;
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.weightx = 1.0;
-		c.weighty = 0;
+		c.weighty = 1.0;
 		c.gridwidth = 4;
 		c.gridy = 0;
 		c.gridx = 0;
 		termsPanel.add( searchField, c );
 		c.gridy++ ;
-		termsPanel.add( regexError, c );
+		termsPanel.add( searchDescription, c );
 		c.gridy++ ;
 		c.gridwidth = 1;
 		termsPanel.add( searchModeSimple, c );
@@ -826,21 +852,43 @@ class SearchDialog extends AbstractAction implements ItemListener, DocumentListe
 		c = new GridBagConstraints();
 		
 		c.anchor = GridBagConstraints.NORTHWEST;
+		c.fill = GridBagConstraints.BOTH;
+		c.weightx = 1.0;
+		c.weighty = 1.0;
 		c.gridy = 0;
 		c.gridx = 0;
-		// c.weightx = 1.0;
+		c.gridwidth = 4;
+		filterPanel.add( pathFilterDesc, c );
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.weighty = 0;
+		c.weightx = 1.0;
+		c.gridy++ ;
+		filterPanel.add( filterPath, c );
+		c.weightx = 0;
+		c.gridwidth = 1;
+		c.gridy++ ;
 		filterPanel.add( filterPersp1, c );
 		c.gridy++ ;
 		filterPanel.add( filterPersp2, c );
 		c.gridy++ ;
 		filterPanel.add( filterPersp3, c );
-		c.gridy = 0;
+		c.gridy = 2;
 		c.gridx++ ;
 		filterPanel.add( filterNoRape, c );
 		c.gridy++ ;
 		filterPanel.add( filterOnlyRape, c );
 		c.gridy++ ;
 		filterPanel.add( filterRapeBoth, c );
+		c.insets = new Insets( 1, 0, 0, 0 );
+		c.anchor = GridBagConstraints.CENTER;
+		c.gridy = 2;
+		c.gridx++ ;
+		c.gridwidth = 2;
+		c.weightx = 1.0;
+		filterPanel.add( filterStageLimits, c );
+		c.insets = new Insets( 0, 0, 0, 0 );
+		c.gridy++ ;
+		filterPanel.add( filterStageLabel, c );
 		
 		panel.add( termsPanel, BorderLayout.NORTH );
 		panel.add( filterPanel, BorderLayout.WEST );
@@ -862,16 +910,17 @@ class SearchDialog extends AbstractAction implements ItemListener, DocumentListe
 		frame.getRootPane().getActionMap().put( "CONFIRM", this );
 		
 		frame.setContentPane( panel );
-		frame.pack();
 	}
 	
 	public void show() {
+		// frame.setSize( 600, 300 );
+		frame.pack();
 		frame.setLocationRelativeTo( parent );
 		frame.setVisible( true );
 	}
 	
 	public void actionPerformed( ActionEvent e ) {
-		if ( searchModeRegex.isSelected() & !regexError.getText().equals( "" ) ) {
+		if ( searchModeRegex.isSelected() && searchDescription.getForeground().equals( Color.RED ) ) {
 			final Timer timer = new Timer( 70, null );
 			timer.addActionListener( new ActionListener() {
 				int flashed = 0;
@@ -879,9 +928,9 @@ class SearchDialog extends AbstractAction implements ItemListener, DocumentListe
 				public void actionPerformed( ActionEvent e ) {
 					flashed++ ;
 					if ( flashed % 2 == 1 )
-						regexError.setBorder( BorderFactory.createMatteBorder( 1, 1, 1, 1, Color.RED ) );
+						searchDescription.setBorder( BorderFactory.createMatteBorder( 1, 1, 1, 1, Color.RED ) );
 					else
-						regexError.setBorder( BorderFactory.createEmptyBorder( 1, 1, 1, 1 ) );
+						searchDescription.setBorder( BorderFactory.createEmptyBorder( 1, 1, 1, 1 ) );
 					if ( flashed == 6 ) timer.stop();
 				}
 			} );
@@ -899,15 +948,20 @@ class SearchDialog extends AbstractAction implements ItemListener, DocumentListe
 	 * Regex Selected Listener
 	 */
 	public void itemStateChanged( ItemEvent e ) {
-		switch ( e.getStateChange() ) {
+		if ( e.getSource() == searchModeRegex ) switch ( e.getStateChange() ) {
 			case ItemEvent.SELECTED:
 				searchField.getDocument().addDocumentListener( this );
 				fieldChanged();
 				break;
 			case ItemEvent.DESELECTED:
 				searchField.getDocument().removeDocumentListener( this );
-				regexError.setText( "" );
 				break;
+		}
+		switch ( e.getStateChange() ) {
+			case ItemEvent.SELECTED:
+				int searchMode = searchModeSimple.isSelected() ? 0 : ( searchModeWWord.isSelected() ? 1 : 2 );
+				searchDescription.setText( searchDescriptions[searchMode] );
+				
 		}
 	}
 	
@@ -915,11 +969,13 @@ class SearchDialog extends AbstractAction implements ItemListener, DocumentListe
 		String regex = searchField.getText();
 		try {
 			Pattern.compile( regex );
-			regexError.setText( "" );
+			searchDescription.setText( searchDescriptions[2] );
+			searchDescription.setForeground( Color.BLACK );
 		}
 		catch ( PatternSyntaxException e ) {
 			String error = e.getLocalizedMessage();
-			regexError.setText( error );
+			searchDescription.setText( error );
+			searchDescription.setForeground( Color.RED );
 		}
 	}
 	
@@ -930,6 +986,11 @@ class SearchDialog extends AbstractAction implements ItemListener, DocumentListe
 		fieldChanged();
 	}
 	public void changedUpdate( DocumentEvent e ) {}
+	
+	public void stateChanged( ChangeEvent e ) {
+		filterStageLabel
+				.setText( filterStageValues[filterStageLimits.getValue()] + " - " + filterStageValues[filterStageLimits.getUpperValue()] );
+	}
 	
 	private void setState( UserSearchTerms terms ) {
 		searchField.setText( terms.search );
@@ -945,6 +1006,7 @@ class SearchDialog extends AbstractAction implements ItemListener, DocumentListe
 				break;
 		}
 		caseSens.setSelected( terms.caseSens );
+		filterPath.setText( terms.pathSub );
 		filterPersp1.setSelected( terms.first );
 		filterPersp2.setSelected( terms.second );
 		filterPersp3.setSelected( terms.third );
@@ -959,6 +1021,8 @@ class SearchDialog extends AbstractAction implements ItemListener, DocumentListe
 				filterRapeBoth.setSelected( true );
 				break;
 		}
+		filterStageLimits.setValue( terms.lowerBoundInt );
+		filterStageLimits.setUpperValue( terms.upperBoundInt );
 	}
 	
 	private UserSearchTerms getTerms() {
@@ -978,11 +1042,202 @@ class SearchDialog extends AbstractAction implements ItemListener, DocumentListe
 		}
 		terms.caseSens = caseSens.isSelected();
 		terms.setSearchString( searchField.getText() );
+		terms.setPathSub( filterPath.getText() );
+		terms.setStages( filterStageLimits.getValue(), filterStageLimits.getUpperValue() );
 		terms.setRapes( filterNoRape.isSelected(), filterOnlyRape.isSelected(), filterRapeBoth.isSelected() );
 		terms.setPerspectives( filterPersp1.isSelected(), filterPersp2.isSelected(), filterPersp3.isSelected() );
 		terms.generateName();
 		
 		return terms;
+	}
+	
+}
+
+@SuppressWarnings("serial")
+class SpecialSearchDialog extends AbstractAction {
+	
+	View view;
+	JFrame frame;
+	JTabbedPane tabbedPane;
+	JSlider lengthSlider;
+	JTextField pathFilterField;
+	
+	public SpecialSearchDialog( View parent ) {
+		view = parent;
+		frame = new JFrame( "Special Search" );
+		JPanel panel = new JPanel( new BorderLayout() );
+		tabbedPane = new JTabbedPane();
+		tabbedPane.setBorder( BorderFactory.createCompoundBorder( BorderFactory.createEmptyBorder( 10, 5, 2, 5 ),
+				BorderFactory.createRaisedBevelBorder() ) );
+		
+		GridBagConstraints c;
+		JLabel description;
+		
+		JPanel brokenSyns = new JPanel( new GridBagLayout() );
+		description = new JLabel();
+		description.setText( "<html>Searches for anything suspected to be a synonym tag, but isn't functional "
+				+ "either due to missing brackets, typos, or a missing definition for that "
+				+ "synonym. Will attempt to suggest a correct replacement.</html>" );
+		c = new GridBagConstraints();
+		c.anchor = GridBagConstraints.NORTHWEST;
+		c.insets = new Insets( 3, 3, 3, 3 );
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.weightx = 1;
+		c.weighty = 1;
+		c.gridy = 0;
+		c.gridx = 0;
+		brokenSyns.add( description, c );
+		tabbedPane.addTab( "Broken Synonyms", brokenSyns );
+		
+		JPanel suggestSyns = new JPanel( new GridBagLayout() );
+		description = new JLabel();
+		description.setText( "<html>Searches for any lines that contain a word which could be inserted by a "
+				+ "synonym tag. Especially useful if you have added new synonyms and want to "
+				+ "update existing files to take advantage of them.</html>" );
+		suggestSyns.add( description, c );
+		tabbedPane.addTab( "Suggest Synonyms", suggestSyns );
+		
+		JPanel findDuplicates = new JPanel( new GridBagLayout() );
+		description = new JLabel();
+		description.setText( "<html>Will check every perspective for lines that are equal or sufficiently "
+				+ "similiar, displaying each match so you can decide to keep one, both, or edit them.</html>" );
+		findDuplicates.add( description, c );
+		tabbedPane.addTab( "Find Duplicates", findDuplicates );
+		
+		JPanel findLongLines = new JPanel( new GridBagLayout() );
+		description = new JLabel();
+		description.setText( "<html>Finds any line where the percentage chance of it being "
+				+ "cut off in-game is greater than the specified percentage. Unless these lines are too long because of the "
+				+ "unpredictable {PRIMARY} or {ACTIVE} tags, they should be shortened.</html>" );
+		JLabel percentage = new JLabel( "% Chance of Cutoff:" ), value = new JLabel();
+		value.setMinimumSize( new Dimension( 50, 10 ) );
+		lengthSlider = new JSlider( 0, 100 );
+		lengthSlider.addChangeListener( new ChangeListener() {
+			public void stateChanged( ChangeEvent e ) {
+				float per = (float) lengthSlider.getValue() / 100f;
+				Color c = new Color( 1f, 1 - per, 0f );
+				lengthSlider.setBorder( BorderFactory.createMatteBorder( 0, 1, 1, 5, c ) );
+				value.setText( lengthSlider.getValue() + "%" );
+			}
+		} );
+		lengthSlider.setValue( 0 );
+		c.gridwidth = 3;
+		findLongLines.add( description, c );
+		c.anchor = GridBagConstraints.CENTER;
+		c.gridwidth = 1;
+		c.gridy++ ;
+		c.weightx = 0;
+		findLongLines.add( percentage, c );
+		c.gridx++ ;
+		c.weightx = 1;
+		c.insets = new Insets( 3, 15, 3, 15 );
+		findLongLines.add( lengthSlider, c );
+		c.gridx++ ;
+		c.weightx = 0;
+		c.insets = new Insets( 3, 3, 3, 3 );
+		findLongLines.add( value, c );
+		tabbedPane.addTab( "Find Long Lines", findLongLines );
+		
+		JPanel fileFilter = new JPanel( new GridBagLayout() );
+		fileFilter.setBorder( BorderFactory.createEmptyBorder( 0, 5, 20, 5 ) );
+		description = new JLabel();
+		description.setText( "<html>If text is entered here, animation names and folders will be checked before"
+				+ " opening, allowing you to limit the search to a subset of files, like a new unique animation"
+				+ " or just FemaleActor_Male, for example." );
+		pathFilterField = new JTextField();
+		JButton start = new JButton( "Start" );
+		start.addActionListener( this );
+		c = new GridBagConstraints();
+		c.anchor = GridBagConstraints.NORTHWEST;
+		c.insets = new Insets( 3, 3, 3, 3 );
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.weightx = 1;
+		c.weighty = 0;
+		c.gridy = 0;
+		c.gridx = 0;
+		fileFilter.add( description, c );
+		c.gridy++ ;
+		fileFilter.add( pathFilterField, c );
+		c.weightx = 0;
+		c.weighty = 0.6;
+		c.fill = GridBagConstraints.VERTICAL;
+		c.gridx++ ;
+		c.gridy = 0;
+		c.gridheight = 2;
+		fileFilter.add( start, c );
+		
+		JRootPane root = frame.getRootPane();
+		InputMap inputMap = root.getInputMap( JComponent.WHEN_IN_FOCUSED_WINDOW );
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK, true ), "CLOSE" );
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0, true ), "CLOSE" );
+		ActionMap actionMap = root.getActionMap();
+		actionMap.put( "CLOSE", new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				frame.dispatchEvent( new WindowEvent( frame, WindowEvent.WINDOW_CLOSING ) );
+			}
+		} );
+		inputMap.put( KeyStroke.getKeyStroke( KeyEvent.VK_ENTER, 0, true ), "CONFIRM" );
+		actionMap.put( "CONFIRM", this );
+		KeyStroke next = KeyStroke.getKeyStroke( "ctrl TAB" ), prev = KeyStroke.getKeyStroke( "ctrl shift TAB" );
+		Set<AWTKeyStroke> forwardKeys = new HashSet<AWTKeyStroke>(
+				root.getFocusTraversalKeys( KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS ) );
+		Set<AWTKeyStroke> backwardKeys = new HashSet<AWTKeyStroke>(
+				root.getFocusTraversalKeys( KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS ) );
+		forwardKeys.remove( next );
+		backwardKeys.remove( prev );
+		root.setFocusTraversalKeys( KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, forwardKeys );
+		root.setFocusTraversalKeys( KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, backwardKeys );
+		inputMap.put( next, "NEXTTAB" );
+		actionMap.put( "NEXTTAB", new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				int ind = tabbedPane.getSelectedIndex() + 1;
+				if ( ind >= tabbedPane.getTabCount() ) ind = 0;
+				tabbedPane.setSelectedIndex( ind );
+			}
+		} );
+		inputMap.put( prev, "PREVTAB" );
+		actionMap.put( "PREVTAB", new AbstractAction() {
+			public void actionPerformed( ActionEvent e ) {
+				int ind = tabbedPane.getSelectedIndex() - 1;
+				if ( ind < 0 ) ind = tabbedPane.getTabCount() - 1;
+				tabbedPane.setSelectedIndex( ind );
+			}
+		} );
+		
+		panel.add( tabbedPane, BorderLayout.CENTER );
+		panel.add( fileFilter, BorderLayout.SOUTH );
+		
+		frame.setContentPane( panel );
+	}
+	
+	public void show() {
+		frame.setSize( 600, 300 );
+		frame.setLocationRelativeTo( view );
+		frame.setVisible( true );
+	}
+	
+	public void actionPerformed( ActionEvent e ) {
+		FileFilterSearchTerms terms;
+		switch ( tabbedPane.getSelectedIndex() ) {
+			case 0:
+				terms = new Model.BrokenSynonymsFinder( view.model.synonyms );
+				break;
+			case 1:
+				terms = new Model.SynonymsSuggester( view.model.synonyms );
+				break;
+			case 2:
+				terms = new Model.DupeFinder();
+				break;
+			case 3:
+				terms = new Model.LongLineFinder( view.model.synonymsLengths, ( (float) lengthSlider.getValue() ) / 100f );
+				break;
+			default:
+				return;
+		}
+		if ( !pathFilterField.getText().equals( "" ) ) terms.setPathSub( pathFilterField.getText() );
+		frame.setVisible( false );
+		view.startSearch( terms );
+		frame.dispose();
 	}
 	
 }
