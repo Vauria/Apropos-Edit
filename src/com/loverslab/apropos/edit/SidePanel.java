@@ -16,6 +16,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -1269,6 +1270,8 @@ class SpecialSearchDialog extends AbstractAction implements DocumentListener {
 		panel.add( tabbedPane, BorderLayout.CENTER );
 		panel.add( fileFilter, BorderLayout.SOUTH );
 		
+		if ( parent.specialSearchHistory != null ) setState( parent.specialSearchHistory );
+		
 		frame.setContentPane( panel );
 	}
 	
@@ -1317,6 +1320,7 @@ class SpecialSearchDialog extends AbstractAction implements DocumentListener {
 		}
 		if ( !pathFilterField.getText().equals( "" ) ) terms.setPathSub( pathFilterField.getText() );
 		frame.setVisible( false );
+		view.specialSearchHistory = terms;
 		view.startSearch( terms );
 		frame.dispose();
 	}
@@ -1349,5 +1353,27 @@ class SpecialSearchDialog extends AbstractAction implements DocumentListener {
 		fieldChanged();
 	}
 	public void changedUpdate( DocumentEvent e ) {}
+	
+	public void setState( FileFilterSearchTerms terms ) {
+		if ( terms instanceof Model.BrokenSynonymsFinder ) {
+			tabbedPane.setSelectedIndex( 0 );
+		}
+		else if ( terms instanceof Model.SynonymsSuggester ) {
+			Model.SynonymsSuggester casted = (Model.SynonymsSuggester) terms;
+			tabbedPane.setSelectedIndex( 1 );
+			synsInputField.setText( String.join( "|", Arrays.asList( casted.keys ) ) );
+		}
+		else if ( terms instanceof Model.DupeFinder ) {
+			tabbedPane.setSelectedIndex( 2 );
+		}
+		else if ( terms instanceof Model.LongLineFinder ) {
+			Model.LongLineFinder casted = (Model.LongLineFinder) terms;
+			tabbedPane.setSelectedIndex( 3 );
+			lengthSlider.setValue( (int) ( casted.cutoff * 100 ) );
+		}
+		else
+			return;
+		pathFilterField.setText( terms.pathSub );
+	}
 	
 }

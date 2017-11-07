@@ -70,6 +70,7 @@ import javax.swing.Timer;
 import javax.swing.ToolTipManager;
 
 import com.google.gson.stream.JsonReader;
+import com.loverslab.apropos.edit.Model.FileFilterSearchTerms;
 import com.loverslab.apropos.edit.Model.SearchTerms;
 import com.loverslab.apropos.edit.Model.UserSearchTerms;
 import com.loverslab.apropos.edit.View.UpdateChecker.Release;
@@ -96,6 +97,7 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 	Timer progressTimeout = new Timer( 0, null );
 	ArrayList<JFrame> displayFrames = new ArrayList<JFrame>();
 	Deque<UserSearchTerms> searchHistory = new ArrayDeque<UserSearchTerms>();
+	FileFilterSearchTerms specialSearchHistory;
 	HashMap<DisplayPanel, AbstractAction> conflictedActions = new HashMap<DisplayPanel, AbstractAction>();
 	volatile Deque<Throwable> exceptionQueue = new ArrayDeque<Throwable>();
 	volatile Deque<Throwable> displayedExceptions = new ArrayDeque<Throwable>();

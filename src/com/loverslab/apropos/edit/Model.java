@@ -2014,8 +2014,8 @@ public class Model {
 	
 	public static class LongLineFinder extends FileFilterSearchTerms {
 		
+		float cutoff;
 		private SynonymsLengthMap synonymsLength;
-		private float cutoff;
 		
 		public LongLineFinder( SynonymsLengthMap synonymsLength, float per ) {
 			super( "Long Lines" );
