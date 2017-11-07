@@ -36,10 +36,12 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Deque;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutionException;
@@ -93,10 +95,10 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 	JProgressBar progressBar;
 	Timer progressTimeout = new Timer( 0, null );
 	ArrayList<JFrame> displayFrames = new ArrayList<JFrame>();
-	LinkedList<UserSearchTerms> searchHistory = new LinkedList<UserSearchTerms>();
+	Deque<UserSearchTerms> searchHistory = new ArrayDeque<UserSearchTerms>();
 	HashMap<DisplayPanel, AbstractAction> conflictedActions = new HashMap<DisplayPanel, AbstractAction>();
-	volatile LinkedList<Throwable> exceptionQueue = new LinkedList<Throwable>();
-	volatile LinkedList<Throwable> displayedExceptions = new LinkedList<Throwable>();
+	volatile Deque<Throwable> exceptionQueue = new ArrayDeque<Throwable>();
+	volatile Deque<Throwable> displayedExceptions = new ArrayDeque<Throwable>();
 	private MainTabView mainview;
 	
 	public static void main( String[] args ) {
@@ -143,8 +145,9 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 		
 		String defaultDB = globals.getProperty( "locations" ).split( globals.delimiter )[0];
 		if ( !defaultDB.equals( "" ) ) actionPerformed( new ActionEvent( this, ActionEvent.ACTION_PERFORMED, defaultDB ) );
-		String lastSearch = globals.getProperty( "lastsearch" );
-		if ( !lastSearch.equals( "" ) ) searchHistory.addFirst( UserSearchTerms.deserialise( lastSearch ) );
+		String[] lastSearch = globals.getProperty( "lastsearch" ).split( globals.delimiter );
+		for ( String serialised : lastSearch )
+			if ( serialised.length() > 0 ) searchHistory.add( UserSearchTerms.deserialise( serialised ) );
 		
 		setVisible( true );
 	}
@@ -232,7 +235,12 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 			public void windowClosing( WindowEvent e ) {
 				globals.setProperty( "size", isMaximized() ? "max" : getSize().width + globals.delimiter + getSize().height );
 				globals.setProperty( "position", isMaximized() ? "max" : getLocation().getX() + globals.delimiter + getLocation().getY() );
-				if ( searchHistory.peekFirst() != null ) globals.setProperty( "lastsearch", searchHistory.peekFirst().serialise() );
+				String serialised = "";
+				Iterator<UserSearchTerms> iterator = searchHistory.iterator();
+				while ( iterator.hasNext() )
+					serialised = serialised + iterator.next().serialise() + globals.delimiter;
+				serialised = serialised.replaceAll( Pattern.quote( globals.delimiter ) + "$", "" );
+				globals.setProperty( "lastsearch", serialised );
 				globals.write();
 				dispose();
 				System.exit( 0 );

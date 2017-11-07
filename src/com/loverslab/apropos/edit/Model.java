@@ -1471,6 +1471,23 @@ public class Model {
 			return true;
 		}
 		
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + maxAnimations;
+			result = prime * result + maxLines;
+			return result;
+		}
+		public boolean equals( Object obj ) {
+			if ( this == obj ) return true;
+			if ( obj == null ) return false;
+			if ( getClass() != obj.getClass() ) return false;
+			SearchTerms other = (SearchTerms) obj;
+			if ( maxAnimations != other.maxAnimations ) return false;
+			if ( maxLines != other.maxLines ) return false;
+			return true;
+		}
+		
 	}
 	
 	public static abstract class FileFilterSearchTerms extends SearchTerms {
@@ -1493,6 +1510,23 @@ public class Model {
 			return pathSub == null || dirname.contains( pathSub );
 		}
 		public boolean matchesStage( AproposLabel stagelabel ) {
+			return true;
+		}
+		public int hashCode() {
+			final int prime = 31;
+			int result = super.hashCode();
+			result = prime * result + ( ( pathSub == null ) ? 0 : pathSub.hashCode() );
+			return result;
+		}
+		public boolean equals( Object obj ) {
+			if ( this == obj ) return true;
+			if ( !super.equals( obj ) ) return false;
+			if ( getClass() != obj.getClass() ) return false;
+			FileFilterSearchTerms other = (FileFilterSearchTerms) obj;
+			if ( pathSub == null ) {
+				if ( other.pathSub != null ) return false;
+			}
+			else if ( !pathSub.equals( other.pathSub ) ) return false;
 			return true;
 		}
 		
@@ -1572,12 +1606,17 @@ public class Model {
 			search = str;
 		}
 		
-		public void generateName() {
+		public String generateName() {
 			int perMode = ( first ? 1 : 0 ) + ( second ? 1 : 0 ) * 2 + ( third ? 1 : 0 ) * 4;
 			String perStr = perModes[perMode];
 			String rapeStr = rapeModes[rapeMode];
 			name = search + "-" + searchModes[searchMode] + ( perStr.length() > 1 ? ", " + perStr : "" )
 					+ ( rapeStr.length() > 1 ? ", " + rapeStr : "" );
+			return name;
+		}
+		
+		public String toString() {
+			return name != null ? name : generateName();
 		}
 		
 		public boolean matchesPerspective( AproposLabel perslabel ) {
@@ -1635,6 +1674,41 @@ public class Model {
 				Thread.getDefaultUncaughtExceptionHandler().uncaughtException( Thread.currentThread(), e );
 			}
 			return null;
+		}
+
+		public int hashCode() {
+			final int prime = 31;
+			int result = super.hashCode();
+			result = prime * result + ( caseSens ? 1231 : 1237 );
+			result = prime * result + ( first ? 1231 : 1237 );
+			result = prime * result + lowerBoundInt;
+			result = prime * result + rapeMode;
+			result = prime * result + ( ( search == null ) ? 0 : search.hashCode() );
+			result = prime * result + searchMode;
+			result = prime * result + ( second ? 1231 : 1237 );
+			result = prime * result + ( third ? 1231 : 1237 );
+			result = prime * result + upperBoundInt;
+			return result;
+		}
+		
+		public boolean equals( Object obj ) {
+			if ( this == obj ) return true;
+			if ( !super.equals( obj ) ) return false;
+			if ( getClass() != obj.getClass() ) return false;
+			UserSearchTerms other = (UserSearchTerms) obj;
+			if ( caseSens != other.caseSens ) return false;
+			if ( first != other.first ) return false;
+			if ( lowerBoundInt != other.lowerBoundInt ) return false;
+			if ( rapeMode != other.rapeMode ) return false;
+			if ( search == null ) {
+				if ( other.search != null ) return false;
+			}
+			else if ( !search.equals( other.search ) ) return false;
+			if ( searchMode != other.searchMode ) return false;
+			if ( second != other.second ) return false;
+			if ( third != other.third ) return false;
+			if ( upperBoundInt != other.upperBoundInt ) return false;
+			return true;
 		}
 		
 	}
@@ -1857,17 +1931,19 @@ public class Model {
 	public static class SynonymsSuggester extends FileFilterSearchTerms {
 		
 		SynonymsMap synonyms;
+		String[] keys;
 		String replacement;
 		
-		public SynonymsSuggester( SynonymsMap synonyms ) {
+		public SynonymsSuggester( SynonymsMap synonyms, String[] keys ) {
 			super( "Synonyms Suggestions" );
 			setLimits( maxAnimations, maxLines / 2 );
 			this.synonyms = synonyms;
+			this.keys = keys;
 		}
 		
 		public boolean matches( String text ) {
 			replacement = " " + text + " ";
-			for ( String key : synonyms.keySet() ) {
+			for ( String key : keys ) {
 				for ( String synonym : synonyms.get( key ) ) {
 					replacement = replacement.replaceAll( "( |\\p{Punct})" + Pattern.quote( synonym ) + "( |\\p{Punct})",
 							"$1" + key + "$2" );

@@ -17,6 +17,7 @@ import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -44,6 +45,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -756,8 +758,9 @@ public class SidePanel extends JPanel implements DisplayPanelChangedListener {
 class SearchDialog extends AbstractAction implements ItemListener, DocumentListener, ChangeListener {
 	
 	private View parent;
-	private UserSearchTerms lastTerms, newTerms;
+	private UserSearchTerms terms;
 	private JFrame frame;
+	private JComboBox<UserSearchTerms> searchHistory;
 	private JTextField searchField, filterPath;
 	private JLabel searchDescription, filterStageLabel;
 	private JRadioButton searchModeSimple, searchModeWWord, searchModeRegex;
@@ -782,7 +785,10 @@ class SearchDialog extends AbstractAction implements ItemListener, DocumentListe
 		
 		GridBagConstraints c = new GridBagConstraints();
 		
-		searchField = new JTextField();
+		searchHistory = new JComboBox<UserSearchTerms>();
+		searchHistory.setEditable( true );
+		searchHistory.addItemListener( this::comboStageChanged );
+		searchField = ( (JTextField) searchHistory.getEditor().getEditorComponent() );
 		searchField.addActionListener( this );
 		searchDescription = new JLabel();
 		searchDescription.setBorder( BorderFactory.createEmptyBorder( 1, 1, 1, 1 ) );
@@ -791,6 +797,7 @@ class SearchDialog extends AbstractAction implements ItemListener, DocumentListe
 		searchModeWWord = new JRadioButton( "Whole Word" );
 		searchModeWWord.addItemListener( this );
 		searchModeRegex = new JRadioButton( "Regex" );
+		searchModeRegex.addItemListener( this::regexStateChanged );
 		searchModeRegex.addItemListener( this );
 		ButtonGroup searchBG = new ButtonGroup();
 		searchBG.add( searchModeSimple );
@@ -836,7 +843,7 @@ class SearchDialog extends AbstractAction implements ItemListener, DocumentListe
 		c.gridwidth = 4;
 		c.gridy = 0;
 		c.gridx = 0;
-		termsPanel.add( searchField, c );
+		termsPanel.add( searchHistory, c );
 		c.gridy++ ;
 		termsPanel.add( searchDescription, c );
 		c.gridy++ ;
@@ -893,8 +900,12 @@ class SearchDialog extends AbstractAction implements ItemListener, DocumentListe
 		panel.add( termsPanel, BorderLayout.NORTH );
 		panel.add( filterPanel, BorderLayout.WEST );
 		
-		lastTerms = parent.searchHistory.peekFirst();
-		if ( lastTerms != null ) setState( lastTerms );
+		if ( parent.searchHistory.size() > 0 ) {
+			Iterator<UserSearchTerms> iterator = parent.searchHistory.iterator();
+			while ( iterator.hasNext() )
+				searchHistory.addItem( iterator.next() );
+			searchHistory.setSelectedIndex( 0 );
+		}
 		
 		frame.getRootPane().getInputMap( JComponent.WHEN_IN_FOCUSED_WINDOW )
 				.put( KeyStroke.getKeyStroke( KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK, true ), "CLOSE" );
@@ -938,30 +949,50 @@ class SearchDialog extends AbstractAction implements ItemListener, DocumentListe
 			return;
 		}
 		frame.setVisible( false );
-		newTerms = getTerms();
-		parent.searchHistory.addFirst( newTerms );
-		parent.startSearch( newTerms );
+		terms = getTerms();
+		parent.searchHistory.addFirst( terms );
+		Set<UserSearchTerms> set = new HashSet<UserSearchTerms>();
+		Iterator<UserSearchTerms> it = parent.searchHistory.iterator();
+		while ( it.hasNext() ) {
+			UserSearchTerms next = it.next();
+			if ( !set.add( next ) ) it.remove();
+		}
+		while ( parent.searchHistory.size() > 10 )
+			parent.searchHistory.removeLast();
+		parent.startSearch( terms );
 		frame.dispose();
 	}
 	
+	public void itemStateChanged( ItemEvent e ) {
+		if ( e.getStateChange() == ItemEvent.SELECTED ) {
+			int searchMode = searchModeSimple.isSelected() ? 0 : ( searchModeWWord.isSelected() ? 1 : 2 );
+			searchDescription.setText( searchDescriptions[searchMode] );
+			
+		}
+	}
 	/**
 	 * Regex Selected Listener
 	 */
-	public void itemStateChanged( ItemEvent e ) {
-		if ( e.getSource() == searchModeRegex ) switch ( e.getStateChange() ) {
+	public void regexStateChanged( ItemEvent e ) {
+		switch ( e.getStateChange() ) {
 			case ItemEvent.SELECTED:
 				searchField.getDocument().addDocumentListener( this );
 				fieldChanged();
 				break;
 			case ItemEvent.DESELECTED:
 				searchField.getDocument().removeDocumentListener( this );
+				searchDescription.setForeground( Color.BLACK );
 				break;
 		}
-		switch ( e.getStateChange() ) {
-			case ItemEvent.SELECTED:
-				int searchMode = searchModeSimple.isSelected() ? 0 : ( searchModeWWord.isSelected() ? 1 : 2 );
-				searchDescription.setText( searchDescriptions[searchMode] );
-				
+	}
+	/**
+	 * Combo Box Selected Listener
+	 */
+	public void comboStageChanged( ItemEvent e ) {
+		if ( e.getStateChange() == ItemEvent.SELECTED && e.getItem() instanceof UserSearchTerms ) {
+			SwingUtilities.invokeLater( () -> { // Resolve these events first otherwise default behaviour overwrites resetting searchField
+				setState( (UserSearchTerms) e.getItem() );
+			} );
 		}
 	}
 	

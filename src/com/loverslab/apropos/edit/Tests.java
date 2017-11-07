@@ -12,6 +12,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.nio.charset.Charset;
+import java.util.Base64;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,9 +31,9 @@ import com.loverslab.apropos.edit.Model.UserSearchTerms;
 public class Tests {
 	
 	public static void main( String[] args ) throws Exception {
-		synonymDetecting();
+		charsetTesting();
 	}
-	
+
 	public static void wordWrap() {
 		final JFrame frame = new JFrame( "Word Wrap Test" );
 		frame.setLocationRelativeTo( null );
@@ -269,7 +272,7 @@ public class Tests {
 		}
 	}
 	
-	private static void synonymDetecting() throws Exception {
+	public static void synonymDetecting() throws Exception {
 		SynonymsMap synonyms = synonymsMap();
 		String[] lines = new String[ 7 ];
 		lines[0] = "{PRIMARY} cries out in shock as {ACTIVE} jams its {BEAST} {COCK} inside her {WTVAGINAL} {PUSSY}.";
@@ -287,6 +290,16 @@ public class Tests {
 			System.out.println( "Final Replacement: " + replacement );
 		}
 		
+	}
+
+	public static void charsetTesting() {
+		Charset x = Charset.forName( "ISO-8859-1" );
+		Random r = new Random();
+		byte[] src = new byte[ 500 * 1024 ^ 2 ];
+		r.nextBytes( src );
+		byte[] encode = Base64.getEncoder().encode( src );
+		String s = new String( encode, x );
+		System.out.println( s.contains( "<" ) );
 	}
 	
 }
