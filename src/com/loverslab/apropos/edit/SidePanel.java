@@ -1085,13 +1085,14 @@ class SearchDialog extends AbstractAction implements ItemListener, DocumentListe
 }
 
 @SuppressWarnings("serial")
-class SpecialSearchDialog extends AbstractAction {
+class SpecialSearchDialog extends AbstractAction implements DocumentListener {
 	
 	View view;
 	JFrame frame;
 	JTabbedPane tabbedPane;
 	JSlider lengthSlider;
-	JTextField pathFilterField;
+	JTextField pathFilterField, synsInputField;
+	JLabel synsTagCount;
 	
 	public SpecialSearchDialog( View parent ) {
 		view = parent;
@@ -1125,13 +1126,43 @@ class SpecialSearchDialog extends AbstractAction {
 		description.setText( "<html>Searches for any lines that contain a word which could be inserted by a "
 				+ "synonym tag. Especially useful if you have added new synonyms and want to "
 				+ "update existing files to take advantage of them.</html>" );
+		c.gridwidth = 2;
 		suggestSyns.add( description, c );
+		JLabel synsInputLabel = new JLabel( "<html>Enter any number of {TAGS} separated by '|', like \"{CUMS}|{CUMMING}\"<br>"
+				+ "Or leave empty to use every available synonym." );
+		c.insets = new Insets( 1, 3, 0, 3 );
+		c.gridy++ ;
+		suggestSyns.add( synsInputLabel, c );
+		synsTagCount = new JLabel( "Valid Tags: " );
+		synsTagCount.setBorder( BorderFactory.createEmptyBorder( 1, 1, 1, 1 ) );
+		synsTagCount.setMinimumSize( new Dimension( 95, 18 ) );
+		c.anchor = GridBagConstraints.WEST;
+		c.insets = new Insets( 2, 3, 2, 2 );
+		c.gridwidth = 1;
+		c.gridy++ ;
+		c.weightx = 0;
+		suggestSyns.add( synsTagCount, c );
+		synsInputField = new JTextField();
+		synsInputField.getDocument().addDocumentListener( this );
+		fieldChanged();
+		c.insets = new Insets( 1, 0, 1, 3 );
+		c.gridx++ ;
+		c.weightx = 1;
+		suggestSyns.add( synsInputField, c );
 		tabbedPane.addTab( "Suggest Synonyms", suggestSyns );
 		
 		JPanel findDuplicates = new JPanel( new GridBagLayout() );
 		description = new JLabel();
 		description.setText( "<html>Will check every perspective for lines that are equal or sufficiently "
 				+ "similiar, displaying each match so you can decide to keep one, both, or edit them.</html>" );
+		c = new GridBagConstraints();
+		c.anchor = GridBagConstraints.NORTHWEST;
+		c.insets = new Insets( 3, 3, 3, 3 );
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.weightx = 1;
+		c.weighty = 1;
+		c.gridy = 0;
+		c.gridx = 0;
 		findDuplicates.add( description, c );
 		tabbedPane.addTab( "Find Duplicates", findDuplicates );
 		
@@ -1254,7 +1285,26 @@ class SpecialSearchDialog extends AbstractAction {
 				terms = new Model.BrokenSynonymsFinder( view.model.synonyms );
 				break;
 			case 1:
-				terms = new Model.SynonymsSuggester( view.model.synonyms );
+				if ( synsTagCount.getForeground().equals( Color.RED ) ) {
+					final Timer timer = new Timer( 70, null );
+					timer.addActionListener( new ActionListener() {
+						int flashed = 0;
+						
+						public void actionPerformed( ActionEvent e ) {
+							flashed++ ;
+							if ( flashed % 2 == 1 )
+								synsTagCount.setBorder( BorderFactory.createMatteBorder( 1, 1, 1, 1, Color.RED ) );
+							else
+								synsTagCount.setBorder( BorderFactory.createEmptyBorder( 1, 1, 1, 1 ) );
+							if ( flashed == 6 ) timer.stop();
+						}
+					} );
+					timer.start();
+					return;
+				}
+				String input = synsInputField.getText();
+				String[] keys = input.length() == 0 ? view.model.synonyms.keySet().toArray( new String[ 0 ] ) : input.split( "\\|" );
+				terms = new Model.SynonymsSuggester( view.model.synonyms, keys );
 				break;
 			case 2:
 				terms = new Model.DupeFinder();
@@ -1270,5 +1320,34 @@ class SpecialSearchDialog extends AbstractAction {
 		view.startSearch( terms );
 		frame.dispose();
 	}
+	
+	public void fieldChanged() {
+		String input = synsInputField.getText();
+		SynonymsMap synonyms = view.model.synonyms;
+		int count = 0;
+		boolean error = false;
+		if ( input.length() == 0 ) {
+			count = synonyms.keySet().size();
+		}
+		else {
+			String[] keys = input.split( "\\|" );
+			for ( String key : keys ) {
+				if ( synonyms.containsKey( key ) )
+					count++ ;
+				else
+					error = true;
+			}
+		}
+		synsTagCount.setText( "Valid Tags: " + count );
+		synsTagCount.setForeground( error ? Color.RED : Color.BLACK );
+	}
+	
+	public void insertUpdate( DocumentEvent e ) {
+		fieldChanged();
+	}
+	public void removeUpdate( DocumentEvent e ) {
+		fieldChanged();
+	}
+	public void changedUpdate( DocumentEvent e ) {}
 	
 }
