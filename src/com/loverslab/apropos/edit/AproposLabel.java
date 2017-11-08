@@ -53,7 +53,7 @@ import com.loverslab.apropos.edit.SynonymsLengthMap.MinMax;
 @SuppressWarnings("serial")
 public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	
-	String string, simulateString;
+	String string, simulateString, html;
 	AproposLabel parent;
 	JLabel label, simuLabel;
 	JTextArea textField;
@@ -124,7 +124,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		JPanel labelPanel = new JPanel( new GridBagLayout() );
 		GridBagConstraints cl = new GridBagConstraints( 0, 0, 1, 1, 1, 1, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets( 1, 0, 2, 0 ), 0, 0 );
-		label = new JLabel( string.equals( "" ) ? "<add new>" : toHTML( string ) );
+		label = new JLabel();
 		labelPanel.add( label, cl );
 		
 		updateBorder();
@@ -167,6 +167,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		
 		// Show the correct panel to begin with
 		layout.show( this, "NORMAL" );
+		updateText();
 		revalidate();
 		displayed = true;
 		
@@ -186,13 +187,14 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		setLayout( new GridLayout( 1, 1 ) );
 		AproposListener al = new AproposListener();
 		
-		label = new JLabel( string.equals( "" ) ? "<add new>" : toHTML( string ) );
+		label = new JLabel();
 		add( label );
 		
 		this.addMouseListener( al );
 		this.addLineChangedListener( lcL );
 		this.addPopupMenuListener( pmL );
 		
+		updateText();
 		revalidate();
 		displayed = true;
 		
@@ -215,28 +217,34 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	 * @param text
 	 */
 	public void setText( String text ) {
-		if ( this.label == null & this.textField == null ) {
-			this.string = text;
-			return;
+		boolean inserted = !text.equals( "" ) && string.equals( "" );
+		boolean removed = text.equals( "" ) && !string.equals( "" );
+		string = text;
+		html = null;
+		updateText( inserted, removed );
+	}
+	
+	public void updateText() {
+		updateText( false, false );
+	}
+	
+	/**
+	 * Applies the stored text to this label's components
+	 * 
+	 * @param inserted if this update should trigger an insert event
+	 */
+	public void updateText( boolean inserted, boolean removed ) {
+		if ( textField != null ) textField.setText( string );
+		if ( label != null ) {
+			String text = html != null ? html : string.length() > 0 ? toHTML( string ) : "<add new>";
+			label.setText( text );
+			if ( inserted ) fireLineInserted( this );
+			if ( removed ) fireLineRemoved( this );
 		}
-		if ( this.textField == null ) {
-			this.string = text;
-			this.label.setText( toHTML( text ) );
-			return;
-		}
-		if ( getText().equals( "" ) ) {
-			if ( !text.equals( "" ) ) {
-				this.label.setText( toHTML( text ) );
-				this.string = text;
-				fireLineInserted( this );
-			}
-		}
-		else if ( text.equals( "" ) )
-			this.label.setText( "<add new>" );
-		else
-			this.label.setText( toHTML( text ) );
-		this.textField.setText( text );
-		this.string = text;
+	}
+	
+	public void setHTML( String html ) {
+		
 	}
 	
 	public String getText() {
