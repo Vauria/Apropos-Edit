@@ -224,10 +224,12 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		updateText( inserted, removed );
 	}
 	
+	/**
+	 * Applies the stored text to this label's components
+	 */
 	public void updateText() {
 		updateText( false, false );
 	}
-	
 	/**
 	 * Applies the stored text to this label's components
 	 * 
@@ -244,7 +246,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	public void setHTML( String html ) {
-		
+		this.html = html;
 	}
 	
 	public String getText() {
@@ -641,7 +643,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 			if ( e.getOppositeComponent() != null ) {
 				Component opp = e.getOppositeComponent();
 				if ( SwingUtilities.getRoot( opp ) == SwingUtilities.getRoot( AproposLabel.this ) ) {
-					if ( !locked ) setText( oldValue );
+					if ( !locked ) updateText();
 					setHoverState( false );
 					release();
 				}
@@ -659,7 +661,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 			else if ( e.getKeyChar() == KeyEvent.VK_ESCAPE ) {
 				setHoverState( false );
 				release();
-				setText( oldValue );
+				updateText();
 			}
 		}
 		

@@ -257,6 +257,10 @@ public class Tests {
 			public boolean matches( String text ) {
 				return text.contains( "knot" );
 			}
+			
+			public String markReplacements( String text ) {
+				return null;
+			}
 		};
 		
 		DatabaseSearch search = m.new DatabaseSearch( terms, null );

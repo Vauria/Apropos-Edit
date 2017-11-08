@@ -1261,6 +1261,7 @@ public class Model {
 							AproposLabel line = labelList.get( i );
 							if ( terms.matches( line.getText() ) ) {
 								line.setMatch( true );
+								line.setHTML( terms.markReplacements( line.getText() ) );
 								hit = true;
 								hitLines++ ;
 								AproposConflictLabel con = terms.matchReplacement( line );
@@ -1398,10 +1399,15 @@ public class Model {
 		
 	}
 	
+	/**
+	 * Base class that provides all the methods required for a {@link DatabaseSearch} to check the contents of the selected Apropos Database
+	 *
+	 */
 	public static abstract class SearchTerms {
 		
 		String name;
 		int maxAnimations = 50, maxLines = 500;
+		String highlightHTML = "<font color='orange'><U>$1</U></font>";
 		
 		/**
 		 * Protected Constructor for Deserialisation
@@ -1429,43 +1435,50 @@ public class Model {
 		public abstract boolean matchesPerspective( AproposLabel perslabel );
 		
 		/**
-		 * Gets given the name of a directory, which will only be opened if this returns true. Can be used to limit themes or FA/MA
+		 * Returns true if this directory matches the constraints of these {@link SearchTerms}. Constraints may be applied on themes, the
+		 * actor_prefixes used, or a unique animation name
 		 * 
-		 * @param dirname
-		 * @return
+		 * @param dirname The name of the folder being opened
 		 */
 		public abstract boolean matchesDirectory( String dirname );
 		
 		/**
-		 * Gets given the label for a stage, which will only be opened if this returns true. Can be used to discard certain stages,
-		 * positions, rape files, etc
+		 * Returns true if this stage matches the constraints of these {@link SearchTerms}. Constraints may be applied on stage numbers,
+		 * position or rape.
 		 * 
-		 * @param stagelabel
-		 * @return
+		 * @param stagelabel retrieved from the visited file representing this stage
 		 */
 		public abstract boolean matchesStage( AproposLabel stagelabel );
 		
 		/**
-		 * The function that each line will be checked against
+		 * Returns true if this line matched the SearchTerms, and should be displayed.
 		 * 
-		 * @param text
-		 * @return true if this line matched the SearchTerms, and should be displayed.
+		 * @param text The String to be checked
 		 */
 		public abstract boolean matches( String text );
 		
 		/**
-		 * Can be used to suggest a replacement for an matched AproposLabel
+		 * Inserts HTML to denote what part of this sting qualified for {@link #matches(String text)} to return true. Will return null if it
+		 * is not possible to denote the substring responsible.
 		 * 
-		 * @param label
+		 * @param text
 		 * @return
+		 */
+		public abstract String markReplacements( String text );
+		
+		/**
+		 * If applicable, will return a ConflictLabel suggesting replacements for the passed label. Otherwise, null.
+		 * 
+		 * @param label Original Label that passed {@link #matches(String text)}
+		 * @return AproposConflictLabel to replace the passed label, or null if no suggestion is applicable
 		 */
 		public abstract AproposConflictLabel matchReplacement( AproposLabel label );
 		
 		/**
-		 * Optional method that allows manipulation and verification of the stagemap of matches before it is published
+		 * Returns true if this map should be published under the constraints of these {@link SearchTerms}. Constraints may be applied on
+		 * any other elements of the lines within this map that could not be determined without the whole picture
 		 * 
-		 * @param map
-		 * @return
+		 * @param map StageMap due for publish
 		 */
 		public boolean prePublishCheck( StageMap map ) {
 			return true;
@@ -1675,7 +1688,7 @@ public class Model {
 			}
 			return null;
 		}
-
+		
 		public int hashCode() {
 			final int prime = 31;
 			int result = super.hashCode();
@@ -1715,36 +1728,34 @@ public class Model {
 	
 	public static class SimpleUserSearchTerms extends UserSearchTerms {
 		private static final long serialVersionUID = 7921686259569421410L;
-		private String realSearch;
+		private String replacement;
 		
 		public SimpleUserSearchTerms() {
 			super();
 			searchMode = 0;
 		}
-		public void setSearchString( String str ) {
-			super.setSearchString( str );
-			if ( !caseSens )
-				realSearch = search.toLowerCase();
-			else
-				realSearch = search;
-		}
 		public boolean matches( String text ) {
-			if ( !caseSens ) text = text.toLowerCase();
-			return text.matches( "^.*" + Pattern.quote( realSearch ) + ".*$" );
+			Matcher matcher = Pattern.compile( "(\\Q" + search + "\\E)", caseSens ? 0 : Pattern.CASE_INSENSITIVE ).matcher( text );
+			replacement = matcher.replaceAll( highlightHTML );
+			return replacement.length() != text.length();
+		}
+		public String markReplacements( String text ) {
+			return "<html>" + replacement;
 		}
 	}
 	
 	public static class WWordUserSearchTerms extends UserSearchTerms {
 		private static final long serialVersionUID = -6481315721704786126L;
+		private String replacement;
 		private String[] words;
 		private String bound = "( |\\p{Punct})";
 		
 		public WWordUserSearchTerms() {
 			super();
 			searchMode = 1;
+			highlightHTML = "$1" + highlightHTML.replace( "$1", "$2" ) + "$3";
 		}
 		public void setSearchString( String str ) {
-			if ( !caseSens ) str = str.toLowerCase();
 			words = str.split( "\\|" );
 			for ( int i = 0; i < words.length; i++ ) {
 				words[i] = Pattern.quote( words[i] ).replaceAll( "\\*", "\\\\E.\\\\Q" );
@@ -1752,26 +1763,41 @@ public class Model {
 			search = str;
 		}
 		public boolean matches( String text ) {
-			if ( !caseSens ) text = text.toLowerCase();
 			text = " " + text + " ";
+			replacement = text;
 			for ( int i = 0; i < words.length; i++ ) {
-				if ( text.matches( "^.*" + bound + words[i] + bound + ".*$" ) )
-					return true;
+				Pattern pattern = Pattern.compile( bound + '(' + words[i] + ')' + bound, caseSens ? 0 : Pattern.CASE_INSENSITIVE );
+				replacement = pattern.matcher( replacement ).replaceAll( highlightHTML );
 			}
-			return false;
+			return replacement.length() != text.length();
+		}
+		public String markReplacements( String text ) {
+			return "<html>" + replacement.replaceAll( "^ (.*) $", "$1" );
 		}
 	}
 	
 	public static class RegexUserSearchTerms extends UserSearchTerms {
 		private static final long serialVersionUID = -5000239467274727949L;
+		private String replacement;
 		
 		public RegexUserSearchTerms() {
 			super();
 			searchMode = 2;
 		}
+		public void setSearchString( String str ) {
+			super.setSearchString( str );
+		}
 		public boolean matches( String text ) {
-			Pattern p = Pattern.compile( search, caseSens ? 0 : Pattern.CASE_INSENSITIVE );
-			return p.matcher( text ).find();
+			Matcher m = Pattern.compile( search, caseSens ? 0 : Pattern.CASE_INSENSITIVE ).matcher( text );
+			replacement = text;
+			while ( m.find() ) {
+				replacement = replacement.substring( 0, m.start() )
+						+ replacement.substring( m.start() ).replaceFirst( "(\\Q" + m.group() + "\\E)", highlightHTML );
+			}
+			return replacement.length() != text.length();
+		}
+		public String markReplacements( String text ) {
+			return "<html>" + replacement;
 		}
 	}
 	
@@ -1926,6 +1952,10 @@ public class Model {
 			return ret;
 		}
 		
+		public String markReplacements( String text ) {
+			return null;
+		}
+		
 	}
 	
 	public static class SynonymsSuggester extends FileFilterSearchTerms {
@@ -1960,6 +1990,10 @@ public class Model {
 			rep.setMatch( true );
 			ret.addConflict( rep, true );
 			return ret;
+		}
+		
+		public String markReplacements( String text ) {
+			return null;
 		}
 		
 	}
@@ -2010,6 +2044,10 @@ public class Model {
 			return dupes;
 		}
 		
+		public String markReplacements( String text ) {
+			return null;
+		}
+		
 	}
 	
 	public static class LongLineFinder extends FileFilterSearchTerms {
@@ -2029,6 +2067,10 @@ public class Model {
 		}
 		
 		public AproposConflictLabel matchReplacement( AproposLabel label ) {
+			return null;
+		}
+		
+		public String markReplacements( String text ) {
 			return null;
 		}
 		
