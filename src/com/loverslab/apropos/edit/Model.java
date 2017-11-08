@@ -1753,9 +1753,9 @@ public class Model {
 		}
 		public boolean matches( String text ) {
 			if ( !caseSens ) text = text.toLowerCase();
+			text = " " + text + " ";
 			for ( int i = 0; i < words.length; i++ ) {
-				if ( text.matches( "^" + words[i] + bound + ".*$" ) | text.matches( "^.*" + bound + words[i] + bound + ".*$" )
-						| text.matches( "^.*" + bound + words[i] + "$" ) )
+				if ( text.matches( "^.*" + bound + words[i] + bound + ".*$" ) )
 					return true;
 			}
 			return false;
