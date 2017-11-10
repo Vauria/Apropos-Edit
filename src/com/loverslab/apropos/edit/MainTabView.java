@@ -57,7 +57,14 @@ public class MainTabView extends JTabbedPane
 	}
 	
 	public DisplayPanel getDisplayPanel() {
-		return ( (DisplayPanelContainer) getComponentAt( getSelectedIndex() ) ).getDisplayPanel();
+		if ( getTabCount() == 0 ) return null;
+		try {
+			DisplayPanelContainer con = (DisplayPanelContainer) getComponentAt( getSelectedIndex() );
+			return con.getDisplayPanel();
+		}
+		catch ( ClassCastException e ) {
+			return null;
+		}
 	}
 	
 	public boolean displayHasLabels() {
