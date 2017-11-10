@@ -1,5 +1,6 @@
 package com.loverslab.apropos.edit;
 
+import java.awt.AWTKeyStroke;
 import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -8,6 +9,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -22,9 +24,11 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.EventListener;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
@@ -33,6 +37,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
+import javax.swing.KeyStroke;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.AbstractDocument;
@@ -137,6 +142,15 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		textField.addMouseListener( hl );
 		textField.addKeyListener( hl );
 		textField.addFocusListener( hl );
+		KeyStroke next = KeyStroke.getKeyStroke( "ctrl TAB" ), prev = KeyStroke.getKeyStroke( "ctrl shift TAB" );
+		Set<AWTKeyStroke> forwardKeys = new HashSet<AWTKeyStroke>(
+				textField.getFocusTraversalKeys( KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS ) );
+		Set<AWTKeyStroke> backwardKeys = new HashSet<AWTKeyStroke>(
+				textField.getFocusTraversalKeys( KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS ) );
+		forwardKeys.remove( next );
+		backwardKeys.remove( prev );
+		textField.setFocusTraversalKeys( KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, forwardKeys );
+		textField.setFocusTraversalKeys( KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, backwardKeys );
 		Document doc = textField.getDocument();
 		// Adding a document filter that just eats all newline characters, so pressing enter just saves the line
 		( (AbstractDocument) doc ).setDocumentFilter( new DocumentFilter() {
