@@ -191,8 +191,8 @@ public class SidePanel extends JPanel implements DisplayPanelChangedListener {
 		verifyButton.addActionListener( listenVerify );
 		JLabel verifyInfo = new JLabel( "(?)" );
 		verifyInfo.setToolTipText( "<html>Reads and then rewrites every JSON file in the selected database<br>"
-				+ "so as to ensure uniform formatting across the database in terms of tabs<br>"
-				+ "vs spaces, line endings, brackets style and ordering.</html>" );
+				+ "so as to ensure uniform formatting across the database in terms<br>"
+				+ "of tabs vs spaces, line endings, brackets style and ordering.</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.gridwidth = 1;
@@ -208,8 +208,8 @@ public class SidePanel extends JPanel implements DisplayPanelChangedListener {
 		JButton synonymsButton = new JButton( "Synonyms Editor" );
 		synonymsButton.addActionListener( listenSynonyms );
 		JLabel synonymsInfo = new JLabel( "(?)" );
-		synonymsInfo.setToolTipText( "<html>Opens a separate window that allows you to view and edit this database's<br>"
-				+ "three synonyms files, Synonyms.txt, Arousal_Descriptors.txt and<br>" + "WearAndTear_Descriptors.txt</html>" );
+		synonymsInfo.setToolTipText( "<html>Opens a separate window that allows you to view and edit this<br>"
+				+ "database's three synonyms files, Synonyms.txt,<br>" + "Arousal_Descriptors.txt and WearAndTear_Descriptors.txt</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.weightx = 1.0;
@@ -225,8 +225,10 @@ public class SidePanel extends JPanel implements DisplayPanelChangedListener {
 		JButton searchButton = new JButton( "Database Search" );
 		searchButton.addActionListener( listenSearch );
 		JLabel searchInfo = new JLabel( "(?)" );
-		searchInfo.setToolTipText( "<html>Opens a separate window that allows you to view and edit this database's<br>"
-				+ "three synonyms files, Synonyms.txt, Arousal_Descriptors.txt and<br>" + "WearAndTear_Descriptors.txt</html>" );
+		searchInfo.setToolTipText( "<html>Opens the Search Dialog, allowing you to search for any text using<br>"
+				+ "three different search engines, under a wide range of constraints<br>"
+				+ "applied through the filtering system. Resulting files can be edited<br>"
+				+ "using the below buttons and hotkeys after selecting them.</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.weightx = 1.0;
@@ -242,8 +244,8 @@ public class SidePanel extends JPanel implements DisplayPanelChangedListener {
 		JButton brokenSynsButton = new JButton( "Special Searches" );
 		brokenSynsButton.addActionListener( listenSpecialSearch );
 		JLabel brokenSynsInfo = new JLabel( "(?)" );
-		brokenSynsInfo.setToolTipText( "<html>Provides access to a number of custom searches, designed to<br>"
-				+ "aid in maintaining and cleaning up your database.</html>" );
+		brokenSynsInfo.setToolTipText( "<html>Provides access to a number of custom searches, designed to aid in<br>"
+				+ "maintaining and cleaning up your database. Details on what each<br>" + "does is included in the search dialog.</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.weightx = 1.0;
@@ -256,21 +258,12 @@ public class SidePanel extends JPanel implements DisplayPanelChangedListener {
 		c.gridx++ ;
 		add( brokenSynsInfo, c );
 		
-		JButton suggestSynsButton = new JButton( "Suggest Synonyms" );
-		suggestSynsButton.setEnabled( false );
-		JLabel suggestSynsInfo = new JLabel( "(?)" );
-		suggestSynsInfo.setToolTipText( "<html>Reads the entire database and displays every line that contains a word<br>"
-				+ "which could be inserted by a synonym tag. Especially useful if you intend<br>"
-				+ "to add new tags to an existing database's synonyms file and want existing<br>"
-				+ "animation files to take advantage of the new tags. Will take a long time to<br>"
-				+ "search the entire database, but will return editable lines as they are found.</html>" );
-		
 		JButton fixButton = new JButton( "Fix Comma Errors" );
 		fixButton.setEnabled( false );
 		JLabel fixInfo = new JLabel( "(?)" );
-		fixInfo.setToolTipText( "<html>Reads the entire database and attempts to fix simple missing or extra<br>"
-				+ "comma errors. Will report any files that could not be automatically fixed, which<br>"
-				+ "will need to be repaired manually outside the Apropos Editor</html>" );
+		fixInfo.setToolTipText( "<html>Reads the entire database and attempts to fix simple missing or<br>"
+				+ "extra comma errors. Will report any files that could not be<br>"
+				+ "automatically fixed, which will need to be repaired manually<br>" + "outside the Apropos Editor</html>" );
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.insets = insButton;
 		c.weightx = 1.0;
