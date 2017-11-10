@@ -463,176 +463,7 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 					StageMap stageMap = get();
 					if ( stageMap != null && stageMap.size() != 0 ) {
 						if ( newWindow ) {
-							final JFrame displayFrame = new JFrame( animString );
-							ensureOnScreen( displayFrame, new Point( getLocation().x + getWidth(), getLocation().y ),
-									new Dimension( 800, getHeight() ) );
-							displayFrame.setDefaultCloseOperation( DISPOSE_ON_CLOSE );
-							
-							displayFrame.addWindowListener( new WindowAdapter() {
-								public void windowDeiconified( WindowEvent e ) {
-									View.this.setState( NORMAL );
-									for ( JFrame frame : displayFrames ) {
-										frame.setState( NORMAL );
-									}
-								}
-							} );
-							
-							JPanel displayPanel = new JPanel( new BorderLayout() );
-							JScrollPane displayNWScroll = new JScrollPane( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-									JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED );
-							DisplayPanel displayNW = new DisplayPanel( View.this, displayNWScroll );
-							displayNWScroll.setViewportView( displayNW );
-							displayPanel.add( displayNWScroll, BorderLayout.CENTER );
-							
-							JPanel buttonPanel = new JPanel();
-							
-							JButton writeButton = new JButton( "Save" );
-							writeButton.setToolTipText( "CTRL + S" );
-							AbstractAction listenWrite = new AbstractAction() {
-								public void actionPerformed( ActionEvent e ) {
-									writeNWDisplay( displayNW );
-								}
-							};
-							writeButton.addActionListener( listenWrite );
-							
-							final JButton simulateButton = new JButton( "Simulate" );
-							simulateButton.setToolTipText( "CTRL + R (CTRL + SHIFT + R to skip dialog)" );
-							AbstractAction listenSimulate = new AbstractAction() {
-								public void actionPerformed( ActionEvent e ) {
-									boolean simulating = simulateButton.getText() == "Reset";
-									if ( displayHasLabels( displayNW ) ) {
-										simulating = !simulating;
-										if ( simulating ) {
-											JPanel panel = new JPanel( new GridLayout( 2, 2 ) );
-											JTextField activeField = new JTextField( globals.getProperty( "active" ) );
-											JTextField primaryField = new JTextField( globals.getProperty( "primary" ) );
-											
-											panel.add( new JLabel( "Name for Active (Your Partner's Name)" ) );
-											panel.add( activeField );
-											panel.add( new JLabel( "Name for Primary (Like your PC's Name)" ) );
-											panel.add( primaryField );
-											
-											int result = JOptionPane.showConfirmDialog( displayFrame, panel,
-													"Chose names for {ACTIVE} and {PRIMARY}", JOptionPane.OK_CANCEL_OPTION,
-													JOptionPane.QUESTION_MESSAGE );
-											
-											switch ( result ) {
-												case JOptionPane.OK_OPTION:
-													simulateButton.setText( "Reset" );
-													String active = activeField.getText();
-													String primary = primaryField.getText();
-													globals.setProperty( "active", active );
-													globals.setProperty( "primary", primary );
-													simulateLabels( displayNW, active, primary );
-													break;
-												default:
-													break;
-											}
-										}
-										else {
-											simulateButton.setText( "Simulate" );
-											deSimLabels( displayNW );
-										}
-									}
-									else
-										handleException( new Exception( "You must load a file before you can Simulate it" ), displayFrame );
-								}
-							};
-							simulateButton.addActionListener( listenSimulate );
-							
-							final JButton duplicatesButton = new JButton( "Find Duplicates" );
-							duplicatesButton
-									.setToolTipText( "<html>Shows all lines that may be duplicates of another, letting you chose<br>"
-											+ "which ones you want to keep.</html>" );
-							AbstractAction listenDuplicates = new AbstractAction() {
-								boolean conflicts = false;
-								
-								public void actionPerformed( ActionEvent e ) {
-									System.out.println( e );
-									if ( e.getActionCommand().equals( "Reset" ) ) {
-										conflicts = true;
-										duplicatesButton.setText( "Resolve Conflicts" );
-									}
-									else if ( displayHasLabels( displayNW ) ) {
-										conflicts = !conflicts;
-										boolean simulating = simulateButton.getText() == "Reset";
-										if ( simulating ) {
-											simulateButton.setText( "Simulate" );
-											deSimLabels( displayNW );
-										}
-										if ( conflicts ) {
-											if ( checkDuplicates( displayNW ) )
-												duplicatesButton.setText( "Resolve Conflicts" );
-											else {
-												conflicts = false;
-												handleException( new Information( "No Duplicates Found" ), displayFrame );
-											}
-										}
-										else {
-											resolveConflicts( displayNW );
-											duplicatesButton.setText( "Find Duplicates" );
-										}
-									}
-									else
-										handleException( new Exception( "You must load a file before you can check it for duplicates" ),
-												displayFrame );
-								}
-							};
-							duplicatesButton.addActionListener( listenDuplicates );
-							conflictedActions.put( displayNW, listenDuplicates );
-							
-							buttonPanel.add( writeButton );
-							buttonPanel.add( simulateButton );
-							buttonPanel.add( duplicatesButton );
-							displayPanel.add( buttonPanel, BorderLayout.PAGE_END );
-							
-							// Add key listener to allow closing the application with CTRL + W;
-							InputMap input = displayFrame.getRootPane().getInputMap( JComponent.WHEN_IN_FOCUSED_WINDOW );
-							ActionMap action = displayFrame.getRootPane().getActionMap();
-							input.put( KeyStroke.getKeyStroke( KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK, true ), "CLOSE" );
-							action.put( "CLOSE", new AbstractAction() {
-								public void actionPerformed( ActionEvent e ) {
-									displayFrame.dispatchEvent( new WindowEvent( displayFrame, WindowEvent.WINDOW_CLOSING ) );
-								}
-							} );
-							input.put( KeyStroke.getKeyStroke( KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK, true ), "SAVE" );
-							action.put( "SAVE", listenWrite );
-							input.put( KeyStroke.getKeyStroke( KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK, true ), "SIMULATE" );
-							action.put( "SIMULATE", listenSimulate );
-							input.put(
-									KeyStroke.getKeyStroke( KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK, true ),
-									"SIMULATESKIP" );
-							action.put( "SIMULATESKIP", new AbstractAction() {
-								public void actionPerformed( ActionEvent e ) {
-									boolean simulating = simulateButton.getText() == "Reset";
-									if ( displayHasLabels( displayNW ) ) {
-										simulating = !simulating;
-										if ( simulating ) {
-											simulateButton.setText( "Reset" );
-											simulateLabels( displayNW, globals.getProperty( "active" ), globals.getProperty( "primary" ) );
-										}
-										else {
-											simulateButton.setText( "Simulate" );
-											deSimLabels( displayNW );
-										}
-									}
-									else
-										handleException( new Exception( "You must load a file before you can Simulate it" ), displayFrame );
-								}
-							} );
-							input.put( KeyStroke.getKeyStroke( KeyEvent.VK_F5, 0, true ), "REFRESH" );
-							action.put( "REFRESH", new AbstractAction() {
-								public void actionPerformed( ActionEvent e ) {
-									StageMap map = displayNW.stageMap;
-									side.setSelectedAnim( map.firstKey() );
-								}
-							} );
-							
-							displayFrames.add( displayFrame );
-							displayFrame.setContentPane( displayPanel );
-							displayFrame.setVisible( true );
-							
-							displayNW.load( stageMap, true );
+							new DisplayFrame( animString, stageMap );
 						}
 						else
 							mainview.openMap( stageMap );
@@ -1047,6 +878,188 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 														 // above
 		exceptionQueue.add( e );
 		SwingUtilities.invokeLater( new ExceptionDisplayer( relative ) );
+	}
+	
+	/**
+	 * An awful, AWFUL class.
+	 */
+	private class DisplayFrame extends JFrame implements DisplayPanelContainer {
+		DisplayPanel displayNW;
+		
+		public DisplayFrame( String animString, StageMap stageMap ) {
+			super( animString );
+			ensureOnScreen( this, new Point( View.this.getLocation().x + View.this.getWidth(), View.this.getLocation().y ),
+					new Dimension( 800, View.this.getHeight() ) );
+			setDefaultCloseOperation( DISPOSE_ON_CLOSE );
+			
+			addWindowListener( new WindowAdapter() {
+				public void windowDeiconified( WindowEvent e ) {
+					View.this.setState( NORMAL );
+					for ( JFrame frame : displayFrames ) {
+						frame.setState( NORMAL );
+					}
+				}
+			} );
+			
+			JPanel displayPanel = new JPanel( new BorderLayout() );
+			JScrollPane displayNWScroll = new JScrollPane( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED );
+			displayNW = new DisplayPanel( View.this, displayNWScroll );
+			displayNWScroll.setViewportView( displayNW );
+			displayPanel.add( displayNWScroll, BorderLayout.CENTER );
+			
+			JPanel buttonPanel = new JPanel();
+			
+			JButton writeButton = new JButton( "Save" );
+			writeButton.setToolTipText( "CTRL + S" );
+			AbstractAction listenWrite = new AbstractAction() {
+				public void actionPerformed( ActionEvent e ) {
+					writeNWDisplay( displayNW );
+				}
+			};
+			writeButton.addActionListener( listenWrite );
+			
+			final JButton simulateButton = new JButton( "Simulate" );
+			simulateButton.setToolTipText( "CTRL + R (CTRL + SHIFT + R to skip dialog)" );
+			AbstractAction listenSimulate = new AbstractAction() {
+				public void actionPerformed( ActionEvent e ) {
+					boolean simulating = simulateButton.getText() == "Reset";
+					if ( displayHasLabels( displayNW ) ) {
+						simulating = !simulating;
+						if ( simulating ) {
+							JPanel panel = new JPanel( new GridLayout( 2, 2 ) );
+							JTextField activeField = new JTextField( globals.getProperty( "active" ) );
+							JTextField primaryField = new JTextField( globals.getProperty( "primary" ) );
+							
+							panel.add( new JLabel( "Name for Active (Your Partner's Name)" ) );
+							panel.add( activeField );
+							panel.add( new JLabel( "Name for Primary (Like your PC's Name)" ) );
+							panel.add( primaryField );
+							
+							int result = JOptionPane.showConfirmDialog( DisplayFrame.this, panel, "Chose names for {ACTIVE} and {PRIMARY}",
+									JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE );
+							
+							switch ( result ) {
+								case JOptionPane.OK_OPTION:
+									simulateButton.setText( "Reset" );
+									String active = activeField.getText();
+									String primary = primaryField.getText();
+									globals.setProperty( "active", active );
+									globals.setProperty( "primary", primary );
+									simulateLabels( displayNW, active, primary );
+									break;
+								default:
+									break;
+							}
+						}
+						else {
+							simulateButton.setText( "Simulate" );
+							deSimLabels( displayNW );
+						}
+					}
+					else
+						handleException( new Exception( "You must load a file before you can Simulate it" ), DisplayFrame.this );
+				}
+			};
+			simulateButton.addActionListener( listenSimulate );
+			
+			final JButton duplicatesButton = new JButton( "Find Duplicates" );
+			duplicatesButton.setToolTipText( "<html>Shows all lines that may be duplicates of another, letting you chose<br>"
+					+ "which ones you want to keep.</html>" );
+			AbstractAction listenDuplicates = new AbstractAction() {
+				boolean conflicts = false;
+				
+				public void actionPerformed( ActionEvent e ) {
+					System.out.println( e );
+					if ( e.getActionCommand().equals( "Reset" ) ) {
+						conflicts = true;
+						duplicatesButton.setText( "Resolve Conflicts" );
+					}
+					else if ( displayHasLabels( displayNW ) ) {
+						conflicts = !conflicts;
+						boolean simulating = simulateButton.getText() == "Reset";
+						if ( simulating ) {
+							simulateButton.setText( "Simulate" );
+							deSimLabels( displayNW );
+						}
+						if ( conflicts ) {
+							if ( checkDuplicates( displayNW ) )
+								duplicatesButton.setText( "Resolve Conflicts" );
+							else {
+								conflicts = false;
+								handleException( new Information( "No Duplicates Found" ), DisplayFrame.this );
+							}
+						}
+						else {
+							resolveConflicts( displayNW );
+							duplicatesButton.setText( "Find Duplicates" );
+						}
+					}
+					else
+						handleException( new Exception( "You must load a file before you can check it for duplicates" ),
+								DisplayFrame.this );
+				}
+			};
+			duplicatesButton.addActionListener( listenDuplicates );
+			conflictedActions.put( displayNW, listenDuplicates );
+			
+			buttonPanel.add( writeButton );
+			buttonPanel.add( simulateButton );
+			buttonPanel.add( duplicatesButton );
+			displayPanel.add( buttonPanel, BorderLayout.PAGE_END );
+			
+			// Add key listener to allow closing the application with CTRL + W;
+			InputMap input = getRootPane().getInputMap( JComponent.WHEN_IN_FOCUSED_WINDOW );
+			ActionMap action = getRootPane().getActionMap();
+			input.put( KeyStroke.getKeyStroke( KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK, true ), "CLOSE" );
+			action.put( "CLOSE", new AbstractAction() {
+				public void actionPerformed( ActionEvent e ) {
+					dispatchEvent( new WindowEvent( DisplayFrame.this, WindowEvent.WINDOW_CLOSING ) );
+				}
+			} );
+			input.put( KeyStroke.getKeyStroke( KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK, true ), "SAVE" );
+			action.put( "SAVE", listenWrite );
+			input.put( KeyStroke.getKeyStroke( KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK, true ), "SIMULATE" );
+			action.put( "SIMULATE", listenSimulate );
+			input.put( KeyStroke.getKeyStroke( KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK, true ),
+					"SIMULATESKIP" );
+			action.put( "SIMULATESKIP", new AbstractAction() {
+				public void actionPerformed( ActionEvent e ) {
+					boolean simulating = simulateButton.getText() == "Reset";
+					if ( displayHasLabels( displayNW ) ) {
+						simulating = !simulating;
+						if ( simulating ) {
+							simulateButton.setText( "Reset" );
+							simulateLabels( displayNW, globals.getProperty( "active" ), globals.getProperty( "primary" ) );
+						}
+						else {
+							simulateButton.setText( "Simulate" );
+							deSimLabels( displayNW );
+						}
+					}
+					else
+						handleException( new Exception( "You must load a file before you can Simulate it" ), DisplayFrame.this );
+				}
+			} );
+			input.put( KeyStroke.getKeyStroke( KeyEvent.VK_F5, 0, true ), "REFRESH" );
+			action.put( "REFRESH", new AbstractAction() {
+				public void actionPerformed( ActionEvent e ) {
+					StageMap map = displayNW.stageMap;
+					side.setSelectedAnim( map.firstKey() );
+				}
+			} );
+			
+			displayFrames.add( this );
+			setContentPane( displayPanel );
+			setVisible( true );
+			
+			displayNW.load( stageMap, true );
+		}
+		
+		public DisplayPanel getDisplayPanel() {
+			return displayNW;
+		}
+		
 	}
 	
 	private class ExceptionDisplayer implements Runnable {
