@@ -134,6 +134,7 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 		globals = new Globals( new File( "apropos-edit.config" ) );
 		globals.read();
 		model = new Model( this );
+		updateActors();
 		
 		new UpdateChecker().execute();
 	}
@@ -400,13 +401,17 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 		mainview.openSearch( terms );
 	}
 	
-	public void simulateLabels( String active, String primary ) {
-		simulateLabels( getDisplayPanel(), active, primary );
+	public void updateActors() {
+		model.synonyms.setActors( globals.getProperty( "primary" ), globals.getProperty( "active" ) );
 	}
 	
-	public void simulateLabels( DisplayPanel display, String active, String primary ) {
+	public void simulateLabels() {
+		simulateLabels( getDisplayPanel() );
+	}
+	
+	public void simulateLabels( DisplayPanel display ) {
 		StageMap stageMap = display.stageMap;
-		model.new LabelSimulator( stageMap, active, primary ) {
+		model.new LabelSimulator( stageMap ) {
 			
 			public void process( List<AproposLabel> labels ) {
 				for ( AproposLabel label : labels )
@@ -577,8 +582,9 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 								side.publishAnimation( s );
 						}
 					}.execute();
-					setConflicted( map.checkDuplicates(), getDisplayPanel() );
+					boolean conflicted = map.checkDuplicates();
 					mainview.openMap( get() );
+					setConflicted( conflicted, getDisplayPanel() );
 				}
 				catch ( InterruptedException | ExecutionException e ) {
 					handleException( e );
@@ -946,7 +952,7 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 									String primary = primaryField.getText();
 									globals.setProperty( "active", active );
 									globals.setProperty( "primary", primary );
-									simulateLabels( displayNW, active, primary );
+									simulateLabels( displayNW );
 									break;
 								default:
 									break;
@@ -1030,7 +1036,7 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 						simulating = !simulating;
 						if ( simulating ) {
 							simulateButton.setText( "Reset" );
-							simulateLabels( displayNW, globals.getProperty( "active" ), globals.getProperty( "primary" ) );
+							simulateLabels( displayNW );
 						}
 						else {
 							simulateButton.setText( "Simulate" );

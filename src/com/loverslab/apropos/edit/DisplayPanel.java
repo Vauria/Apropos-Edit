@@ -53,6 +53,10 @@ public class DisplayPanel extends JPanel
 		load( stageMap, true );
 	}
 	
+	public View getView() {
+		return parent;
+	}
+	
 	public void load( StageMap stageMap, boolean resetScroll ) {
 		this.stageMap = stageMap;
 		
@@ -87,7 +91,7 @@ public class DisplayPanel extends JPanel
 					for ( AproposLabel label : list ) {
 						c.gridy++ ;
 						label.addInteractionListener( this );
-						if ( !matchesOnly | label.isMatch() ) add( label.display( this, this, parent.model.synonymsLengths ), c );
+						if ( !matchesOnly | label.isMatch() ) add( label.display( this, this, this ), c );
 					}
 				}
 			}

@@ -27,8 +27,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
@@ -36,8 +38,9 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
+import javax.swing.ToolTipManager;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.AbstractDocument;
@@ -62,7 +65,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	AproposLabel parent;
 	JLabel label, simuLabel;
 	JTextArea textField;
-	SynonymsLengthMap synonymsLength;
+	DisplayPanel displayPanel;
 	private boolean displayed, hoverState, simulateState, highlighted, matched = false;
 	static FontMetrics metrics = new JLabel().getFontMetrics( new JLabel().getFont() );
 	
@@ -115,10 +118,10 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	 * 
 	 * @return This AproposLabel
 	 */
-	public AproposLabel display( LineChangedListener lcL, PopupMenuListener pmL, SynonymsLengthMap synonymsLength ) {
+	public AproposLabel display( LineChangedListener lcL, PopupMenuListener pmL, DisplayPanel panel ) {
 		if ( displayed ) return this;
 		
-		this.synonymsLength = synonymsLength;
+		this.displayPanel = panel;
 		
 		// Create the listener and the layout
 		CardLayout layout = new CardLayout( 0, 0 );
@@ -169,6 +172,9 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		simulateString = "<pending simulation>";
 		simuLabel = new JLabel( simulateString );
 		simulatePanel.add( simuLabel, cl );
+		
+		ToolTipManager toolTipManager = ToolTipManager.sharedInstance();
+		toolTipManager.registerComponent( this );
 		
 		this.addMouseListener( hl );
 		this.addLineChangedListener( lcL );
@@ -568,7 +574,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	}
 	
 	public Color getWarningColor( String text ) {
-		float per = getWarningPer( synonymsLength, text );
+		float per = getWarningPer( displayPanel.getView().model.synonymsLengths, text );
 		if ( per != per ) return null;
 		Color c = new Color( 1f, 1 - per, 0f );
 		return c;
@@ -585,6 +591,31 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 	
 	public void updateBorder() {
 		updateBorder( getText() );
+	}
+	
+	// ttc = ToolTipCurrent
+	private int ttcStart = 0, ttcEnd = 0; // Char Positions in this label's text for the beginning and end of the {SYNONYM}
+	private String ttcText = null; // ToolTip's Current Text
+	
+	public String getToolTipText( MouseEvent ev ) {
+		String text = textField.getText();
+		int pos = positionFromPoint( ev.getPoint(), text );
+		if ( pos < 0 || pos >= text.length() ) return null; // Outside bounds
+		if ( pos >= ttcStart && pos <= ttcEnd && ttcText != null ) return ttcText; // Still within the same Synonym, save perf
+		ttcStart = text.lastIndexOf( '{', pos ); // Get the closest open bracket left of the mouse
+		ttcEnd = text.indexOf( '}', pos ); // Get the closest close bracket right of the mouse
+		int closeBefore = text.lastIndexOf( '}', pos - 1 ); // See if there's a close bracket before the mouse too
+		int openAfter = text.indexOf( '{', pos + 1 ); // See if there's an open bracket after the mouse too
+		if ( ttcStart == -1 || ttcEnd == -1 || ( closeBefore != -1 && closeBefore > ttcStart )
+				|| ( openAfter != -1 && openAfter < ttcEnd ) ) // If the closest open is closed before our mouse pos, or the closest close
+																 // is opened after our mouse pos, cursor is between two Synonym tags
+			ttcText = null;
+		else {
+			String key = text.substring( ttcStart, ttcEnd + 1 );
+			List<String> synonyms = displayPanel.getView().model.synonyms.get( key );
+			ttcText = synonyms.stream().distinct().collect( Collectors.joining( ", " ) );
+		}
+		return ttcText;
 	}
 	
 	/**
@@ -805,12 +836,12 @@ class AproposConflictLabel extends AproposLabel {
 		return ret;
 	}
 	
-	public AproposLabel display( LineChangedListener lcL, PopupMenuListener pmL, SynonymsLengthMap synonymsLength ) {
+	public AproposLabel display( LineChangedListener lcL, PopupMenuListener pmL, DisplayPanel panel ) {
 		if ( displayed ) return this;
 		
 		if ( matches.size() == 1 ) {
 			setLayout( new GridLayout( 1, 1 ) );
-			add( matches.getFirst().display( lcL, pmL, synonymsLength ) );
+			add( matches.getFirst().display( lcL, pmL, panel ) );
 		}
 		else {
 			setLayout( new GridBagLayout() );
@@ -838,7 +869,7 @@ class AproposConflictLabel extends AproposLabel {
 				add( keepBox, c );
 				c.gridx++ ;
 				c.weightx++ ;
-				add( l.display( lcL, pmL, synonymsLength ), c );
+				add( l.display( lcL, pmL, panel ), c );
 				l.mark( keepMap.get( l ) );
 			}
 		}

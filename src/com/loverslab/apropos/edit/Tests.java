@@ -28,18 +28,20 @@ import com.loverslab.apropos.edit.Model.DatabaseSearch;
 import com.loverslab.apropos.edit.Model.SearchTerms;
 import com.loverslab.apropos.edit.Model.UserSearchTerms;
 
+@SuppressWarnings("unused")
 public class Tests {
 	
 	public static void main( String[] args ) throws Exception {
 		charsetTesting();
 	}
 
-	public static void wordWrap() {
+	private static void wordWrap() {
 		final JFrame frame = new JFrame( "Word Wrap Test" );
 		frame.setLocationRelativeTo( null );
 		frame.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
 		
 		JPanel panel = new ScrollPanel( new GridBagLayout() );
+		
 		SynonymsLengthMap map = null;
 		try ( ObjectInputStream ois = new ObjectInputStream( new FileInputStream( new File( "synLen.obj" ) ) ) ) {
 			map = (SynonymsLengthMap) ois.readObject();
@@ -61,7 +63,7 @@ public class Tests {
 		// slowly thrusting {COCK} in my mouth...");
 		// jlabel.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.GRAY));
 		
-		panel.add( label.display( null, null, map ), c );
+		panel.add( label.display( null, null, null ), c );
 		// panel.add(jlabel,c);
 		
 		JScrollPane scrollpane = new JScrollPane( panel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
@@ -72,7 +74,7 @@ public class Tests {
 		frame.setVisible( true );
 	}
 	
-	static class ScrollPanel extends JPanel implements Scrollable {
+	private static class ScrollPanel extends JPanel implements Scrollable {
 		private static final long serialVersionUID = -5835799549417498766L;
 		
 		public ScrollPanel() {
@@ -100,7 +102,7 @@ public class Tests {
 		
 	}
 	
-	public static void shifting() {
+	private static void shifting() {
 		LabelList list = new LabelList();
 		//@formatter:off
 		/*list.add( new AproposLabel( "{ACTIVE} keeps a steady rhythm as it is obviously enjoying my {MOUTH}.",null));
@@ -133,7 +135,7 @@ public class Tests {
 		System.out.println( "\t\t\t\t\t" + Model.perspectiveShift( shift, target, current ) );
 	}
 	
-	public static void matching() {
+	private static void matching() {
 		String[] results = new String[] { "Perfect", "Punctuation", "Close", "", "", "", "", "Word Content", "Word Count", "Char Length" };
 		String[] one = new String[ 10 ];
 		String[] two = new String[ 10 ];
@@ -166,7 +168,7 @@ public class Tests {
 		}
 	}
 	
-	public static void labelFromFile() {
+	private static void labelFromFile() {
 		String s = "/Users/Kealan/Dumps/Workspace/Apropos Diffing/dbOfficial/FemaleActor_Wolf/FemaleActor_Wolf_Vaginal_Rape_Orgasm.txt";
 		System.out.println( s );
 		AproposLabel test = Model.stageLabelFromFile( new File( s ) );
@@ -175,7 +177,7 @@ public class Tests {
 		System.out.println( test.getParentLabel() );
 	}
 	
-	public static void labelFromPath() {
+	private static void labelFromPath() {
 		String s = "E:\\User Files\\Dumps\\Workspace\\Apropos Diffing\\dbOfficial\\FemaleActor_aMSleeping\\FemaleActor_aMSleeping_Rape\\Stage 1\\2nd Person";
 		System.out.println( s );
 		AproposLabel test = new AproposLabel( s );
@@ -183,7 +185,7 @@ public class Tests {
 		System.out.println( test.getDepth() );
 	}
 	
-	public static void versionComp() {
+	private static void versionComp() {
 		String current = "1.2.5", release = "1.3.5a4";
 		Pattern p = Pattern.compile( "([0-9.]+)([ab][0-9]*)?" );
 		String[] cparts = matchFirstGroups( current, p ), rparts = matchFirstGroups( release, p );
@@ -204,7 +206,7 @@ public class Tests {
 		System.out.println( ret );
 	}
 	
-	public static String matchFirstGroups( String str, Pattern p )[] { // Why can I do this
+	private static String matchFirstGroups( String str, Pattern p )[] { // Why can I do this
 		Matcher m = p.matcher( str );
 		if ( m.find() ) {
 			int c = m.groupCount();
@@ -217,7 +219,7 @@ public class Tests {
 		return null;
 	}
 	
-	public static void isJson() throws Exception {
+	private static void isJson() throws Exception {
 		String json = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getContents( null )
 				.getTransferData( DataFlavor.stringFlavor );
 		json = json.replaceFirst( "^\\{([\\s\\S]*)\\}$", "$1" ).trim();
@@ -225,7 +227,7 @@ public class Tests {
 		System.out.println( json.trim().matches( "^\\{[\\s\\S]*\\}$" ) );
 	}
 	
-	public static SynonymsMap synonymsMap() throws Exception {
+	private static SynonymsMap synonymsMap() throws Exception {
 		Model m = new Model( new ViewStub() );
 		Globals globals = new Globals( new File( "apropos-edit.config" ) );
 		globals.read();
@@ -235,7 +237,7 @@ public class Tests {
 		return m.synonyms;
 	}
 	
-	public static void searchTest() throws Exception {
+	private static void searchTest() throws Exception {
 		Model m = new Model( new ViewStub() );
 		Globals globals = new Globals( new File( "apropos-edit.config" ) );
 		globals.read();
@@ -267,7 +269,7 @@ public class Tests {
 		search.execute();
 	}
 	
-	public static void fileSorting() throws Exception {
+	private static void fileSorting() throws Exception {
 		String[] files = new String[] { "FemaleActor_Dragon_Vaginal_Rape_Orgasm.txt", "FemaleActor_Dragon_Vaginal_Rape.txt",
 				"FemaleActor_Dragon_Vaginal_Rape_Stage2.txt" };
 		for ( String file : files ) {
@@ -276,7 +278,7 @@ public class Tests {
 		}
 	}
 	
-	public static void synonymDetecting() throws Exception {
+	private static void synonymDetecting() throws Exception {
 		SynonymsMap synonyms = synonymsMap();
 		String[] lines = new String[ 7 ];
 		lines[0] = "{PRIMARY} cries out in shock as {ACTIVE} jams its {BEAST} {COCK} inside her {WTVAGINAL} {PUSSY}.";
@@ -296,7 +298,7 @@ public class Tests {
 		
 	}
 
-	public static void charsetTesting() {
+	private static void charsetTesting() {
 		Charset x = Charset.forName( "ISO-8859-1" );
 		Random r = new Random();
 		byte[] src = new byte[ 500 * 1024 ^ 2 ];

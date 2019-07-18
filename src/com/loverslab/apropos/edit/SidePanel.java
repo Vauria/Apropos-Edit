@@ -552,7 +552,8 @@ public class SidePanel extends JPanel implements DisplayPanelChangedListener {
 								String primary = primaryField.getText();
 								parent.globals.setProperty( "active", active );
 								parent.globals.setProperty( "primary", primary );
-								parent.simulateLabels( active, primary );
+								parent.updateActors();
+								parent.simulateLabels();
 								break;
 							default:
 								break;
@@ -707,7 +708,7 @@ public class SidePanel extends JPanel implements DisplayPanelChangedListener {
 					simulating = !simulating;
 					if ( simulating ) {
 						simulateButton.setText( "Reset" );
-						parent.simulateLabels( parent.globals.getProperty( "active" ), parent.globals.getProperty( "primary" ) );
+						parent.simulateLabels();
 					}
 					else {
 						simulateButton.setText( "Simulate" );

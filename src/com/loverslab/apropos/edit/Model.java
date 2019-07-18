@@ -57,7 +57,7 @@ public class Model {
 	View view;
 	AproposLabel root;
 	TreeMap<String, Boolean> uniques = null;
-	SynonymsMap synonyms;
+	SynonymsMap synonyms = new SynonymsMap();
 	SynonymsLengthMap synonymsLengths;
 	public static String fs = File.separator;
 	private String[] skip = new String[] { "AnimationPatchups.txt", "Arousal_Descriptors.txt", "Themes.txt", "UniqueAnimations.txt",
@@ -120,7 +120,6 @@ public class Model {
 	}};
 	//@formatter:on
 	public Model( View view ) {
-		super();
 		this.view = view;
 	}
 	
@@ -794,7 +793,7 @@ public class Model {
 	public class SynonymsFetcher extends SwingWorker<Object, Object> {
 		
 		public Object doInBackground() {
-			synonyms = new SynonymsMap();
+			synonyms.clear();
 			File file = new File( db + "Synonyms.txt" );
 			if ( file.exists() ) {
 				try ( JsonReader reader = new JsonReader( new InputStreamReader( new FileInputStream( file ) ) ) ) {
@@ -2082,20 +2081,16 @@ public class Model {
 	public abstract class LabelSimulator extends SwingWorker<Object, AproposLabel> {
 		
 		StageMap stageMap;
-		String active, primary;
 		Random r = new Random();
 		
-		public LabelSimulator( StageMap stageMap, String active, String primary ) {
+		public LabelSimulator( StageMap stageMap ) {
 			super();
 			this.stageMap = stageMap;
-			this.active = active;
-			this.primary = primary;
 		}
 		
 		public Object doInBackground() {
 			view.setProgress( "Simulating...", "Simulation Complete", 0 );
 			// Put the Active and Primary names into the Synonyms Map
-			synonyms.setActors( primary, active );
 			synonyms.setLevels( -1, -1 );
 			
 			// Don't bother picking out 'played' lines if the map is being used in a seach
@@ -2689,11 +2684,31 @@ class SynonymsMap {
 	private Random r = new Random();
 	
 	public SynonymsMap() {
-		super();
+		init();
+	}
+
+	/**
+	 * Initialises this SynonymsMap, for the benefit of the Wear and Tear files that don't define their keys in the json
+	 */
+	private void init() {
 		TreeMap<String, ArrayList<String>> map = new TreeMap<String, ArrayList<String>>();
 		mapWearNTear.put( "{WTVAGINAL}", map );
 		mapWearNTear.put( "{WTORAL}", map );
 		mapWearNTear.put( "{WTANAL}", map );
+	}
+	
+	/**
+	 * Empties this SynonymsMap of all data except the non-database-dependent Actor Names.
+	 */
+	public void clear() {
+		mapSynonyms.clear();
+		mapArousal.clear();
+		mapWearNTear.clear();
+		keySet = null;
+		stagesSynonyms = stagesArousal = stagesWearNTear = null;
+		levelArousal = -1;
+		levelWearNTear = -1;
+		init();
 	}
 	
 	public String insert( String str ) {
@@ -2751,7 +2766,7 @@ class SynonymsMap {
 		this.levelWearNTear = levelWearNTear;
 	}
 	
-	public ArrayList<String> get( String key ) {
+	public List<String> get( String key ) {
 		if ( mapSynonyms.containsKey( key ) ) return mapSynonyms.get( key );
 		if ( mapArousal.containsKey( key ) ) {
 			ArrayList<String> ret = new ArrayList<String>();
@@ -2767,10 +2782,12 @@ class SynonymsMap {
 				ret.addAll( map.get( level ) );
 			return ret;
 		}
+		if ( key.equals( "{ACTIVE}" ) ) return Arrays.asList( active );
+		if ( key.equals( "{PRIMARY}" ) ) return Arrays.asList( primary );
 		return null;
 	}
 	
-	public ArrayList<String> get( String key, int level ) {
+	public List<String> get( String key, int level ) {
 		if ( mapSynonyms.containsKey( key ) ) return mapSynonyms.get( key );
 		if ( mapArousal.containsKey( key ) ) {
 			TreeMap<String, ArrayList<String>> map = mapArousal.get( key );
@@ -2879,7 +2896,7 @@ class SynonymsLengthMap implements Serializable {
 		max = metrics.stringWidth( "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM" ); // The Holy String of
 																														 // 78 M's
 		for ( String key : synonyms.keySet() ) {
-			ArrayList<String> list = synonyms.get( key );
+			List<String> list = synonyms.get( key );
 			MinMax minmax = new MinMax();
 			for ( String word : list ) {
 				int length = metrics.stringWidth( word );
