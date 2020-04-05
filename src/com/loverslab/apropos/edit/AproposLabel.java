@@ -94,7 +94,7 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		String s = File.separator;
 		path = path.replaceAll( s + s + "$", "" );
 		// Check if valid database to terminate recursion
-		File f = new File( path + s + "Themes.txt" ); // TODO: Have a more reliable way to determine if this is a DB folder
+		File f = new File( path + s + "AnimationPatchups.txt" ); // TODO: Have a more reliable way to determine if this is a DB folder
 		if ( f.exists() ) {
 			string = path;
 			this.parent = null;
