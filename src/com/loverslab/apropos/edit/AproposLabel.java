@@ -613,7 +613,10 @@ public class AproposLabel extends JPanel implements Comparable<AproposLabel> {
 		else {
 			String key = text.substring( ttcStart, ttcEnd + 1 );
 			List<String> synonyms = displayPanel.getView().model.synonyms.get( key );
-			ttcText = synonyms.stream().distinct().collect( Collectors.joining( ", " ) );
+			if ( synonyms.size() > 0 )
+				ttcText = synonyms.stream().distinct().collect( Collectors.joining( ", " ) );
+			else
+				ttcText = "This tag does not exist in the current database.";
 		}
 		return ttcText;
 	}
