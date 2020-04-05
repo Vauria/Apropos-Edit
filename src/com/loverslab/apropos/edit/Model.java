@@ -2415,7 +2415,9 @@ abstract class LabelMap<T extends AproposMap> extends TreeMap<AproposLabel, T> i
 	}
 	
 	public AproposLabel firstLine() {
-		return firstEntry().getValue().firstLine();
+		for ( T map : values() )
+			if ( map.totalSize() > 0 ) return map.firstLine();
+		return null;
 	}
 	
 	public Iterator<AproposLabel> iterator() {
