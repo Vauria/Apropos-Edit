@@ -69,6 +69,7 @@ import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import javax.swing.ToolTipManager;
 
+import com.google.gson.JsonParseException;
 import com.google.gson.stream.JsonReader;
 import com.loverslab.apropos.edit.Model.FileFilterSearchTerms;
 import com.loverslab.apropos.edit.Model.SearchTerms;
@@ -857,8 +858,8 @@ public class View extends JFrame implements ActionListener, DisplayPanelContaine
 	public void handleException( Throwable e, Component relative ) {
 		Throwable error = e;
 		do
-			if ( error instanceof NullPointerException | error instanceof NumberFormatException
-					| error instanceof ArrayIndexOutOfBoundsException | error instanceof ClassCastException | error instanceof Error ) {
+			if ( ! ( error instanceof Information | error instanceof JsonParseException | error instanceof IllegalStateException
+					| error instanceof IOException ) ) {
 				// These sorts of exceptions are really dangeroos and can attak at any tiem, so ve must deal vith it.
 				
 				StringWriter stack = new StringWriter();
